@@ -12,7 +12,6 @@ import os
 from collections import OrderedDict
 
 L, W = 4.8, 2.0
-L_BIKE, W_BIKE = 2.0, 0.48
 LANE_WIDTH = 3.75
 BIKE_LANE_WIDTH = 2.0
 PERSON_LANE_WIDTH = 2.0
@@ -20,16 +19,18 @@ LANE_NUMBER = 3
 CROSSROAD_SIZE = 50
 EXPECTED_V = 8.
 dirname = os.path.dirname(__file__)
+TASK_DICT = dict(left=1.0, straight=0.0, right=-1.0)
 SUMOCFG_DIR = dirname + "/sumo_files/cross.sumocfg"
 VEHICLE_MODE_DICT = dict(left=OrderedDict(dl=2, du=2, ud=2, ul=2),
-                         straight=OrderedDict(dl=1, du=2, ru=2, ur=2),
-                         right=OrderedDict(dr=1, ur=2, lr=2))
-BIKE_MODE_DICT = dict(left=OrderedDict(ud_b=2),
+                         straight=OrderedDict(dl=2, du=2, ru=2, ur=2),
+                         right=OrderedDict(dr=2, du=2, ur=2, lr=2))
+BIKE_MODE_DICT = dict(left=OrderedDict(ud_b=4),
                          straight=OrderedDict(du_b=4),
                          right=OrderedDict(du_b=2, lr_b=0))
 PERSON_MODE_DICT = dict(left=OrderedDict(c3=4),
                          straight=OrderedDict(c2=0),
                          right=OrderedDict(c1=4, c2=0))
+LIGHT = {0: 'green', 1: 'red'}
 
 
 def dict2flat(inp):
