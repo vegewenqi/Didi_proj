@@ -108,19 +108,19 @@ class EnvironmentModel(object):  # all tensors
         self.light_info_dim = 1
         self.task_info_dim = 1
         self.per_path_info_dim = 4
-        self.per_bike_info_dim = 9
-        self.per_person_info_dim = 9
-        self.per_veh_info_dim = 9
+        self.per_bike_info_dim = 10
+        self.per_person_info_dim = 10
+        self.per_veh_info_dim = 10
         self.obses_ego = None
         self.obses_bike = None
         self.obses_person =None
         self.obses_veh =None
 
-    def reset(self, obses_ego, obses_bike, obses_person, obses_veh, ref_indexes=None):  # input are all tensors
+    def reset(self, obses_ego, obses_others, ref_indexes=None):  # input are all tensors
         self.obses_ego = obses_ego
-        self.obses_bike = tf.reshape(obses_bike, [-1, self.per_bike_info_dim * self.bike_num])
-        self.obses_person = tf.reshape(obses_person, [-1, self.per_person_info_dim * self.person_num])
-        self.obses_veh = tf.reshape(obses_veh, [-1, self.per_veh_info_dim * self.veh_num])
+        self.obses_bike = obses_others[:, :self.bike_num * self.per_bike_info_dim]
+        self.obses_person = obses_others[:, self.bike_num * self.per_bike_info_dim:self.bike_num * self.per_bike_info_dim + self.person_num * self.per_person_info_dim]
+        self.obses_veh = obses_others[:, self.bike_num * self.per_bike_info_dim + self.person_num * self.per_person_info_dim:]
         self.ref_indexes = ref_indexes
         self.actions = None
         self.reward_info = None
@@ -140,11 +140,8 @@ class EnvironmentModel(object):  # all tensors
             self.obses_ego, self.obses_bike, self.obses_person, self.obses_veh = \
                 self.compute_next_obses(self.obses_ego, self.obses_bike, self.obses_person, self.obses_veh, self.actions)
 
-            obses_bike = tf.reshape(self.obses_bike, [-1, self.per_bike_info_dim])
-            obses_person = tf.reshape(self.obses_person, [-1, self.per_person_info_dim])
-            obses_veh = tf.reshape(self.obses_veh, [-1, self.per_veh_info_dim])
-
-        return self.obses_ego, obses_bike, obses_person, obses_veh, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
+            obses_others = tf.concat([self.obses_bike, self.obses_person, self.obses_veh], axis=1)
+        return self.obses_ego, obses_others, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
                veh2bike4real, veh2person4real
 
     def _action_transformation_for_end2end(self, actions):  # [-1, 1]
@@ -206,7 +203,7 @@ class EnvironmentModel(object):  # all tensors
         return veh2veh4real
 
     def compute_rewards(self, obses_ego, obses_bike, obses_person, obses_veh, actions):
-        # obses = self.convert_vehs_to_abso(obses)
+        obses_ego, obses_bike, obses_person, obses_veh = self.convert_vehs_to_abso(obses_ego, obses_bike, obses_person, obses_veh)
         with tf.name_scope('compute_reward') as scope:
             ego_infos, tracking_infos = obses_ego[:, :self.ego_info_dim], obses_ego[:, self.ego_info_dim: self.ego_info_dim + self.track_info_dim]
 
@@ -276,69 +273,69 @@ class EnvironmentModel(object):  # all tensors
 
             veh2road4real = tf.zeros_like(veh_infos[:, 0])
             veh2road4training = tf.zeros_like(veh_infos[:, 0])
-            if self.task == 'left':
-                for ego_point in [ego_front_points, ego_rear_points]:
-                    veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, ego_point[0] < 1),
-                                         tf.square(ego_point[0]-1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, LANE_WIDTH-ego_point[0] < 1),
-                                         tf.square(LANE_WIDTH-ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4training += tf.where(logical_and(ego_point[0] < 0, LANE_WIDTH*LANE_NUMBER - ego_point[1] < 1),
-                                         tf.square(LANE_WIDTH*LANE_NUMBER - ego_point[1] - 1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4training += tf.where(logical_and(ego_point[0] < -CROSSROAD_SIZE/2, ego_point[1] - 0 < 1),
-                                         tf.square(ego_point[1] - 0 - 1), tf.zeros_like(veh_infos[:, 0]))
-
-                    veh2road4real += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, ego_point[0] < 1),
-                                         tf.square(ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4real += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, LANE_WIDTH - ego_point[0] < 1),
-                                         tf.square(LANE_WIDTH - ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4real += tf.where(logical_and(ego_point[0] < -CROSSROAD_SIZE/2, LANE_WIDTH*LANE_NUMBER - ego_point[1] < 1),
-                                         tf.square(LANE_WIDTH*LANE_NUMBER - ego_point[1] - 1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4real += tf.where(logical_and(ego_point[0] < -CROSSROAD_SIZE/2, ego_point[1] - 0 < 1),
-                                         tf.square(ego_point[1] - 0 - 1), tf.zeros_like(veh_infos[:, 0]))
-            elif self.task == 'straight':
-                for ego_point in [ego_front_points, ego_rear_points]:
-                    veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, ego_point[0] - LANE_WIDTH < 1),
-                                         tf.square(ego_point[0] - LANE_WIDTH -1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, 2*LANE_WIDTH-ego_point[0] < 1),
-                                         tf.square(2*LANE_WIDTH-ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4training += tf.where(logical_and(ego_point[1] > CROSSROAD_SIZE/2, LANE_WIDTH*LANE_NUMBER - ego_point[0] < 1),
-                                         tf.square(LANE_WIDTH*LANE_NUMBER - ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4training += tf.where(logical_and(ego_point[1] > CROSSROAD_SIZE/2, ego_point[0] - 0 < 1),
-                                         tf.square(ego_point[0] - 0 - 1), tf.zeros_like(veh_infos[:, 0]))
-
-                    veh2road4real += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE / 2, ego_point[0]-LANE_WIDTH < 1),
-                                                  tf.square(ego_point[0]-LANE_WIDTH - 1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4real += tf.where(
-                        logical_and(ego_point[1] < -CROSSROAD_SIZE / 2, 2 * LANE_WIDTH - ego_point[0] < 1),
-                        tf.square(2 * LANE_WIDTH - ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4real += tf.where(
-                        logical_and(ego_point[1] > CROSSROAD_SIZE / 2, LANE_WIDTH * LANE_NUMBER - ego_point[0] < 1),
-                        tf.square(LANE_WIDTH * LANE_NUMBER - ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4real += tf.where(logical_and(ego_point[1] > CROSSROAD_SIZE / 2, ego_point[0] - 0 < 1),
-                                                  tf.square(ego_point[0] - 0 - 1), tf.zeros_like(veh_infos[:, 0]))
-            else:
-                assert self.task == 'right'
-                for ego_point in [ego_front_points, ego_rear_points]:
-                    veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, ego_point[0] - 2*LANE_WIDTH < 1),
-                                         tf.square(ego_point[0] - 2*LANE_WIDTH-1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, LANE_NUMBER*LANE_WIDTH-ego_point[0] < 1),
-                                         tf.square(LANE_NUMBER*LANE_WIDTH-ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4training += tf.where(logical_and(ego_point[0] > CROSSROAD_SIZE/2, 0 - ego_point[1] < 1),
-                                         tf.square(0 - ego_point[1] - 1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4training += tf.where(logical_and(ego_point[0] > CROSSROAD_SIZE/2, ego_point[1] - (-LANE_WIDTH*LANE_NUMBER) < 1),
-                                         tf.square(ego_point[1] - (-LANE_WIDTH*LANE_NUMBER) - 1), tf.zeros_like(veh_infos[:, 0]))
-
-                    veh2road4real += tf.where(
-                        logical_and(ego_point[1] < -CROSSROAD_SIZE / 2, ego_point[0] - 2 * LANE_WIDTH < 1),
-                        tf.square(ego_point[0] - 2 * LANE_WIDTH - 1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4real += tf.where(
-                        logical_and(ego_point[1] < -CROSSROAD_SIZE / 2, LANE_NUMBER * LANE_WIDTH - ego_point[0] < 1),
-                        tf.square(LANE_NUMBER * LANE_WIDTH - ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4real += tf.where(logical_and(ego_point[0] > CROSSROAD_SIZE / 2, 0 - ego_point[1] < 1),
-                                                  tf.square(0 - ego_point[1] - 1), tf.zeros_like(veh_infos[:, 0]))
-                    veh2road4real += tf.where(
-                        logical_and(ego_point[0] > CROSSROAD_SIZE / 2, ego_point[1] - (-LANE_WIDTH * LANE_NUMBER) < 1),
-                        tf.square(ego_point[1] - (-LANE_WIDTH * LANE_NUMBER) - 1), tf.zeros_like(veh_infos[:, 0]))
+            # if self.task == 'left':
+            #     for ego_point in [ego_front_points, ego_rear_points]:
+            #         veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, ego_point[0] < 1),
+            #                              tf.square(ego_point[0]-1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, LANE_WIDTH-ego_point[0] < 1),
+            #                              tf.square(LANE_WIDTH-ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4training += tf.where(logical_and(ego_point[0] < 0, LANE_WIDTH*LANE_NUMBER - ego_point[1] < 1),
+            #                              tf.square(LANE_WIDTH*LANE_NUMBER - ego_point[1] - 1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4training += tf.where(logical_and(ego_point[0] < -CROSSROAD_SIZE/2, ego_point[1] - 0 < 1),
+            #                              tf.square(ego_point[1] - 0 - 1), tf.zeros_like(veh_infos[:, 0]))
+            #
+            #         veh2road4real += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, ego_point[0] < 1),
+            #                              tf.square(ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4real += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, LANE_WIDTH - ego_point[0] < 1),
+            #                              tf.square(LANE_WIDTH - ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4real += tf.where(logical_and(ego_point[0] < -CROSSROAD_SIZE/2, LANE_WIDTH*LANE_NUMBER - ego_point[1] < 1),
+            #                              tf.square(LANE_WIDTH*LANE_NUMBER - ego_point[1] - 1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4real += tf.where(logical_and(ego_point[0] < -CROSSROAD_SIZE/2, ego_point[1] - 0 < 1),
+            #                              tf.square(ego_point[1] - 0 - 1), tf.zeros_like(veh_infos[:, 0]))
+            # elif self.task == 'straight':
+            #     for ego_point in [ego_front_points, ego_rear_points]:
+            #         veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, ego_point[0] - LANE_WIDTH < 1),
+            #                              tf.square(ego_point[0] - LANE_WIDTH -1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, 2*LANE_WIDTH-ego_point[0] < 1),
+            #                              tf.square(2*LANE_WIDTH-ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4training += tf.where(logical_and(ego_point[1] > CROSSROAD_SIZE/2, LANE_WIDTH*LANE_NUMBER - ego_point[0] < 1),
+            #                              tf.square(LANE_WIDTH*LANE_NUMBER - ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4training += tf.where(logical_and(ego_point[1] > CROSSROAD_SIZE/2, ego_point[0] - 0 < 1),
+            #                              tf.square(ego_point[0] - 0 - 1), tf.zeros_like(veh_infos[:, 0]))
+            #
+            #         veh2road4real += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE / 2, ego_point[0]-LANE_WIDTH < 1),
+            #                                       tf.square(ego_point[0]-LANE_WIDTH - 1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4real += tf.where(
+            #             logical_and(ego_point[1] < -CROSSROAD_SIZE / 2, 2 * LANE_WIDTH - ego_point[0] < 1),
+            #             tf.square(2 * LANE_WIDTH - ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4real += tf.where(
+            #             logical_and(ego_point[1] > CROSSROAD_SIZE / 2, LANE_WIDTH * LANE_NUMBER - ego_point[0] < 1),
+            #             tf.square(LANE_WIDTH * LANE_NUMBER - ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4real += tf.where(logical_and(ego_point[1] > CROSSROAD_SIZE / 2, ego_point[0] - 0 < 1),
+            #                                       tf.square(ego_point[0] - 0 - 1), tf.zeros_like(veh_infos[:, 0]))
+            # else:
+            #     assert self.task == 'right'
+            #     for ego_point in [ego_front_points, ego_rear_points]:
+            #         veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, ego_point[0] - 2*LANE_WIDTH < 1),
+            #                              tf.square(ego_point[0] - 2*LANE_WIDTH-1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, LANE_NUMBER*LANE_WIDTH-ego_point[0] < 1),
+            #                              tf.square(LANE_NUMBER*LANE_WIDTH-ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4training += tf.where(logical_and(ego_point[0] > CROSSROAD_SIZE/2, 0 - ego_point[1] < 1),
+            #                              tf.square(0 - ego_point[1] - 1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4training += tf.where(logical_and(ego_point[0] > CROSSROAD_SIZE/2, ego_point[1] - (-LANE_WIDTH*LANE_NUMBER) < 1),
+            #                              tf.square(ego_point[1] - (-LANE_WIDTH*LANE_NUMBER) - 1), tf.zeros_like(veh_infos[:, 0]))
+            #
+            #         veh2road4real += tf.where(
+            #             logical_and(ego_point[1] < -CROSSROAD_SIZE / 2, ego_point[0] - 2 * LANE_WIDTH < 1),
+            #             tf.square(ego_point[0] - 2 * LANE_WIDTH - 1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4real += tf.where(
+            #             logical_and(ego_point[1] < -CROSSROAD_SIZE / 2, LANE_NUMBER * LANE_WIDTH - ego_point[0] < 1),
+            #             tf.square(LANE_NUMBER * LANE_WIDTH - ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4real += tf.where(logical_and(ego_point[0] > CROSSROAD_SIZE / 2, 0 - ego_point[1] < 1),
+            #                                       tf.square(0 - ego_point[1] - 1), tf.zeros_like(veh_infos[:, 0]))
+            #         veh2road4real += tf.where(
+            #             logical_and(ego_point[0] > CROSSROAD_SIZE / 2, ego_point[1] - (-LANE_WIDTH * LANE_NUMBER) < 1),
+            #             tf.square(ego_point[1] - (-LANE_WIDTH * LANE_NUMBER) - 1), tf.zeros_like(veh_infos[:, 0]))
 
             rewards = 0.01 * devi_v + 0.8 * devi_y + 30 * devi_phi + 0.02 * punish_yaw_rate + \
                       5 * punish_steer + 0.05 * punish_a_x
@@ -371,8 +368,18 @@ class EnvironmentModel(object):  # all tensors
                    veh2person4real, reward_dict
 
     def compute_next_obses(self, obses_ego, obses_bike, obses_person, obses_veh, actions):
-        # obses = self.convert_vehs_to_abso(obses)
-        ego_infos, tracking_infos = obses_ego[:, :self.ego_info_dim], obses_ego[:, self.ego_info_dim:]
+        obses_ego, obses_bike, obses_person, obses_veh = self.convert_vehs_to_abso(obses_ego, obses_bike, obses_person, obses_veh)
+        self.light_flag = True
+
+        ego_infos = obses_ego[:, :self.ego_info_dim]
+        track_infos = obses_ego[:, self.ego_info_dim:self.ego_info_dim + self.track_info_dim]
+        path_infos = obses_ego[:, self.ego_info_dim + self.track_info_dim: self.ego_info_dim + self.track_info_dim +
+                                                                       self.per_path_info_dim * self.num_future_data]
+        light_infos = obses_ego[:,
+                      self.ego_info_dim + self.track_info_dim + self.per_path_info_dim * self.num_future_data:
+                      self.ego_info_dim + self.track_info_dim + self.per_path_info_dim * self.num_future_data + self.light_info_dim]
+        task_infos = obses_ego[:, self.ego_info_dim + self.track_info_dim + self.per_path_info_dim * self.num_future_data + self.light_info_dim:]
+
         bike_infos = tf.stop_gradient(obses_bike)
         person_infos = tf.stop_gradient(obses_person)
         veh_infos = tf.stop_gradient(obses_veh)
@@ -386,19 +393,25 @@ class EnvironmentModel(object):  # all tensors
                                                                       next_ego_infos[:, 0],
                                                                       self.num_future_data)
         else:
-            # next_tracking_infos = self.tracking_error_predict(ego_infos, tracking_infos, actions)
-            next_tracking_infos = tf.zeros(shape=(len(next_ego_infos),
-                                                  (self.num_future_data+1)*self.per_tracking_info_dim))
+            next_tracking_infos = tf.zeros(shape=(len(next_ego_infos), self.track_info_dim +
+                                                  self.num_future_data * self.per_path_info_dim))
             ref_indexes = tf.expand_dims(self.ref_indexes, axis=1)
-            for ref_idx, path in enumerate(self.ref_path.path_list):
-                self.ref_path.path = path
-                tracking_info_4_this_ref_idx = self.ref_path.tracking_error_vector(next_ego_infos[:, 3],
-                                                                                   next_ego_infos[:, 4],
-                                                                                   next_ego_infos[:, 5],
-                                                                                   next_ego_infos[:, 0],
-                                                                                   self.num_future_data)
-                next_tracking_infos = tf.where(ref_indexes == ref_idx, tracking_info_4_this_ref_idx,
-                                               next_tracking_infos)
+            for task, task_idx in TASK_DICT.items():                # choose task
+                self.ref_path = ReferencePath(task)
+                for light_idx, light_name in LIGHT.items():         # choose light
+                    flag_temp = logical_and(task_infos == task_idx, light_infos == light_idx)
+                    if tf.reduce_any(flag_temp):
+                        for ref_idx, path in enumerate(self.ref_path.path_list[light_name]):     # choose path
+                            filter = logical_and(flag_temp, ref_indexes == ref_idx)
+                            if tf.reduce_any(filter):
+                                self.ref_path.path = path
+                                track_info_temp = self.ref_path.tracking_error_vector(next_ego_infos[:, 3],
+                                                                                      next_ego_infos[:, 4],
+                                                                                      next_ego_infos[:, 5],
+                                                                                      next_ego_infos[:, 0],
+                                                                                      self.num_future_data)
+                                next_tracking_infos = tf.where(filter, track_info_temp, next_tracking_infos)
+
         next_bike_infos = self.bike_predict(bike_infos)
         if not person_infos.shape[1]:                                       # no pedestrian is considered
             next_person_infos = person_infos
@@ -406,35 +419,40 @@ class EnvironmentModel(object):  # all tensors
             next_person_infos = self.person_predict(person_infos)
         next_veh_infos = self.veh_predict(veh_infos)
 
-        next_obses_ego = tf.concat([next_ego_infos, next_tracking_infos], 1)
-        # next_obses = self.convert_vehs_to_rela(next_obses)
+        next_obses_ego = tf.concat([next_ego_infos, next_tracking_infos, light_infos, task_infos], 1)
+        next_obses_ego, next_bike_infos, next_person_infos, next_veh_infos = self.convert_vehs_to_rela(next_obses_ego, next_bike_infos, next_person_infos, next_veh_infos)
         return next_obses_ego, next_bike_infos, next_person_infos, next_veh_infos
 
-    # def convert_vehs_to_rela(self, obs_abso):
-    #     ego_infos, tracking_infos, veh_infos = obs_abso[:, :self.ego_info_dim], \
-    #                                            obs_abso[:, self.ego_info_dim:self.ego_info_dim + self.per_tracking_info_dim * (
-    #                                                      self.num_future_data + 1)], \
-    #                                            obs_abso[:, self.ego_info_dim + self.per_tracking_info_dim * (
-    #                                                        self.num_future_data + 1):]
-    #     ego_x, ego_y = ego_infos[:, 3], ego_infos[:, 4]
-    #     ego = tf.tile(tf.stack([ego_x, ego_y, tf.zeros_like(ego_x), tf.zeros_like(ego_x)], 1),
-    #                   (1, int(tf.shape(veh_infos)[1]/self.per_item_info_dim)))
-    #     vehs_rela = veh_infos - ego
-    #     out = tf.concat([ego_infos, tracking_infos, vehs_rela], 1)
-    #     return out
+    def convert_vehs_to_rela(self, obses_ego, obses_bike, obses_person, obses_veh):
+        ego_x, ego_y = obses_ego[:, 3], obses_ego[:, 4]
+        ego = tf.tile(tf.concat([tf.stack([ego_x, ego_y], axis=1), tf.zeros(shape=(len(ego_x), self.per_bike_info_dim-2))], axis=1),
+                                (1, int(tf.shape(obses_bike)[1]/self.per_bike_info_dim)))
+        bikes_abso = obses_bike - ego
 
-    # def convert_vehs_to_abso(self, obs_rela):
-    #     ego_infos, tracking_infos, veh_rela = obs_rela[:, :self.ego_info_dim], \
-    #                                            obs_rela[:, self.ego_info_dim:self.ego_info_dim + self.per_tracking_info_dim * (
-    #                                                    self.num_future_data + 1)], \
-    #                                            obs_rela[:, self.ego_info_dim + self.per_tracking_info_dim * (
-    #                                                    self.num_future_data + 1):]
-    #     ego_x, ego_y = ego_infos[:, 3], ego_infos[:, 4]
-    #     ego = tf.tile(tf.stack([ego_x, ego_y, tf.zeros_like(ego_x), tf.zeros_like(ego_x)], 1),
-    #                   (1, int(tf.shape(veh_rela)[1] / self.per_item_info_dim)))
-    #     vehs_abso = veh_rela + ego
-    #     out = tf.concat([ego_infos, tracking_infos, vehs_abso], 1)
-    #     return out
+        ego = tf.tile(tf.concat([tf.stack([ego_x, ego_y], axis=1), tf.zeros(shape=(len(ego_x), self.per_person_info_dim-2))], axis=1),
+                                (1, int(tf.shape(obses_person)[1]/self.per_person_info_dim)))
+        persons_abso = obses_person - ego
+
+        ego = tf.tile(tf.concat([tf.stack([ego_x, ego_y], axis=1), tf.zeros(shape=( len(ego_x), self.per_veh_info_dim-2))], axis=1),
+                                (1, int(tf.shape(obses_veh)[1]/self.per_veh_info_dim)))
+        vehs_abso = obses_veh - ego
+        return obses_ego, bikes_abso, persons_abso, vehs_abso
+
+
+    def convert_vehs_to_abso(self, obses_ego, obses_bike, obses_person, obses_veh):
+        ego_x, ego_y = obses_ego[:, 3], obses_ego[:, 4]
+        ego = tf.tile(tf.concat([tf.stack([ego_x, ego_y], axis=1), tf.zeros(shape=(len(ego_x), self.per_bike_info_dim-2))], axis=1),
+                                (1, int(tf.shape(obses_bike)[1]/self.per_bike_info_dim)))
+        bikes_abso = obses_bike + ego
+
+        ego = tf.tile(tf.concat([tf.stack([ego_x, ego_y], axis=1), tf.zeros(shape=(len(ego_x), self.per_person_info_dim-2))], axis=1),
+                                (1, int(tf.shape(obses_person)[1]/self.per_person_info_dim)))
+        persons_abso = obses_person + ego
+
+        ego = tf.tile(tf.concat([tf.stack([ego_x, ego_y], axis=1), tf.zeros(shape=( len(ego_x), self.per_veh_info_dim-2))], axis=1),
+                                (1, int(tf.shape(obses_veh)[1]/self.per_veh_info_dim)))
+        vehs_abso = obses_veh + ego
+        return obses_ego, bikes_abso, persons_abso, vehs_abso
 
     def ego_predict(self, ego_infos, actions):
         ego_next_infos, _ = self.vehicle_dynamics.prediction(ego_infos[:, :6], actions, self.base_frequency)
@@ -461,7 +479,7 @@ class EnvironmentModel(object):  # all tensors
         for persons_index in range(len(person_mode_list)):
             persons = person_infos[:, persons_index * self.per_person_info_dim:(persons_index + 1) * self.per_person_info_dim]
 
-            person_xs, person_ys, person_vs, person_phis, person_index = persons[:, 0], persons[:, 1], persons[:, 2], persons[:, 3], persons[:, 4]
+            person_xs, person_ys, person_vs, person_phis = persons[:, 0], persons[:, 1], persons[:, 2], persons[:, 3]
             person_phis_rad = person_phis * np.pi / 180.
 
             person_xs_delta = person_vs / self.base_frequency * tf.cos(person_phis_rad)
@@ -472,25 +490,23 @@ class EnvironmentModel(object):  # all tensors
             next_person_phis_rad = tf.where(next_person_phis_rad > np.pi, next_person_phis_rad - 2 * np.pi, next_person_phis_rad)
             next_person_phis_rad = tf.where(next_person_phis_rad <= -np.pi, next_person_phis_rad + 2 * np.pi, next_person_phis_rad)
             next_person_phis = next_person_phis_rad * 180 / np.pi
-            next_person_index = person_index
-            pred.append(tf.stack([next_person_xs, next_person_ys, next_person_vs, next_person_phis, next_person_index], 1))
+            next_person_info = tf.concat([tf.stack([next_person_xs, next_person_ys, next_person_vs, next_person_phis], 1), persons[:, 4:]], axis=1)
+            pred.append(next_person_info)
 
         pred = tf.concat(pred, axis=1)
         return pred
 
     def veh_predict(self, veh_infos):
-        veh_mode_list = VEHICLE_MODE_LIST[self.task]
         predictions_to_be_concat = []
 
-        for vehs_index in range(len(veh_mode_list)):
+        for vehs_index in range(int(tf.shape(veh_infos)[1] / self.per_veh_info_dim)):
             predictions_to_be_concat.append(self.predict_for_veh_mode(
-                veh_infos[:, vehs_index * self.per_item_info_dim:(vehs_index + 1) * self.per_item_info_dim],
-                veh_mode_list[vehs_index]))
+                veh_infos[:, vehs_index * self.per_veh_info_dim:(vehs_index + 1) * self.per_veh_info_dim]))
         pred = tf.stop_gradient(tf.concat(predictions_to_be_concat, 1))
         return pred
 
     def predict_for_bike_mode(self, bikes, mode):
-        bike_xs, bike_ys, bike_vs, bike_phis, bike_index = bikes[:, 0], bikes[:, 1], bikes[:, 2], bikes[:, 3], bikes[:, 4]
+        bike_xs, bike_ys, bike_vs, bike_phis = bikes[:, 0], bikes[:, 1], bikes[:, 2], bikes[:, 3]
         bike_phis_rad = bike_phis * np.pi / 180.
 
         middle_cond = logical_and(logical_and(bike_xs > -CROSSROAD_SIZE/2, bike_xs < CROSSROAD_SIZE/2),
@@ -499,23 +515,24 @@ class EnvironmentModel(object):  # all tensors
 
         bike_xs_delta = bike_vs / self.base_frequency * tf.cos(bike_phis_rad)
         bike_ys_delta = bike_vs / self.base_frequency * tf.sin(bike_phis_rad)
-
-        if mode in ['dl_b', 'rd_b', 'ur_b', 'lu_b']:
-            bike_phis_rad_delta = tf.where(middle_cond, (bike_vs / (CROSSROAD_SIZE/2+3*LANE_WIDTH + BIKE_LANE_WIDTH / 2)) / self.base_frequency, zeros)
-        elif mode in ['dr_b', 'ru_b', 'ul_b', 'ld_b']:
-            bike_phis_rad_delta = tf.where(middle_cond, -(bike_vs / (CROSSROAD_SIZE/2-3.0*LANE_WIDTH - BIKE_LANE_WIDTH / 2)) / self.base_frequency, zeros)  # TODO：ONLY FOR 3LANE
-        else:
-            bike_phis_rad_delta = zeros
+        # all bikes use linear prediction
+        # if mode in ['dl_b', 'rd_b', 'ur_b', 'lu_b']:
+        #     bike_phis_rad_delta = tf.where(middle_cond, (bike_vs / (CROSSROAD_SIZE/2+3*LANE_WIDTH + BIKE_LANE_WIDTH / 2)) / self.base_frequency, zeros)
+        # elif mode in ['dr_b', 'ru_b', 'ul_b', 'ld_b']:
+        #     bike_phis_rad_delta = tf.where(middle_cond, -(bike_vs / (CROSSROAD_SIZE/2-3.0*LANE_WIDTH - BIKE_LANE_WIDTH / 2)) / self.base_frequency, zeros)  # TODO：ONLY FOR 3LANE
+        # else:
+        #     bike_phis_rad_delta = zeros
+        bike_phis_rad_delta = zeros
         next_bike_xs, next_bike_ys, next_bike_vs, next_bike_phis_rad = \
             bike_xs + bike_xs_delta, bike_ys + bike_ys_delta, bike_vs, bike_phis_rad + bike_phis_rad_delta
         next_bike_phis_rad = tf.where(next_bike_phis_rad > np.pi, next_bike_phis_rad - 2 * np.pi, next_bike_phis_rad)
         next_bike_phis_rad = tf.where(next_bike_phis_rad <= -np.pi, next_bike_phis_rad + 2 * np.pi, next_bike_phis_rad)
         next_bike_phis = next_bike_phis_rad * 180 / np.pi
-        next_bike_index = bike_index
-        return tf.stack([next_bike_xs, next_bike_ys, next_bike_vs, next_bike_phis, next_bike_index], 1)
+        next_bike_info = tf.concat([tf.stack([next_bike_xs, next_bike_ys, next_bike_vs, next_bike_phis], 1), bikes[:, 4:]], axis=1)
+        return next_bike_info
 
-    def predict_for_veh_mode(self, vehs, mode):
-        veh_xs, veh_ys, veh_vs, veh_phis, veh_index = vehs[:, 0], vehs[:, 1], vehs[:, 2], vehs[:, 3], vehs[:, 4]
+    def predict_for_veh_mode(self, vehs):
+        veh_xs, veh_ys, veh_vs, veh_phis, veh_turn_rad = vehs[:, 0], vehs[:, 1], vehs[:, 2], vehs[:, 3], vehs[:, -1]
         veh_phis_rad = veh_phis * np.pi / 180.
 
         middle_cond = logical_and(logical_and(veh_xs > -CROSSROAD_SIZE/2, veh_xs < CROSSROAD_SIZE/2),
@@ -525,19 +542,15 @@ class EnvironmentModel(object):  # all tensors
         veh_xs_delta = veh_vs / self.base_frequency * tf.cos(veh_phis_rad)
         veh_ys_delta = veh_vs / self.base_frequency * tf.sin(veh_phis_rad)
 
-        if mode in ['dl', 'rd', 'ur', 'lu']:
-            veh_phis_rad_delta = tf.where(middle_cond, (veh_vs / (CROSSROAD_SIZE/2+0.5*LANE_WIDTH)) / self.base_frequency, zeros)
-        elif mode in ['dr', 'ru', 'ul', 'ld']:
-            veh_phis_rad_delta = tf.where(middle_cond, -(veh_vs / (CROSSROAD_SIZE/2-2.5*LANE_WIDTH)) / self.base_frequency, zeros)  # TODO：ONLY FOR 3LANE
-        else:
-            veh_phis_rad_delta = zeros
+        veh_phis_rad_delta = tf.where(middle_cond, veh_vs / self.base_frequency * veh_turn_rad, zeros)
+
         next_veh_xs, next_veh_ys, next_veh_vs, next_veh_phis_rad = \
             veh_xs + veh_xs_delta, veh_ys + veh_ys_delta, veh_vs, veh_phis_rad + veh_phis_rad_delta
         next_veh_phis_rad = tf.where(next_veh_phis_rad > np.pi, next_veh_phis_rad - 2 * np.pi, next_veh_phis_rad)
         next_veh_phis_rad = tf.where(next_veh_phis_rad <= -np.pi, next_veh_phis_rad + 2 * np.pi, next_veh_phis_rad)
         next_veh_phis = next_veh_phis_rad * 180 / np.pi
-        next_veh_index = veh_index
-        return tf.stack([next_veh_xs, next_veh_ys, next_veh_vs, next_veh_phis, next_veh_index], 1)
+        next_veh_info = tf.concat([tf.stack([next_veh_xs, next_veh_ys, next_veh_vs, next_veh_phis], 1), vehs[:, 4:]], axis=1)
+        return next_veh_info
 
     def render(self, mode='human'):
         if mode == 'human':
