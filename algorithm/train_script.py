@@ -210,16 +210,16 @@ def built_attention_parser(alg_name):
         args.state_light_dim = env.light_info_dim # 1
         args.state_task_dim = env.task_info_dim # 1
 
-        args.state_bike_dim = env.per_bike_info_dim * env.bike_num
-        args.state_person_dim = env.per_person_info_dim * env.person_num
-        args.state_veh_dim = env.per_veh_info_dim * env.veh_num
+        args.state_bike_dim = env.per_bike_info_dim * env.bike_num # n * 10
+        args.state_person_dim = env.per_person_info_dim * env.person_num # n * 10
+        args.state_veh_dim = env.per_veh_info_dim * env.veh_num # n * 10
         
         args.per_bike_dim = env.per_bike_info_dim
         args.per_person_dim = env.per_person_info_dim
         args.per_veh_dim = env.per_veh_info_dim
 
         if args.per_bike_dim == args.per_person_dim == args.per_veh_dim:
-            args.Attn_in_per_dim = env.per_veh_info_dim # 9
+            args.Attn_in_per_dim = env.per_veh_info_dim # 10
             args.Attn_in_total_dim = obs_space.shape[0] - args.state_ego_dim - args.state_track_dim - 2
         else:
             raise ValueError

@@ -75,9 +75,13 @@ class Preprocessor(object):
         self.num_agent = None
         self.args = args
         self.d_obj = args.Attn_in_per_dim
+
+        self.others_num = int((args.state_bike_dim + args.state_person_dim + args.state_veh_dim) / self.d_obj)
         self.obs_ego_scale = np.array([0.2, 1., 2., 1 / 30., 1 / 30, 1 / 180.] +
-                                      [1., 1 / 15., 0.2] + [1., 1., 1 / 15.] * self.args.env_kwargs_num_future_data)
-        self.obs_other_scale = np.array([1 / 30., 1 / 30., 0.2, 1 / 180., 1.0])
+                                      [1., 1 / 15., 0.2] + [1., 1., 1 / 15., 0.2] * self.args.env_kwargs_num_future_data + 
+                                      [1., ] + [1., ])
+        # self.obs_other_scale = np.array([1 / 30., 1 / 30., 0.2, 1 / 180., 1.0])
+        self.obs_other_scale = np.array([1 / 30., 1 / 30., 0.2, 1 / 180., 0.2, 0.5, 1., 1., 1., 0.] * self.others_num)
         if 'num_agent' in kwargs.keys():
             self.ret = np.zeros(kwargs['num_agent'])
             self.num_agent = kwargs['num_agent']
@@ -120,20 +124,22 @@ class Preprocessor(object):
 
     def process_obs_attention(self, obses_ego, obses_others):
         if self.obs_ptype == 'scale':
-            batch_size = obses_ego.shape[0]
+            # batch_size = obses_ego.shape[0]
             processed_obses_ego = obses_ego * self.obs_ego_scale
-            processed_obses_others = np.reshape(obses_others, (batch_size, -1, self.d_obj)) * self.obs_other_scale
-            processed_obses_others = np.reshape(processed_obses_others, (batch_size, -1))
+            processed_obses_others = obses_others * self.obs_other_scale
+            # processed_obses_others = np.reshape(obses_others, (batch_size, -1, self.d_obj)) * self.obs_other_scale
+            # processed_obses_others = np.reshape(processed_obses_others, (batch_size, -1))
             return processed_obses_ego, processed_obses_others
 
     def tf_process_obses_attention(self, obses_ego, obses_others):
         with tf.name_scope('obs_process') as scope:
-            batch_size = obses_ego.shape[0]
+            # batch_size = obses_ego.shape[0]
             if self.obs_ptype == 'scale':
                 processed_obses_ego = obses_ego * tf.convert_to_tensor(self.obs_ego_scale, dtype=tf.float32)
-                processed_obses_others = tf.reshape(obses_others, (batch_size, -1, self.d_obj)) * \
-                    tf.convert_to_tensor(self.obs_other_scale, dtype=tf.float32) 
-                processed_obses_others = tf.reshape(processed_obses_others, (batch_size, -1))
+                processed_obses_ego = obses_others * tf.convert_to_tensor(self.obs_other_scale, dtype=tf.float32)
+                # processed_obses_others = tf.reshape(obses_others, (batch_size, -1, self.d_obj)) * \
+                #     tf.convert_to_tensor(self.obs_other_scale, dtype=tf.float32) 
+                # processed_obses_others = tf.reshape(processed_obses_others, (batch_size, -1))
                 return processed_obses_ego, processed_obses_others
             else:
                 print('no scale')
