@@ -10,18 +10,18 @@
 import warnings
 from collections import OrderedDict
 from math import cos, sin, pi
+import random
+from random import choice
 
 import gym
-import random
 import matplotlib.pyplot as plt
 import numpy as np
 from gym.utils import seeding
 
-# gym.envs.user_defined.toyota_env.
 from env_build.dynamics_and_models import VehicleDynamics, ReferencePath, EnvironmentModel
 from env_build.endtoend_env_utils import shift_coordination, rotate_coordination, rotate_and_shift_coordination, deal_with_phi, \
     L, W, CROSSROAD_SIZE, LANE_WIDTH, LANE_NUMBER, judge_feasible, MODE2TASK, VEHICLE_MODE_DICT, BIKE_MODE_DICT, PERSON_MODE_DICT, \
-    VEH_NUM, BIKE_NUM, PERSON_NUM, EXPECTED_V
+    VEH_NUM, BIKE_NUM, PERSON_NUM, EXPECTED_V, TASK_DICT
 from env_build.traffic import Traffic
 
 warnings.filterwarnings("ignore")
@@ -43,25 +43,20 @@ def convert_observation_to_space(observation):
     return space
 
 
-class CrossroadEnd2endMixPiFix(gym.Env):
+class CrossroadEnd2endMix(gym.Env):
     def __init__(self,
-                 training_task,  # 'left', 'straight', 'right'
                  num_future_data=0,
                  mode='training',
                  multi_display=False,
                  **kwargs):
         self.dynamics = VehicleDynamics()
         self.interested_vehs = None
-        self.training_task = training_task
-        self.ref_path = ReferencePath(self.training_task, **kwargs)
         self.detected_vehicles = None
         self.all_vehicles = None
         self.ego_dynamics = None
         self.num_future_data = num_future_data
-        self.env_model = EnvironmentModel(training_task, num_future_data)
         self.init_state = {}
         self.action_number = 2
-        self.exp_v = EXPECTED_V
         self.ego_l, self.ego_w = L, W
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(self.action_number,), dtype=np.float32)
 
@@ -70,29 +65,25 @@ class CrossroadEnd2endMixPiFix(gym.Env):
         self.step_length = 100  # ms
 
         self.step_time = self.step_length / 1000.0
-        self.init_state = self._reset_init_state()
+        self.init_state = None
         self.obs = None
         self.action = None
-        self.veh_mode_dict = VEHICLE_MODE_DICT[self.training_task]
-        self.bicycle_mode_dict = BIKE_MODE_DICT[self.training_task]
-        self.person_mode_dict = PERSON_MODE_DICT[self.training_task]
-        self.veh_num = VEH_NUM[self.training_task]
-        self.bike_num = BIKE_NUM[self.training_task]
-        self.person_num = PERSON_NUM[self.training_task]
 
         self.done_type = 'not_done_yet'
         self.reward_info = None
         self.ego_info_dim = 6
-        self.per_veh_info_dim = 5
-        self.per_bike_info_dim = 5
-        self.per_person_info_dim = 5
-        self.per_tracking_info_dim = 3
+        self.track_info_dim = 3
+        self.light_info_dim = 1
+        self.task_info_dim = 1
+        self.per_path_info_dim = 4
+        self.per_bike_info_dim = 10
+        self.per_person_info_dim = 10
+        self.per_veh_info_dim = 10
         self.mode = mode
         if not multi_display:
             self.traffic = Traffic(self.step_length,
                                    mode=self.mode,
-                                   init_n_ego_dict=self.init_state,
-                                   training_task=self.training_task)
+                                   init_n_ego_dict=self.init_state)
             self.reset()
             action = self.action_space.sample()
             observation, _reward, done, _info = self.step(action)
@@ -104,9 +95,20 @@ class CrossroadEnd2endMixPiFix(gym.Env):
         return [seed]
 
     def reset(self, **kwargs):  # kwargs include three keys
-        self.ref_path = ReferencePath(self.training_task, **kwargs)
+        self.v_light = self.traffic.init_light()
+        self.training_task = choice(['left', 'straight', 'right'])
+        self.task_idx = TASK_DICT[self.training_task]
+        self.light_vector = self.v_light if self.v_light == 0 or self.v_light == 1 else 1
+        self.ref_path = ReferencePath(self.training_task, self.light_vector, **kwargs)
+        self.env_model = EnvironmentModel(self.training_task, self.num_future_data)
+        self.veh_mode_dict = VEHICLE_MODE_DICT[self.training_task]
+        self.bicycle_mode_dict = BIKE_MODE_DICT[self.training_task]
+        self.person_mode_dict = PERSON_MODE_DICT[self.training_task]
+        self.veh_num = VEH_NUM[self.training_task]
+        self.bike_num = BIKE_NUM[self.training_task]
+        self.person_num = PERSON_NUM[self.training_task]
         self.init_state = self._reset_init_state()
-        self.traffic.init_traffic(self.init_state)
+        self.traffic.init_traffic(self.init_state, self.training_task)
         self.traffic.sim_step()
         ego_dynamics = self._get_ego_dynamics([self.init_state['ego']['v_x'],
                                                self.init_state['ego']['v_y'],
@@ -124,7 +126,6 @@ class CrossroadEnd2endMixPiFix(gym.Env):
         self.action = None
         self.reward_info = None
         self.done_type = 'not_done_yet'
-
         return self.obs
 
     def close(self):
@@ -142,7 +143,7 @@ class CrossroadEnd2endMixPiFix(gym.Env):
         self.done_type, done = self._judge_done()
         self.reward_info.update({'final_rew': reward})
         all_info.update({'reward_info': self.reward_info, 'ref_index': self.ref_path.ref_index,
-                         'veh_num': self.veh_num, 'bike_num': self.bike_num, 'person_num':self.person_num})
+                         'task': self.training_task, 'mask': self.vehs_mask})
         return self.obs, reward, done, all_info
 
     def _set_observation_space(self, observation):
@@ -223,7 +224,7 @@ class CrossroadEnd2endMixPiFix(gym.Env):
             return 'not_done_yet', 0
 
     def _deviate_too_much(self):
-        delta_y, delta_phi, delta_v = self.obs[self.ego_info_dim:self.ego_info_dim+3]
+        delta_y, delta_phi, delta_v = self.obs[self.ego_info_dim:self.ego_info_dim+self.track_info_dim]
         return True if abs(delta_y) > 15 else False
 
     def _break_road_constrain(self):
@@ -297,36 +298,50 @@ class CrossroadEnd2endMixPiFix(gym.Env):
                                                              np.array([ego_phi], dtype=np.float32),
                                                              np.array([ego_v_x], dtype=np.float32),
                                                              self.num_future_data).numpy()[0]
-        self.per_tracking_info_dim = 3
-
-        vector = np.concatenate((ego_vector, tracking_error, vehs_vector), axis=0)
-        # vector = self.convert_vehs_to_rela(vector)
+        self.light_vector = self.v_light if self.v_light == 0 or self.v_light == 1 else 1
+        vector = np.concatenate((ego_vector, tracking_error, [self.light_vector], [self.task_idx], vehs_vector), axis=0)
+        vector = vector.astype(np.float32)
+        vector = self.convert_vehs_to_rela(vector)
 
         return vector
 
-    # def convert_vehs_to_rela(self, obs_abso):
-    #     ego_infos, tracking_infos, veh_infos = obs_abso[:self.ego_info_dim], \
-    #                                            obs_abso[self.ego_info_dim:self.ego_info_dim + self.per_tracking_info_dim * (
-    #                                                      self.num_future_data + 1)], \
-    #                                            obs_abso[self.ego_info_dim + self.per_tracking_info_dim * (
-    #                                                        self.num_future_data + 1):]
-    #     ego_vx, ego_vy, ego_r, ego_x, ego_y, ego_phi = ego_infos
-    #     ego = np.array([ego_x, ego_y, 0, 0]*int(len(veh_infos)/self.per_veh_info_dim), dtype=np.float32)
-    #     vehs_rela = veh_infos - ego
-    #     out = np.concatenate((ego_infos, tracking_infos, vehs_rela), axis=0)
-    #     return out
-    #
-    # def convert_vehs_to_abso(self, obs_rela):
-    #     ego_infos, tracking_infos, veh_rela = obs_rela[:self.ego_info_dim], \
-    #                                            obs_rela[self.ego_info_dim:self.ego_info_dim + self.per_tracking_info_dim * (
-    #                                                    self.num_future_data + 1)], \
-    #                                            obs_rela[self.ego_info_dim + self.per_tracking_info_dim * (
-    #                                                    self.num_future_data + 1):]
-    #     ego_vx, ego_vy, ego_r, ego_x, ego_y, ego_phi = ego_infos
-    #     ego = np.array([ego_x, ego_y, 0, 0]*int(len(veh_rela)/self.per_veh_info_dim), dtype=np.float32)
-    #     vehs_abso = veh_rela + ego
-    #     out = np.concatenate((ego_infos, tracking_infos, vehs_abso), axis=0)
-    #     return out
+    def convert_vehs_to_rela(self, obs_abso):
+        ego_road_infos = obs_abso[:self.ego_info_dim + self.track_info_dim + self.num_future_data * self.per_path_info_dim
+                                                                                + self.light_info_dim + self.task_info_dim]
+        obses_others = obs_abso[self.ego_info_dim + self.track_info_dim + self.num_future_data * self.per_path_info_dim
+                                                                                + self.light_info_dim + self.task_info_dim:]
+        bike_infos = obses_others[:self.bike_num * self.per_bike_info_dim]
+        person_infos = obses_others[self.bike_num * self.per_bike_info_dim:self.bike_num * self.per_bike_info_dim + self.person_num * self.per_person_info_dim]
+        veh_infos = obses_others[self.bike_num * self.per_bike_info_dim + self.person_num * self.per_person_info_dim:]
+
+        ego_vx, ego_vy, ego_r, ego_x, ego_y, ego_phi = ego_road_infos[:self.ego_info_dim]
+        ego = np.array(([ego_x, ego_y] + [0.] * (self.per_bike_info_dim - 2))*int(len(bike_infos)/self.per_bike_info_dim), dtype=np.float32)
+        bikes_rela = bike_infos - ego
+        ego = np.array(([ego_x, ego_y] + [0.] * (self.per_person_info_dim - 2))*int(len(person_infos)/self.per_person_info_dim), dtype=np.float32)
+        persons_rela = person_infos - ego
+        ego = np.array(([ego_x, ego_y] + [0.] * (self.per_veh_info_dim - 2))*int(len(veh_infos)/self.per_veh_info_dim), dtype=np.float32)
+        vehs_rela = veh_infos - ego
+        out = np.concatenate((ego_road_infos, bikes_rela, persons_rela, vehs_rela), axis=0)
+        return out
+
+    def convert_vehs_to_abso(self, obs_rela):
+        ego_road_infos =obs_rela[:self.ego_info_dim + self.track_info_dim + self.num_future_data * self.per_path_info_dim
+                                                                                + self.light_info_dim + self.task_info_dim]
+        obses_others = obs_rela[self.ego_info_dim + self.track_info_dim + self.num_future_data * self.per_path_info_dim
+                                                                                + self.light_info_dim + self.task_info_dim:]
+        bike_infos = obses_others[:self.bike_num * self.per_bike_info_dim]
+        person_infos = obses_others[self.bike_num * self.per_bike_info_dim:self.bike_num * self.per_bike_info_dim + self.person_num * self.per_person_info_dim]
+        veh_infos = obses_others[self.bike_num * self.per_bike_info_dim + self.person_num * self.per_person_info_dim:]
+
+        ego_vx, ego_vy, ego_r, ego_x, ego_y, ego_phi = ego_road_infos[:self.ego_info_dim]
+        ego = np.array(([ego_x, ego_y] + [0.] * (self.per_bike_info_dim - 2))*int(len(bike_infos)/self.per_bike_info_dim), dtype=np.float32)
+        bikes_abso = bike_infos + ego
+        ego = np.array(([ego_x, ego_y] + [0.] * (self.per_person_info_dim - 2))*int(len(person_infos)/self.per_person_info_dim), dtype=np.float32)
+        persons_abso = person_infos + ego
+        ego = np.array(([ego_x, ego_y] + [0.] * (self.per_veh_info_dim - 2))*int(len(veh_infos)/self.per_veh_info_dim), dtype=np.float32)
+        vehs_abso = veh_infos + ego
+        out = np.concatenate((ego_road_infos, bikes_abso, persons_abso, vehs_abso), axis=0)
+        return out
 
     def _construct_ego_vector_short(self):
         ego_v_x = self.ego_dynamics['v_x']
@@ -336,14 +351,13 @@ class CrossroadEnd2endMixPiFix(gym.Env):
         ego_y = self.ego_dynamics['y']
         ego_phi = self.ego_dynamics['phi']
         ego_feature = [ego_v_x, ego_v_y, ego_r, ego_x, ego_y, ego_phi]
-        self.ego_info_dim = 6
         return np.array(ego_feature, dtype=np.float32)
 
     def _construct_veh_vector_short(self, exit_='D'):
         ego_x = self.ego_dynamics['x']
         ego_y = self.ego_dynamics['y']
-        v_light = self.v_light
         vehs_vector = []
+        self.vehs_mask = []
 
         name_settings = dict(D=dict(do='1o', di='1i', ro='2o', ri='2i', uo='3o', ui='3i', lo='4o', li='4i'),
                              R=dict(do='2o', di='2i', ro='3o', ri='3i', uo='4o', ui='4i', lo='1o', li='1i'),
@@ -359,16 +373,19 @@ class CrossroadEnd2endMixPiFix(gym.Env):
 
             # slice or fill to some number
             def slice_or_fill(sorted_list, fill_value, num):
+                mask = [True] * len(sorted_list)
                 if len(sorted_list) >= num:
-                    return sorted_list[:num]
+                    return sorted_list[:num], mask[:num]
                 else:
                     while len(sorted_list) < num:
                         sorted_list.append(fill_value)
-                    return sorted_list
+                        mask.extend([False])
+                    return sorted_list, mask
 
             for v in vs:
                 if v['type'] in ['bicycle_1', 'bicycle_2', 'bicycle_3']:
-                    v.update(partici_type=0.0)
+                    v.update(partici_type=[1., 0., 0.])
+                    v.update(turn_rad=0.0)
                     route_list = v['route']
                     start = route_list[0]
                     end = route_list[1]
@@ -394,8 +411,9 @@ class CrossroadEnd2endMixPiFix(gym.Env):
                         ld_b.append(v)
 
                 elif v['type'] == 'DEFAULT_PEDTYPE':
-                    v.update(partici_type=1.0)
+                    v.update(partici_type=[0., 1., 0.])
                     road_list = v['road']
+                    v.update(turn_rad=0.0)
                     # print(road_list)
                     # if road_list == ':1i_0':
                     #     i1_0.append(v)
@@ -431,36 +449,48 @@ class CrossroadEnd2endMixPiFix(gym.Env):
                     #     c_w3.append(v)
 
                 else:
-                    v.update(partici_type=2.0)
+                    v.update(partici_type=[0., 0., 1.])
                     route_list = v['route']
                     start = route_list[0]
                     end = route_list[1]
                     if start == name_setting['do'] and end == name_setting['li']:
+                        v.update(turn_rad=1/(CROSSROAD_SIZE/2+0.5*LANE_WIDTH))
                         dl.append(v)
                     elif start == name_setting['do'] and end == name_setting['ui']:
+                        v.update(turn_rad=0.)
                         du.append(v)
                     elif start == name_setting['do'] and end == name_setting['ri']:
+                        v.update(turn_rad=-1 / (CROSSROAD_SIZE/2-2.5*LANE_WIDTH))
                         dr.append(v)
 
                     elif start == name_setting['ro'] and end == name_setting['di']:
+                        v.update(turn_rad=1 / (CROSSROAD_SIZE / 2 + 0.5 * LANE_WIDTH))
                         rd.append(v)
                     elif start == name_setting['ro'] and end == name_setting['li']:
+                        v.update(turn_rad=0.)
                         rl.append(v)
                     elif start == name_setting['ro'] and end == name_setting['ui']:
+                        v.update(turn_rad=-1 / (CROSSROAD_SIZE/2-2.5*LANE_WIDTH))
                         ru.append(v)
 
                     elif start == name_setting['uo'] and end == name_setting['ri']:
+                        v.update(turn_rad=1 / (CROSSROAD_SIZE / 2 + 0.5 * LANE_WIDTH))
                         ur.append(v)
                     elif start == name_setting['uo'] and end == name_setting['di']:
+                        v.update(turn_rad=0.)
                         ud.append(v)
                     elif start == name_setting['uo'] and end == name_setting['li']:
+                        v.update(turn_rad=-1 / (CROSSROAD_SIZE/2-2.5*LANE_WIDTH))
                         ul.append(v)
 
                     elif start == name_setting['lo'] and end == name_setting['ui']:
+                        v.update(turn_rad=1 / (CROSSROAD_SIZE / 2 + 0.5 * LANE_WIDTH))
                         lu.append(v)
                     elif start == name_setting['lo'] and end == name_setting['ri']:
+                        v.update(turn_rad=0.)
                         lr.append(v)
                     elif start == name_setting['lo'] and end == name_setting['di']:
+                        v.update(turn_rad=-1 / (CROSSROAD_SIZE/2-2.5*LANE_WIDTH))
                         ld.append(v)
 
             # fetch bicycle in range
@@ -486,21 +516,22 @@ class CrossroadEnd2endMixPiFix(gym.Env):
 
             mode2fillvalue_b = dict(
                 du_b=dict(type="bicycle_1", x=LANE_WIDTH * LANE_NUMBER + 1, y=-(CROSSROAD_SIZE / 2 + 30), v=0,
-                        phi=90, w=0.48, l=2, route=('1o', '3i'), partici_type=0.0),
+                        phi=90, w=0.48, l=2, route=('1o', '3i'), partici_type=[1., 0., 0.], turn_rad=0.),
                 # dr=dict(type="bicycle_1", x=LANE_WIDTH * LANE_NUMBER + 1, y=-(CROSSROAD_SIZE / 2 + 30), v=0,
                 #         phi=90, w=0.48, l=2, route=('1o', '2i')),
                 # ru=dict(type="bicycle_1", x=(CROSSROAD_SIZE / 2 + 15), y=LANE_WIDTH * LANE_NUMBER + 1, v=0,
                 #         phi=180, w=0.48, l=2, route=('2o', '3i')),
                 ud_b=dict(type="bicycle_1", x=-LANE_WIDTH * LANE_NUMBER - 1, y=(CROSSROAD_SIZE / 2 + 20), v=0,
-                        phi=-90, w=0.48, l=2, route=('3o', '1i'), partici_type=0.0),
+                        phi=-90, w=0.48, l=2, route=('3o', '1i'), partici_type=[1., 0., 0.], turn_rad=0.),
                 # ul=dict(type="bicycle_1", x=-LANE_WIDTH * LANE_NUMBER - 1, y=(CROSSROAD_SIZE / 2 + 20), v=0,
                 #         phi=-90, w=0.48, l=2, route=('3o', '4i')),
                 lr_b=dict(type="bicycle_1", x=-(CROSSROAD_SIZE / 2 + 20), y=-LANE_WIDTH * LANE_NUMBER - 1,
-                        v=0, phi=0, w=0.48, l=2, route=('4o', '2i'), partici_type=0.0))
+                        v=0, phi=0, w=0.48, l=2, route=('4o', '2i'), partici_type=[1., 0., 0.], turn_rad=0.))
 
             tmp_b = OrderedDict()
+            masks_b = OrderedDict()
             for mode, num in BIKE_MODE_DICT[task].items():
-                tmp_b[mode] = slice_or_fill(eval(mode), mode2fillvalue_b[mode], num)
+                tmp_b[mode], masks_b[mode] = slice_or_fill(eval(mode), mode2fillvalue_b[mode], num)
 
             # fetch person in range
             c1 = list(filter(lambda v: v['y'] < 6 and v['x'] > ego_x - 6, c1))  # interest of right
@@ -513,13 +544,14 @@ class CrossroadEnd2endMixPiFix(gym.Env):
             c3 = sorted(c3, key=lambda v: (abs(v['y'] - ego_y), -v['x']))
 
             mode2fillvalue_p = dict(
-                c1=dict(type='DEFAULT_PEDTYPE', x=LANE_WIDTH*LANE_NUMBER+3, y=-(CROSSROAD_SIZE / 2 + 30), v=0, phi=90, w=0.525,l=0.75, road="0_c1", partici_type=1.0),
-                c2=dict(type='DEFAULT_PEDTYPE', x=-(CROSSROAD_SIZE/2+20), y=-(LANE_WIDTH*LANE_NUMBER+3), v=0, phi=0, w=0.525, l=0.75, road="0_c2", partici_type=1.0),
-                c3=dict(type='DEFAULT_PEDTYPE', x=-(LANE_WIDTH*LANE_NUMBER+3), y=(CROSSROAD_SIZE/2+20), v=0, phi=-90, w=0.525, l=0.75, road="0_c3", partici_type=1.0))
+                c1=dict(type='DEFAULT_PEDTYPE', x=LANE_WIDTH*LANE_NUMBER+3, y=-(CROSSROAD_SIZE / 2 + 30), v=0, phi=90, w=0.525,l=0.75, road="0_c1", partici_type=[0., 1., 0.], turn_rad=0.),
+                c2=dict(type='DEFAULT_PEDTYPE', x=-(CROSSROAD_SIZE/2+20), y=-(LANE_WIDTH*LANE_NUMBER+3), v=0, phi=0, w=0.525, l=0.75, road="0_c2", partici_type=[0., 1., 0.], turn_rad=0.),
+                c3=dict(type='DEFAULT_PEDTYPE', x=-(LANE_WIDTH*LANE_NUMBER+3), y=(CROSSROAD_SIZE/2+20), v=0, phi=-90, w=0.525, l=0.75, road="0_c3", partici_type=[0., 1., 0.], turn_rad=0.))
 
             tmp_p = OrderedDict()
+            masks_p = OrderedDict()
             for mode, num in PERSON_MODE_DICT[task].items():
-                tmp_p[mode] = slice_or_fill(eval(mode), mode2fillvalue_p[mode], num)
+                tmp_p[mode], masks_p[mode] = slice_or_fill(eval(mode), mode2fillvalue_p[mode], num)
 
             # fetch veh in range
             dl = list(filter(lambda v: v['x'] > -CROSSROAD_SIZE/2-10 and v['y'] > ego_y-2, dl))  # interest of left straight
@@ -560,31 +592,38 @@ class CrossroadEnd2endMixPiFix(gym.Env):
             lr = sorted(lr, key=lambda v: -v['x'])
 
             mode2fillvalue = dict(
-                dl=dict(type="car_1", x=LANE_WIDTH/2, y=-(CROSSROAD_SIZE/2+30), v=0, phi=90, w=2.5, l=5, route=('1o', '4i'), partici_type=2.0),
-                du=dict(type="car_1", x=LANE_WIDTH*1.5, y=-(CROSSROAD_SIZE/2+30), v=0, phi=90, w=2.5, l=5, route=('1o', '3i'), partici_type=2.0),
-                dr=dict(type="car_1", x=LANE_WIDTH*(LANE_NUMBER-0.5), y=-(CROSSROAD_SIZE/2+30), v=0, phi=90, w=2.5, l=5, route=('1o', '2i'), partici_type=2.0),
-                ru=dict(type="car_1", x=(CROSSROAD_SIZE/2+15), y=LANE_WIDTH*(LANE_NUMBER-0.5), v=0, phi=180, w=2.5, l=5, route=('2o', '3i'), partici_type=2.0),
-                ur=dict(type="car_1", x=-LANE_WIDTH/2, y=(CROSSROAD_SIZE/2+20), v=0, phi=-90, w=2.5, l=5, route=('3o', '2i'), partici_type=2.0),
-                ud=dict(type="car_1", x=-LANE_WIDTH*1.5, y=(CROSSROAD_SIZE/2+20), v=0, phi=-90, w=2.5, l=5, route=('3o', '1i'), partici_type=2.0),
-                ul=dict(type="car_1", x=-LANE_WIDTH*(LANE_NUMBER-0.5), y=(CROSSROAD_SIZE/2+20), v=0, phi=-90, w=2.5, l=5, route=('3o', '4i'), partici_type=2.0),
-                lr=dict(type="car_1", x=-(CROSSROAD_SIZE/2+20), y=-LANE_WIDTH*1.5, v=0, phi=0, w=2.5, l=5, route=('4o', '2i'), partici_type=2.0))
+                dl=dict(type="car_1", x=LANE_WIDTH/2, y=-(CROSSROAD_SIZE/2+30), v=0, phi=90, w=2.5, l=5, route=('1o', '4i'), partici_type=[0., 0., 1.], turn_rad=1/(CROSSROAD_SIZE/2+0.5*LANE_WIDTH)),
+                du=dict(type="car_1", x=LANE_WIDTH*1.5, y=-(CROSSROAD_SIZE/2+30), v=0, phi=90, w=2.5, l=5, route=('1o', '3i'), partici_type=[0., 0., 1.], turn_rad=0.),
+                dr=dict(type="car_1", x=LANE_WIDTH*(LANE_NUMBER-0.5), y=-(CROSSROAD_SIZE/2+30), v=0, phi=90, w=2.5, l=5, route=('1o', '2i'), partici_type=[0., 0., 1.], turn_rad=-1 / (CROSSROAD_SIZE/2-2.5*LANE_WIDTH)),
+                ru=dict(type="car_1", x=(CROSSROAD_SIZE/2+15), y=LANE_WIDTH*(LANE_NUMBER-0.5), v=0, phi=180, w=2.5, l=5, route=('2o', '3i'), partici_type=[0., 0., 1.], turn_rad=-1 / (CROSSROAD_SIZE/2-2.5*LANE_WIDTH)),
+                ur=dict(type="car_1", x=-LANE_WIDTH/2, y=(CROSSROAD_SIZE/2+20), v=0, phi=-90, w=2.5, l=5, route=('3o', '2i'), partici_type=[0., 0., 1.], turn_rad=1/(CROSSROAD_SIZE/2+0.5*LANE_WIDTH)),
+                ud=dict(type="car_1", x=-LANE_WIDTH*1.5, y=(CROSSROAD_SIZE/2+20), v=0, phi=-90, w=2.5, l=5, route=('3o', '1i'), partici_type=[0., 0., 1.], turn_rad=0.),
+                ul=dict(type="car_1", x=-LANE_WIDTH*(LANE_NUMBER-0.5), y=(CROSSROAD_SIZE/2+20), v=0, phi=-90, w=2.5, l=5, route=('3o', '4i'), partici_type=[0., 0., 1.], turn_rad=-1 / (CROSSROAD_SIZE/2-2.5*LANE_WIDTH)),
+                lr=dict(type="car_1", x=-(CROSSROAD_SIZE/2+20), y=-LANE_WIDTH*1.5, v=0, phi=0, w=2.5, l=5, route=('4o', '2i'), partici_type=[0., 0., 1.], turn_rad=0.))
 
             tmp_v = OrderedDict()
+            masks_v = OrderedDict()
             for mode, num in VEHICLE_MODE_DICT[task].items():
-                tmp_v[mode] = slice_or_fill(eval(mode), mode2fillvalue[mode], num)
+                tmp_v[mode], masks_v[mode] = slice_or_fill(eval(mode), mode2fillvalue[mode], num)
 
             tmp1 = dict(tmp_b, **tmp_p)
             tmp = dict(tmp1, **tmp_v)
-            return tmp
+            masks_dict = dict(dict(masks_b, **masks_p), **masks_v)
+            return tmp, masks_dict
 
         list_of_interested_veh_dict = []
-        self.interested_vehs = filter_interested_participants(self.all_vehicles, self.training_task)
+        self.interested_vehs, self.mask_mode = filter_interested_participants(self.all_vehicles, self.training_task)
         for part in list(self.interested_vehs.values()):
             list_of_interested_veh_dict.extend(part)
+        for part in list(self.mask_mode.values()):
+            self.vehs_mask.extend(part)
 
         for veh in list_of_interested_veh_dict:
-            veh_x, veh_y, veh_v, veh_phi, veh_partici_type = veh['x'], veh['y'], veh['v'], veh['phi'], veh['partici_type']
-            vehs_vector.extend([veh_x, veh_y, veh_v, veh_phi, veh_partici_type])
+            veh_x, veh_y, veh_v, veh_phi, veh_l, veh_w, veh_partici_type, veh_turn_rad = veh['x'], veh['y'], veh['v'], veh['phi'], \
+                                                                           veh['l'], veh['w'], veh['partici_type'], veh['turn_rad']
+            vehs_vector.extend([veh_x, veh_y, veh_v, veh_phi, veh_l, veh_w])
+            vehs_vector.extend(veh_partici_type)
+            vehs_vector.extend([veh_turn_rad])
         return np.array(vehs_vector, dtype=np.float32)
 
     def recover_orig_position_fn(self, transformed_x, transformed_y, x, y, d):  # x, y, d are used to transform
@@ -595,15 +634,14 @@ class CrossroadEnd2endMixPiFix(gym.Env):
 
     def _reset_init_state(self):
         if self.training_task == 'left':
-            random_index = int(np.random.random()*(900+700)) + 700
+            random_index = int(np.random.random()*(900+500)) + 700
         elif self.training_task == 'straight':
             random_index = int(np.random.random()*(1200+500)) + 700
         else:
             random_index = int(np.random.random()*(420+500)) + 700
 
-        x, y, phi = self.ref_path.indexs2points(random_index)
-        # v = 7 + 6 * np.random.random()
-        v = EXPECTED_V * np.random.random()
+        x, y, phi, exp_v = self.ref_path.indexs2points(random_index)
+        v = exp_v * np.random.random()
         if self.training_task == 'left':
             routeID = 'dl'
         elif self.training_task == 'straight':
@@ -626,7 +664,7 @@ class CrossroadEnd2endMixPiFix(gym.Env):
         obses, actions = obs[np.newaxis, :], action[np.newaxis, :]
 
         # extract infos for each kind of participants
-        start = 0; end = start + self.ego_info_dim + self.per_tracking_info_dim * (self.num_future_data + 1)
+        start = 0; end = start + self.ego_info_dim + self.track_info_dim + self.per_path_info_dim * self.num_future_data + self.light_info_dim + self.task_info_dim
         obses_ego = obses[:, start:end]
         start = end; end = start + self.per_bike_info_dim * self.bike_num
         obses_bike = obses[:, start:end]
@@ -702,7 +740,6 @@ class CrossroadEnd2endMixPiFix(gym.Env):
                          linestyle=linestyle, color='black', linewidth=linewidth)
 
             # ----------vertical----------------
-
             plt.plot([0.2, 0.2], [-square_length / 2 - extension, -square_length / 2], color='orange')
             plt.plot([-0.2, -0.2], [-square_length / 2 - extension, -square_length / 2], color='orange')
             plt.plot([0.2, 0.2], [square_length / 2 + extension, square_length / 2], color='orange')
@@ -872,6 +909,7 @@ class CrossroadEnd2endMixPiFix(gym.Env):
             for mode, num in self.veh_mode_dict.items():
                 for i in range(num):
                     veh = self.interested_vehs[mode][i]
+                    mask = self.mask_mode[mode][i]
                     veh_x = veh['x']
                     veh_y = veh['y']
                     veh_phi = veh['phi']
@@ -885,20 +923,19 @@ class CrossroadEnd2endMixPiFix(gym.Env):
                         task = MODE2TASK[mode]
                         color = task2color[task]
                         draw_rotate_rec(veh_x, veh_y, veh_phi, veh_l, veh_w, color, linestyle=':')
+                        plt.text(veh_x, veh_y, str(mask)[0])
 
             # plot_interested bicycle
             for mode, num in self.bicycle_mode_dict.items():
                 for i in range(num):
                     veh = self.interested_vehs[mode][i]
+                    mask = self.mask_mode[mode][i]
                     veh_x = veh['x']
                     veh_y = veh['y']
                     veh_phi = veh['phi']
                     veh_l = veh['l']
                     veh_w = veh['w']
                     veh_type = veh['type']
-                    # TODO: 定义veh_type
-                    # print("车辆信息", veh)
-                    # veh_type = 'bicycle_1'
                     task2color = {'left': 'b', 'straight': 'c', 'right': 'm'}
 
                     if is_in_plot_area(veh_x, veh_y):
@@ -906,20 +943,19 @@ class CrossroadEnd2endMixPiFix(gym.Env):
                         task = MODE2TASK[mode]
                         color = task2color[task]
                         draw_rotate_rec(veh_x, veh_y, veh_phi, veh_l, veh_w, color, linestyle=':')
+                        plt.text(veh_x, veh_y, str(mask)[0])
 
             # plot_interested person
             for mode, num in self.person_mode_dict.items():
                 for i in range(num):
                     veh = self.interested_vehs[mode][i]
+                    mask = self.mask_mode[mode][i]
                     veh_x = veh['x']
                     veh_y = veh['y']
                     veh_phi = veh['phi']
                     veh_l = veh['l']
                     veh_w = veh['w']
                     veh_type = veh['type']
-                    # TODO: 定义veh_type
-                    # print("车辆信息", veh)
-                    # veh_type = 'bicycle_1'
                     task2color = {'left': 'b', 'straight': 'c', 'right': 'm'}
 
                     if is_in_plot_area(veh_x, veh_y):
@@ -927,6 +963,7 @@ class CrossroadEnd2endMixPiFix(gym.Env):
                         task = MODE2TASK[mode]
                         color = task2color[task]
                         draw_rotate_rec(veh_x, veh_y, veh_phi, veh_l, veh_w, color, linestyle=':')
+                        plt.text(veh_x, veh_y, str(mask)[0])
 
             # plot own car
             # dict(v_x=ego_dict['v_x'],
@@ -960,11 +997,11 @@ class CrossroadEnd2endMixPiFix(gym.Env):
             draw_rotate_rec(ego_x, ego_y, ego_phi, ego_l, ego_w, 'red')
 
             # plot future data
-            tracking_info = self.obs[self.ego_info_dim:self.ego_info_dim + self.per_tracking_info_dim * (self.num_future_data+1)]
-            future_path = tracking_info[self.per_tracking_info_dim:]
+            tracking_info = self.obs[self.ego_info_dim:self.ego_info_dim + self.track_info_dim]
+            future_path = self.obs[self.ego_info_dim + self.track_info_dim: self.ego_info_dim + self.track_info_dim +
+                                                                            self.per_path_info_dim * self.num_future_data]
             for i in range(self.num_future_data):
-                delta_x, delta_y, delta_phi = future_path[i*self.per_tracking_info_dim:
-                                                          (i+1)*self.per_tracking_info_dim]
+                delta_x, delta_y, delta_phi, exp_v = future_path[i*self.per_path_info_dim: (i+1)*self.per_path_info_dim]
                 path_x, path_y, path_phi = ego_x+delta_x, ego_y+delta_y, ego_phi-delta_phi
                 plt.plot(path_x, path_y, 'g.')
                 plot_phi_line('self_car', path_x, path_y, path_phi, 'g')
@@ -972,7 +1009,7 @@ class CrossroadEnd2endMixPiFix(gym.Env):
             delta_, _, _ = tracking_info[:3]
             ax.plot(self.ref_path.path[0], self.ref_path.path[1], color='g')
             indexs, points = self.ref_path.find_closest_point(np.array([ego_x], np.float32), np.array([ego_y],np.float32))
-            path_x, path_y, path_phi = points[0][0], points[1][0], points[2][0]
+            path_x, path_y, path_phi, path_v= points[0][0], points[1][0], points[2][0], points[3][0]
             plt.plot(path_x, path_y, 'g.')
             delta_x, delta_y, delta_phi = ego_x - path_x, ego_y - path_y, ego_phi - path_phi
 
@@ -1009,7 +1046,7 @@ class CrossroadEnd2endMixPiFix(gym.Env):
             plt.text(text_x, text_y_start - next(ge), r'delta_phi: ${:.2f}\degree$'.format(delta_phi))
 
             plt.text(text_x, text_y_start - next(ge), 'v_x: {:.2f}m/s'.format(ego_v_x))
-            plt.text(text_x, text_y_start - next(ge), 'exp_v: {:.2f}m/s'.format(self.exp_v))
+            plt.text(text_x, text_y_start - next(ge), 'exp_v: {:.2f}m/s'.format(path_v))
             plt.text(text_x, text_y_start - next(ge), 'v_y: {:.2f}m/s'.format(ego_v_y))
             plt.text(text_x, text_y_start - next(ge), 'yaw_rate: {:.2f}rad/s'.format(ego_r))
             plt.text(text_x, text_y_start - next(ge), 'yaw_rate bound: [{:.2f}, {:.2f}]'.format(-r_bound, r_bound))
@@ -1055,9 +1092,9 @@ class CrossroadEnd2endMixPiFix(gym.Env):
 
 
 def test_end2end():
-    env = CrossroadEnd2endMixPiFix(training_task='left', num_future_data=0)
-    env_model = EnvironmentModel(training_task='left', num_future_data=0)
+    env = CrossroadEnd2endMix(num_future_data=10)
     obs = env.reset()
+    env_model = EnvironmentModel(training_task=env.training_task, num_future_data=env.num_future_data)
     i = 0
     while i < 100000:
         for j in range(200):
@@ -1072,32 +1109,20 @@ def test_end2end():
             obs, reward, done, info = env.step(action)
             obses, actions = obs[np.newaxis, :], action[np.newaxis, :]
             # extract infos for each kind of participants
-            start = 0; end = start + env.ego_info_dim + env.per_tracking_info_dim * (env.num_future_data + 1)
-            obses_ego = obses[:, start:end]
-            start = end; end = start + env.per_bike_info_dim * env.bike_num
-            obses_bike = obses[:, start:end]
-            start = end; end = start + env.per_person_info_dim * env.person_num
-            obses_person = obses[:, start:end]
-            start = end; end = start + env.per_veh_info_dim * env.veh_num
-            obses_veh = obses[:, start:end]
-
-            obses_bike = np.reshape(obses_bike, [-1, env.per_bike_info_dim])
-            obses_person = np.reshape(obses_person, [-1, env.per_person_info_dim])
-            obses_veh = np.reshape(obses_veh, [-1, env.per_veh_info_dim])
-
-            env_model.reset(np.tile(obses_ego, (2, 1)), np.tile(obses_bike, (2, 1)), np.tile(obses_person, (2, 1)),
-                            np.tile(obses_veh, (2, 1)), [env.ref_path.ref_index, random.randint(0, 2)])
+            ego_dim = env.ego_info_dim + env.track_info_dim + env.num_future_data * env.per_path_info_dim + env.light_info_dim + env.task_info_dim
+            obses_ego = obses[:, :ego_dim]
+            obses_others = obses[:, ego_dim:]
+            env_model.reset(np.tile(obses_ego, (2, 1)), np.tile(obses_others, (2, 1)), [env.ref_path.ref_index, random.randint(0, 2)])
             env_model.mode = 'training'
             for _ in range(10):
-                obses_ego, obses_bike, obses_person, obses_veh, rewards, punish_term_for_training, \
+                obses_ego, obses_others, rewards, punish_term_for_training, \
                     real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, veh2person4real = env_model.rollout_out(np.tile(actions, (2, 1)))
-            print(obses_ego.shape, obses_bike.shape, obses_person.shape, obses_veh.shape)
-            print(obses_bike[:, -1].numpy(), obses_person[:, -1].numpy(), obses_veh[:, -1].numpy())
+            print(obses_ego.shape, obses_others.shape)
             env.render()
             if done:
                 break
-        done = 0
         obs = env.reset()
+        env_model = EnvironmentModel(training_task=env.training_task, num_future_data=env.num_future_data)
         env.render()
 
 
