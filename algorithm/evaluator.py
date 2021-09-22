@@ -10,7 +10,7 @@
 import logging
 import os
 
-from env_build.endtoend import CrossroadEnd2endMixPiFix
+from env_build.endtoend import CrossroadEnd2endMix
 import numpy as np
 import tensorflow as tf
 
@@ -30,7 +30,7 @@ class Evaluator(object):
     def __init__(self, policy_cls, env_id, args):
         logging.getLogger("tensorflow").setLevel(logging.ERROR)
         self.args = args
-        self.env = CrossroadEnd2endMixPiFix(**args2envkwargs(args))
+        self.env = CrossroadEnd2endMix(**args2envkwargs(args))
         self.policy_with_value = policy_cls(self.args)
         self.iteration = 0
         if self.args.mode == 'training':
@@ -177,7 +177,7 @@ class EvaluatorWithAttention(object):
     def __init__(self, policy_cls, env_id, args):
         logging.getLogger("tensorflow").setLevel(logging.ERROR)
         self.args = args
-        self.env = CrossroadEnd2endMixPiFix(**args2envkwargs(args))
+        self.env = CrossroadEnd2endMix(**args2envkwargs(args))
         self.policy_with_value = policy_cls(self.args)
         self.iteration = 0
         if self.args.mode == 'training':
@@ -220,7 +220,7 @@ class EvaluatorWithAttention(object):
             for _ in range(steps):
                 # extract infos for each kind of participants
                 start = 0; 
-                end = self.args.state_ego_dim + self.args.state_track_dim + self.args.state_light_dim + self.args.task_info_dim
+                end = self.args.state_ego_dim + self.args.state_track_dim + self.args.state_light_dim + self.args.state_task_dim
                 obs_ego = obs[start:end]
                 start = end
                 end = start + self.args.Attn_in_total_dim
@@ -230,7 +230,7 @@ class EvaluatorWithAttention(object):
                     = self.preprocessor.tf_process_obses_attention(obs_ego, obs_others)
                 mask = tf.cast(self.info['mask'], dtype=tf.float32)
                 attention_obs_others = self.policy_with_value.compute_Attn(processed_obs_others, mask)
-                processed_obs = np.concatenate((processed_obs_ego, attention_obs_others.numpy()), axis=0)
+                processed_obs = np.concatenate((processed_obs_ego, tf.squeeze(attention_obs_others, axis=0).numpy()), axis=0)
 
                 action = self.policy_with_value.compute_mode(processed_obs[np.newaxis, :])
                 obs, reward, done, info = self.env.step(action.numpy()[0])
@@ -240,7 +240,7 @@ class EvaluatorWithAttention(object):
         else:
             while not done:
                 start = 0; 
-                end = self.args.state_ego_dim + self.args.state_track_dim + self.args.state_light_dim + self.args.task_info_dim
+                end = self.args.state_ego_dim + self.args.state_track_dim + self.args.state_light_dim + self.args.state_task_dim
                 obs_ego = obs[start:end]
                 start = end
                 end = start + self.args.Attn_in_total_dim
@@ -250,7 +250,7 @@ class EvaluatorWithAttention(object):
                     = self.preprocessor.tf_process_obses_attention(obs_ego, obs_others)
                 mask = tf.cast(self.info['mask'], dtype=tf.float32)
                 attention_obs_others = self.policy_with_value.compute_Attn(processed_obs_others, mask)
-                processed_obs = np.concatenate((processed_obs_ego, attention_obs_others.numpy()), axis=0)
+                processed_obs = np.concatenate((processed_obs_ego, tf.squeeze(attention_obs_others, axis=0).numpy()), axis=0)
 
                 action = self.policy_with_value.compute_mode(processed_obs[np.newaxis, :])
                 obs, reward, done, info = self.env.step(action.numpy()[0])

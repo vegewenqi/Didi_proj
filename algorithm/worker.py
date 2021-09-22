@@ -9,7 +9,7 @@
 
 import logging
 
-from env_build.endtoend import CrossroadEnd2endMixPiFix
+from env_build.endtoend import CrossroadEnd2endMix
 import numpy as np
 import tensorflow as tf
 
@@ -32,7 +32,7 @@ class OffPolicyWorker(object):
         logging.getLogger("tensorflow").setLevel(logging.ERROR)
         self.worker_id = worker_id
         self.args = args
-        self.env = CrossroadEnd2endMixPiFix(**args2envkwargs(args))
+        self.env = CrossroadEnd2endMix(**args2envkwargs(args))
         self.policy_with_value = policy_cls(self.args)
         self.batch_size = self.args.batch_size
         self.obs = self.env.reset()
@@ -163,7 +163,7 @@ class OffPolicyWorkerWithAttention(object):
         logging.getLogger("tensorflow").setLevel(logging.ERROR)
         self.worker_id = worker_id
         self.args = args
-        self.env = CrossroadEnd2endMixPiFix(**args2envkwargs(args))
+        self.env = CrossroadEnd2endMix(**args2envkwargs(args))
         self.policy_with_value = policy_cls(self.args)
         self.batch_size = self.args.batch_size
         self.obs, self.info = self.env.reset()
@@ -219,7 +219,7 @@ class OffPolicyWorkerWithAttention(object):
         sample_count = 0
         for _ in range(self.batch_size):
             # extract infos for each kind of participants
-            start = 0; end = self.args.state_ego_dim + self.args.state_track_dim + self.args.state_light_dim + self.args.task_info_dim
+            start = 0; end = self.args.state_ego_dim + self.args.state_track_dim + self.args.state_light_dim + self.args.state_task_dim
             obs_ego = self.obs[start:end]
             start = end; end = start + self.args.Attn_in_total_dim
             obs_others = self.obs[start:end]
@@ -228,7 +228,7 @@ class OffPolicyWorkerWithAttention(object):
                 = self.preprocessor.process_obs_attention(obs_ego, obs_others)
             mask = tf.cast(self.info['mask'], dtype=tf.float32)
             attention_obs_others = self.policy_with_value.compute_Attn(processed_obs_others, mask)
-            processed_obs = np.concatenate((processed_obs_ego, attention_obs_others.numpy()), axis=0)
+            processed_obs = np.concatenate((processed_obs_ego, tf.squeeze(attention_obs_others, axis=0).numpy()), axis=0)
             judge_is_nan([processed_obs])
             action, logp = self.policy_with_value.compute_action(processed_obs[np.newaxis, :])
             if self.explore_sigma is not None:
@@ -246,7 +246,7 @@ class OffPolicyWorkerWithAttention(object):
             sample_count += 1
             self.done = 1 if sample_count > self.args.max_step else self.done
 
-            start = 0; end = self.args.state_ego_dim + self.args.state_track_dim + self.args.state_light_dim + self.args.task_info_dim
+            start = 0; end = self.args.state_ego_dim + self.args.state_track_dim + self.args.state_light_dim + self.args.state_task_dim
             obs_ego_next = obs_tp1[start:end]
             start = end; end = start + self.args.Attn_in_total_dim
             obs_others_next = obs_tp1[start:end]

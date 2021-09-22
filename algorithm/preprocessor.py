@@ -136,7 +136,7 @@ class Preprocessor(object):
             # batch_size = obses_ego.shape[0]
             if self.obs_ptype == 'scale':
                 processed_obses_ego = obses_ego * tf.convert_to_tensor(self.obs_ego_scale, dtype=tf.float32)
-                processed_obses_ego = obses_others * tf.convert_to_tensor(self.obs_other_scale, dtype=tf.float32)
+                processed_obses_others = obses_others * tf.convert_to_tensor(self.obs_other_scale, dtype=tf.float32)
                 # processed_obses_others = tf.reshape(obses_others, (batch_size, -1, self.d_obj)) * \
                 #     tf.convert_to_tensor(self.obs_other_scale, dtype=tf.float32) 
                 # processed_obses_others = tf.reshape(processed_obses_others, (batch_size, -1))

@@ -96,7 +96,7 @@ class CrossroadEnd2endMix(gym.Env):
 
     def reset(self, **kwargs):  # kwargs include three keys
         self.v_light = self.traffic.init_light()
-        self.training_task = choice(['left', 'straight', 'right'])
+        self.training_task = 'left' # choice(['left', 'straight', 'right'])
         self.task_idx = TASK_DICT[self.training_task]
         self.light_vector = self.v_light if self.v_light == 0 or self.v_light == 1 else 1
         self.ref_path = ReferencePath(self.training_task, self.light_vector, **kwargs)
@@ -121,12 +121,14 @@ class CrossroadEnd2endMix(gym.Env):
                                                self.dynamics.vehicle_params['miu'],
                                                self.dynamics.vehicle_params['miu']]
                                               )
-        self._get_all_info(ego_dynamics)
+        all_info = self._get_all_info(ego_dynamics)
         self.obs = self._get_obs()
         self.action = None
         self.reward_info = None
         self.done_type = 'not_done_yet'
-        return self.obs
+        all_info.update({'reward_info': self.reward_info, 'ref_index': self.ref_path.ref_index,
+                         'task': self.training_task, 'mask': self.vehs_mask})
+        return self.obs, all_info
 
     def close(self):
         del self.traffic

@@ -469,7 +469,7 @@ class EnvironmentModel(object):  # all tensors
             predictions_to_be_concat.append(self.predict_for_bike_mode(
                 bike_infos[:, bikes_index * self.per_bike_info_dim:(bikes_index + 1) * self.per_bike_info_dim],
                 bike_mode_list[bikes_index]))
-        pred = tf.stop_gradient(tf.concat(predictions_to_be_concat, 1))
+        pred = tf.concat(predictions_to_be_concat, 1) # tf.stop_gradient(tf.concat(predictions_to_be_concat, 1))
         return pred
 
     def person_predict(self, person_infos):
@@ -502,7 +502,7 @@ class EnvironmentModel(object):  # all tensors
         for vehs_index in range(int(tf.shape(veh_infos)[1] / self.per_veh_info_dim)):
             predictions_to_be_concat.append(self.predict_for_veh_mode(
                 veh_infos[:, vehs_index * self.per_veh_info_dim:(vehs_index + 1) * self.per_veh_info_dim]))
-        pred = tf.stop_gradient(tf.concat(predictions_to_be_concat, 1))
+        pred = tf.concat(predictions_to_be_concat, 1) # tf.stop_gradient(tf.concat(predictions_to_be_concat, 1))
         return pred
 
     def predict_for_bike_mode(self, bikes, mode):

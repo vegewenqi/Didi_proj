@@ -390,7 +390,7 @@ class AMPCLearnerWithAttention(object):
         mb_obs_others = self.tf.constant(self.batch_data['batch_obs_others'])
         iteration = self.tf.convert_to_tensor(iteration, self.tf.int32)
         mb_ref_index = self.tf.constant(self.batch_data['batch_ref_index'], self.tf.int32)
-        mb_mask = self.tf.constant(tf.cast(self.batch_data['batch_mask'], self.tf.float32))
+        mb_mask = self.tf.constant(self.tf.cast(self.batch_data['batch_mask'], self.tf.float32))
 
         with self.grad_timer:
             pg_grad, obj_v_grad, Attn_net_grad, obj_v_loss, obj_loss, \

@@ -25,7 +25,7 @@ from trainer import Trainer
 from worker import OffPolicyWorker, OffPolicyWorkerWithAttention
 from utils.misc import args2envkwargs
 
-from env_build.endtoend import CrossroadEnd2endMixPiFix
+from env_build.endtoend import CrossroadEnd2endMix
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -70,7 +70,7 @@ def built_AMPC_parser():
     parser.add_argument('--off_policy', type=str, default=True)
 
     # env
-    parser.add_argument('--env_id', default='CrossroadEnd2endMixPiFix-v0')
+    parser.add_argument('--env_id', default='CrossroadEnd2endMix-v0')
     parser.add_argument('--env_kwargs_num_future_data', type=int, default=0)
     parser.add_argument('--env_kwargs_training_task', type=str, default='left')
     parser.add_argument('--max_step', type=int, default=200)
@@ -154,9 +154,9 @@ def built_AMPC_parser():
     # optimizer (PABAL)
     parser.add_argument('--max_sampled_steps', type=int, default=0)
     parser.add_argument('--max_iter', type=int, default=600000)
-    parser.add_argument('--num_workers', type=int, default=4)
-    parser.add_argument('--num_learners', type=int, default=10)
-    parser.add_argument('--num_buffers', type=int, default=4)
+    parser.add_argument('--num_workers', type=int, default=6)
+    parser.add_argument('--num_learners', type=int, default=12)
+    parser.add_argument('--num_buffers', type=int, default=6)
     parser.add_argument('--max_weight_sync_delay', type=int, default=300)
     parser.add_argument('--grads_queue_size', type=int, default=20)
     parser.add_argument('--grads_max_reuse', type=int, default=0)  # todo: if not 0, then obj_v_grad and pg_grad will be 0
@@ -203,7 +203,7 @@ def built_parser(alg_name):
 def built_attention_parser(alg_name):
     if alg_name == 'AMPC':
         args = built_AMPC_parser()
-        env = CrossroadEnd2endMixPiFix(**args2envkwargs(args))
+        env = CrossroadEnd2endMix(**args2envkwargs(args))
         obs_space, act_space = env.observation_space, env.action_space
         args.state_ego_dim = env.ego_info_dim # 6
         args.state_track_dim = env.track_info_dim + env.per_path_info_dim * env.num_future_data # 3 + 4*n

@@ -138,7 +138,7 @@ class ReplayBufferWithAttention(object):
             data = self._storage[i]
             obs_ego_next, obs_others_next, done, ref_index, mask = data
             obses_ego_next.append(np.array(obs_ego_next, copy=False))
-            obses_bike_next.append(np.array(obs_others_next, copy=False))
+            obses_others_next.append(np.array(obs_others_next, copy=False))
             dones.append(done)
             ref_indexs.append(ref_index)
             masks.append(np.array(mask, copy=False))
