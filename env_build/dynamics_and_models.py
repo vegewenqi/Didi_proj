@@ -438,7 +438,6 @@ class EnvironmentModel(object):  # all tensors
         vehs_abso = obses_veh - ego
         return obses_ego, bikes_abso, persons_abso, vehs_abso
 
-
     def convert_vehs_to_abso(self, obses_ego, obses_bike, obses_person, obses_veh):
         ego_x, ego_y = obses_ego[:, 3], obses_ego[:, 4]
         ego = tf.tile(tf.concat([tf.stack([ego_x, ego_y], axis=1), tf.zeros(shape=(len(ego_x), self.per_bike_info_dim-2))], axis=1),
@@ -502,27 +501,17 @@ class EnvironmentModel(object):  # all tensors
         for vehs_index in range(int(tf.shape(veh_infos)[1] / self.per_veh_info_dim)):
             predictions_to_be_concat.append(self.predict_for_veh_mode(
                 veh_infos[:, vehs_index * self.per_veh_info_dim:(vehs_index + 1) * self.per_veh_info_dim]))
-        pred = tf.concat(predictions_to_be_concat, 1) # tf.stop_gradient(tf.concat(predictions_to_be_concat, 1))
+        pred = tf.concat(predictions_to_be_concat, 1)
         return pred
 
     def predict_for_bike_mode(self, bikes, mode):
         bike_xs, bike_ys, bike_vs, bike_phis = bikes[:, 0], bikes[:, 1], bikes[:, 2], bikes[:, 3]
         bike_phis_rad = bike_phis * np.pi / 180.
 
-        middle_cond = logical_and(logical_and(bike_xs > -CROSSROAD_SIZE/2, bike_xs < CROSSROAD_SIZE/2),
-                                  logical_and(bike_ys > -CROSSROAD_SIZE/2, bike_ys < CROSSROAD_SIZE/2))
-        zeros = tf.zeros_like(bike_xs)
-
         bike_xs_delta = bike_vs / self.base_frequency * tf.cos(bike_phis_rad)
         bike_ys_delta = bike_vs / self.base_frequency * tf.sin(bike_phis_rad)
-        # all bikes use linear prediction
-        # if mode in ['dl_b', 'rd_b', 'ur_b', 'lu_b']:
-        #     bike_phis_rad_delta = tf.where(middle_cond, (bike_vs / (CROSSROAD_SIZE/2+3*LANE_WIDTH + BIKE_LANE_WIDTH / 2)) / self.base_frequency, zeros)
-        # elif mode in ['dr_b', 'ru_b', 'ul_b', 'ld_b']:
-        #     bike_phis_rad_delta = tf.where(middle_cond, -(bike_vs / (CROSSROAD_SIZE/2-3.0*LANE_WIDTH - BIKE_LANE_WIDTH / 2)) / self.base_frequency, zeros)  # TODO：ONLY FOR 3LANE
-        # else:
-        #     bike_phis_rad_delta = zeros
-        bike_phis_rad_delta = zeros
+        bike_phis_rad_delta = tf.zeros_like(bike_xs)
+
         next_bike_xs, next_bike_ys, next_bike_vs, next_bike_phis_rad = \
             bike_xs + bike_xs_delta, bike_ys + bike_ys_delta, bike_vs, bike_phis_rad + bike_phis_rad_delta
         next_bike_phis_rad = tf.where(next_bike_phis_rad > np.pi, next_bike_phis_rad - 2 * np.pi, next_bike_phis_rad)
@@ -535,14 +524,9 @@ class EnvironmentModel(object):  # all tensors
         veh_xs, veh_ys, veh_vs, veh_phis, veh_turn_rad = vehs[:, 0], vehs[:, 1], vehs[:, 2], vehs[:, 3], vehs[:, -1]
         veh_phis_rad = veh_phis * np.pi / 180.
 
-        middle_cond = logical_and(logical_and(veh_xs > -CROSSROAD_SIZE/2, veh_xs < CROSSROAD_SIZE/2),
-                                  logical_and(veh_ys > -CROSSROAD_SIZE/2, veh_ys < CROSSROAD_SIZE/2))
-        zeros = tf.zeros_like(veh_xs)
-
         veh_xs_delta = veh_vs / self.base_frequency * tf.cos(veh_phis_rad)
         veh_ys_delta = veh_vs / self.base_frequency * tf.sin(veh_phis_rad)
-
-        veh_phis_rad_delta = tf.where(middle_cond, veh_vs / self.base_frequency * veh_turn_rad, zeros)
+        veh_phis_rad_delta = veh_vs / self.base_frequency * veh_turn_rad
 
         next_veh_xs, next_veh_ys, next_veh_vs, next_veh_phis_rad = \
             veh_xs + veh_xs_delta, veh_ys + veh_ys_delta, veh_vs, veh_phis_rad + veh_phis_rad_delta
