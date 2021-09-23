@@ -21,7 +21,7 @@ from gym.utils import seeding
 from env_build.dynamics_and_models import VehicleDynamics, ReferencePath, EnvironmentModel
 from env_build.endtoend_env_utils import shift_coordination, rotate_coordination, rotate_and_shift_coordination, deal_with_phi, \
     L, W, CROSSROAD_SIZE, LANE_WIDTH, LANE_NUMBER, judge_feasible, MODE2TASK, VEHICLE_MODE_DICT, BIKE_MODE_DICT, PERSON_MODE_DICT, \
-    VEH_NUM, BIKE_NUM, PERSON_NUM, EXPECTED_V, TASK_DICT, Para
+    VEH_NUM, BIKE_NUM, PERSON_NUM, TASK_DICT, Para, LIGHT_DICT
 from env_build.traffic import Traffic
 
 warnings.filterwarnings("ignore")
@@ -62,6 +62,7 @@ class CrossroadEnd2endMix(gym.Env):
 
         self.seed()
         self.v_light = None
+        self.light_vector = None
         self.step_length = 100  # ms
 
         self.step_time = self.step_length / 1000.0
@@ -73,8 +74,9 @@ class CrossroadEnd2endMix(gym.Env):
         self.reward_info = None
         self.ego_info_dim = 6
         self.track_info_dim = 3
-        self.light_info_dim = 1
-        self.task_info_dim = 1
+        self.light_info_dim = 2
+        self.task_info_dim = 3
+        self.ref_info_dim = 3
         self.per_path_info_dim = 4
         self.per_bike_info_dim = 10
         self.per_person_info_dim = 10
@@ -98,7 +100,7 @@ class CrossroadEnd2endMix(gym.Env):
         self.v_light = self.traffic.init_light()
         self.training_task = choice(['left', 'straight', 'right'])
         self.task_idx = TASK_DICT[self.training_task]
-        self.light_vector = self.v_light if self.v_light == 0 or self.v_light == 1 else 1
+        self.light_vector = LIGHT_DICT[0] if self.training_task == 'right' else LIGHT_DICT[self.v_light]
         self.ref_path = ReferencePath(self.training_task, self.light_vector, **kwargs)
         self.env_model = EnvironmentModel(self.training_task, self.num_future_data)
         self.veh_mode_dict = VEHICLE_MODE_DICT[self.training_task]
@@ -298,8 +300,8 @@ class CrossroadEnd2endMix(gym.Env):
                                                              np.array([ego_phi], dtype=np.float32),
                                                              np.array([ego_v_x], dtype=np.float32),
                                                              self.num_future_data).numpy()[0]
-        self.light_vector = self.v_light if self.v_light == 0 or self.v_light == 1 else 1
-        vector = np.concatenate((ego_vector, tracking_error, [self.light_vector], [self.task_idx], vehs_vector), axis=0)
+        self.light_vector = LIGHT_DICT[0] if self.training_task == 'right' else LIGHT_DICT[self.v_light]
+        vector = np.concatenate((ego_vector, tracking_error, self.light_vector, self.task_idx, self.ref_path.ref_encoder, vehs_vector), axis=0)
         vector = vector.astype(np.float32)
         vector = self.convert_vehs_to_rela(vector)
 
@@ -307,9 +309,9 @@ class CrossroadEnd2endMix(gym.Env):
 
     def convert_vehs_to_rela(self, obs_abso):
         ego_road_infos = obs_abso[:self.ego_info_dim + self.track_info_dim + self.num_future_data * self.per_path_info_dim
-                                                                                + self.light_info_dim + self.task_info_dim]
+                                                                                + self.light_info_dim + self.task_info_dim+ self.ref_info_dim]
         obses_others = obs_abso[self.ego_info_dim + self.track_info_dim + self.num_future_data * self.per_path_info_dim
-                                                                                + self.light_info_dim + self.task_info_dim:]
+                                + self.light_info_dim + self.task_info_dim + self.ref_info_dim:]
         bike_infos = obses_others[:self.bike_num * self.per_bike_info_dim]
         person_infos = obses_others[self.bike_num * self.per_bike_info_dim:self.bike_num * self.per_bike_info_dim + self.person_num * self.per_person_info_dim]
         veh_infos = obses_others[self.bike_num * self.per_bike_info_dim + self.person_num * self.per_person_info_dim:]
@@ -326,9 +328,9 @@ class CrossroadEnd2endMix(gym.Env):
 
     def convert_vehs_to_abso(self, obs_rela):
         ego_road_infos =obs_rela[:self.ego_info_dim + self.track_info_dim + self.num_future_data * self.per_path_info_dim
-                                                                                + self.light_info_dim + self.task_info_dim]
+                                                                                + self.light_info_dim + self.task_info_dim + self.ref_info_dim]
         obses_others = obs_rela[self.ego_info_dim + self.track_info_dim + self.num_future_data * self.per_path_info_dim
-                                                                                + self.light_info_dim + self.task_info_dim:]
+                                                                                + self.light_info_dim + self.task_info_dim + self.ref_info_dim:]
         bike_infos = obses_others[:self.bike_num * self.per_bike_info_dim]
         person_infos = obses_others[self.bike_num * self.per_bike_info_dim:self.bike_num * self.per_bike_info_dim + self.person_num * self.per_person_info_dim]
         veh_infos = obses_others[self.bike_num * self.per_bike_info_dim + self.person_num * self.per_person_info_dim:]
@@ -1028,7 +1030,7 @@ class CrossroadEnd2endMix(gym.Env):
                 if i == self.ref_path.ref_index:
                     plt.plot(item[0], item[1], color=color[i], alpha=1.0)
                 else:
-                    plt.plot(item[0], item[1], color=color[i], alpha=1.0)
+                    plt.plot(item[0], item[1], color=color[i], alpha=0.3)
                     # indexs, points = item.find_closest_point(np.array([ego_x], np.float32), np.array([ego_y], np.float32))
                     # path_x, path_y, path_phi = points[0][0], points[1][0], points[2][0]
                     # plt.plot(path_x, path_y,  color=color[i])
@@ -1098,7 +1100,7 @@ class CrossroadEnd2endMix(gym.Env):
 
 
 def test_end2end():
-    env = CrossroadEnd2endMix(num_future_data=10)
+    env = CrossroadEnd2endMix(num_future_data=1)
     obs = env.reset()
     env_model = EnvironmentModel(training_task=env.training_task, num_future_data=env.num_future_data)
     i = 0
@@ -1115,8 +1117,9 @@ def test_end2end():
             obs, reward, done, info = env.step(action)
             obses, actions = obs[np.newaxis, :], action[np.newaxis, :]
             # extract infos for each kind of participants
-            # ego_dim = env.ego_info_dim + env.track_info_dim + env.num_future_data * env.per_path_info_dim + env.light_info_dim + env.task_info_dim
-            # obses_ego = obses[:, :ego_dim]
+            ego_dim = env.ego_info_dim + env.track_info_dim + env.num_future_data * env.per_path_info_dim + env.light_info_dim + env.task_info_dim + env.ref_info_dim
+            obses_ego = obses[:, env.ego_info_dim + env.track_info_dim + env.num_future_data * env.per_path_info_dim:ego_dim]
+            print(obses_ego)
             # obses_others = obses[:, ego_dim:]
             # env_model.reset(np.tile(obses_ego, (2, 1)), np.tile(obses_others, (2, 1)), [env.ref_path.ref_index, random.randint(0, 2)])
             # env_model.mode = 'training'
@@ -1125,8 +1128,8 @@ def test_end2end():
             #         real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, veh2person4real = env_model.rollout_out(np.tile(actions, (2, 1)))
             # print(obses_ego.shape, obses_others.shape)
             env.render()
-            if done:
-                break
+            # if done:
+            #     break
         obs = env.reset()
         # env_model = EnvironmentModel(training_task=env.training_task, num_future_data=env.num_future_data)
         env.render()

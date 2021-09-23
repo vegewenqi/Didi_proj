@@ -43,8 +43,14 @@ class Para:
     CROSSROAD_SIZE_LAT = 64
     CROSSROAD_SIZE_LON = 76
 
+
 dirname = os.path.dirname(__file__)
-TASK_DICT = dict(left=1.0, straight=0.0, right=-1.0)
+TASK_DICT = dict(left=[1.0, 0.0, 0.0], straight=[0.0, 1.0, 0.0], right=[0.0, 0.0, 1.0])
+LIGHT_DICT = {0: [1.0, 0.0], 1: [1.0, 0.0], 2: [1.0, 1.0], 3: [0.0, 1.0], 4: [0.0, 1.0], 5: [0.0, 1.0], 6: [0.0, 1.0]}
+LIGHT = {'[1.0, 0.0]': 'green', '[0.0, 1.0]': 'red'}
+REF_ENCODER = dict(left={0: [1.0, 0.0, 0.0], 1: [0.0, 1.0, 0.0], 2: [0.0, 0.0, 1.0]},
+                   straight={0: [1.0, 0.0, 0.0], 1: [0.0, 1.0, 0.0], 2: [0.0, 0.0, 1.0]},
+                   right={0: [1.0, 0.0, 0.0], 1: [0.0, 1.0, 0.0], 2: [0.0, 0.0, 1.0]})
 SUMOCFG_DIR = dirname + "/sumo_files/cross.sumocfg"
 VEHICLE_MODE_DICT = dict(left=OrderedDict(dl=2, du=2, ud=2, ul=2),
                          straight=OrderedDict(dl=2, du=2, ru=2, ur=2),
@@ -55,7 +61,6 @@ BIKE_MODE_DICT = dict(left=OrderedDict(ud_b=4),
 PERSON_MODE_DICT = dict(left=OrderedDict(c3=4),
                          straight=OrderedDict(c2=0),
                          right=OrderedDict(c1=4, c2=0))
-LIGHT = {0: 'green', 1: 'red'}
 
 
 def dict2flat(inp):

@@ -233,8 +233,8 @@ class Traffic(object):
         return random_traffic
 
     def init_light(self):
-        if random.random() > 0.7:
-            self.training_light_phase = 3
+        if random.random() > 0.2:
+            self.training_light_phase = 4
         else:
             self.training_light_phase = 0
         traci.trafficlight.setPhase('0', self.training_light_phase)

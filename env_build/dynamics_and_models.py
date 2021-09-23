@@ -16,7 +16,7 @@ import tensorflow as tf
 from tensorflow import logical_and
 
 from env_build.endtoend_env_utils import rotate_coordination, L, W, CROSSROAD_SIZE, LANE_WIDTH, LANE_NUMBER, \
-    VEHICLE_MODE_LIST, BIKE_MODE_LIST, PERSON_MODE_LIST, VEH_NUM, BIKE_NUM, PERSON_NUM, EXPECTED_V, BIKE_LANE_WIDTH, LIGHT, TASK_DICT, Para
+    VEHICLE_MODE_LIST, BIKE_MODE_LIST, PERSON_MODE_LIST, VEH_NUM, BIKE_NUM, PERSON_NUM, EXPECTED_V, BIKE_LANE_WIDTH, LIGHT, TASK_DICT, Para, REF_ENCODER
 
 tf.config.threading.set_inter_op_parallelism_threads(1)
 tf.config.threading.set_intra_op_parallelism_threads(1)
@@ -105,8 +105,9 @@ class EnvironmentModel(object):  # all tensors
         self.person_num = PERSON_NUM[self.task]
         self.ego_info_dim = 6
         self.track_info_dim = 3
-        self.light_info_dim = 1
-        self.task_info_dim = 1
+        self.light_info_dim = 2
+        self.task_info_dim = 3
+        self.ref_info_dim = 3
         self.per_path_info_dim = 4
         self.per_bike_info_dim = 10
         self.per_person_info_dim = 10
@@ -707,20 +708,22 @@ def deal_with_phi_diff(phi_diff):
 
 
 class ReferencePath(object):
-    def __init__(self, task, light_phase=0, ref_index=None):
+    def __init__(self, task, light_phase=[1.0, 0.0], ref_index=None):
         self.task = task
         self.path_list = {}
         self.path_len_list = []
         self.control_points = []
-        self.traffic_light = LIGHT[light_phase]
+        self.traffic_light = LIGHT[str(light_phase)]
         self.light_phase = light_phase
         self._construct_ref_path(self.task)
         self.ref_index = np.random.choice(len(self.path_list[self.traffic_light])) if ref_index is None else ref_index
         self.path = self.path_list[self.traffic_light][self.ref_index]
+        self.ref_encoder = REF_ENCODER[self.task][self.ref_index]
 
     def set_path(self, light, path_index=None):
         self.ref_index = path_index
         self.path = self.path_list[LIGHT[light]][self.ref_index]
+        self.ref_encoder = REF_ENCODER[self.task][self.ref_index]
 
     def _construct_ref_path(self, task):
         sl = 40  # straight length
