@@ -45,7 +45,7 @@ class Traffic(object):
         self.collision_ego_id = None
         self.v_light = None
         self.n_ego_dict = init_n_ego_dict
-
+        self.training_light_phase = None
         self.mode = mode
 
         try:
@@ -75,7 +75,7 @@ class Traffic(object):
                  # '--seed', str(int(seed))
                  ], port=port, numRetries=5)  # '--seed', str(int(seed))
 
-        traci.junction.subscribeContext(objectID='a3', domain=traci.constants.CMD_GET_VEHICLE_VARIABLE, dist=10000.0,
+        traci.junction.subscribeContext(objectID='0', domain=traci.constants.CMD_GET_VEHICLE_VARIABLE, dist=10000.0,
                                         varIDs=[traci.constants.VAR_POSITION,
                                                 traci.constants.VAR_LENGTH,
                                                 traci.constants.VAR_WIDTH,
@@ -94,7 +94,7 @@ class Traffic(object):
                                                 # traci.constants.VAR_ROUTE_INDEX
                                                 ], begin=0.0, end=2147483647.0)
 
-        traci.junction.subscribeContext(objectID='a4', domain=traci.constants.CMD_GET_PERSON_VARIABLE,dist=10000.0, varIDs=[traci.constants.VAR_POSITION,
+        traci.junction.subscribeContext(objectID='0', domain=traci.constants.CMD_GET_PERSON_VARIABLE,dist=10000.0, varIDs=[traci.constants.VAR_POSITION,
                                                 traci.constants.VAR_LENGTH,
                                                 traci.constants.VAR_WIDTH,
                                                 traci.constants.VAR_ANGLE,
@@ -117,8 +117,6 @@ class Traffic(object):
             else:
                 traci.trafficlight.setPhase('0', 0)
 
-            # if self.mode == "training":
-            #     traci.trafficlight.setPhase('0', self.training_light_phase)
             traci.simulationStep()
 
     def __del__(self):
@@ -156,7 +154,7 @@ class Traffic(object):
                  # '--seed', str(int(seed))
                  ], port=port, numRetries=5)  # '--seed', str(int(seed))
 
-        traci.junction.subscribeContext(objectID='a3', domain=traci.constants.CMD_GET_VEHICLE_VARIABLE, dist=10000.0,
+        traci.junction.subscribeContext(objectID='0', domain=traci.constants.CMD_GET_VEHICLE_VARIABLE, dist=10000.0,
                                         varIDs=[traci.constants.VAR_POSITION,
                                                 traci.constants.VAR_LENGTH,
                                                 traci.constants.VAR_WIDTH,
@@ -175,7 +173,7 @@ class Traffic(object):
                                                 # traci.constants.VAR_ROUTE_INDEX
                                                 ], begin=0.0, end=2147483647.0)
 
-        traci.junction.subscribeContext(objectID='a4', domain=traci.constants.CMD_GET_PERSON_VARIABLE,dist=10000.0,
+        traci.junction.subscribeContext(objectID='0', domain=traci.constants.CMD_GET_PERSON_VARIABLE, dist=10000.0,
                                         varIDs=[traci.constants.VAR_POSITION,
                                                 traci.constants.VAR_LENGTH,
                                                 traci.constants.VAR_WIDTH,
@@ -191,9 +189,9 @@ class Traffic(object):
                                                 # traci.constants.VAR_NEXT_EDGE,
                                                 # traci.constants.VAR_ROUTE_ID,
                                                 # traci.constants.VAR_ROUTE_INDEX
-                                                ],begin=0.0, end=2147483647.0)
+                                                ], begin=0.0, end=2147483647.0)
 
-        while traci.simulation.getTime() < 100:          # turn right
+        while traci.simulation.getTime() < 100:  # turn right
             if traci.simulation.getTime() < 80:
                 traci.trafficlight.setPhase('0', 2)
             else:
@@ -226,15 +224,12 @@ class Traffic(object):
             traci.vehicle.setSpeed(egoID, math.sqrt(ego_v_x ** 2 + ego_v_y ** 2))
 
     def generate_random_traffic(self):
-        random_traffic_01 = traci.junction.getContextSubscriptionResults('a3')
-        random_traffic_02 = traci.junction.getContextSubscriptionResults('a4')
-        random_traffic = dict(random_traffic_01, **random_traffic_02)
+        random_traffic = traci.junction.getContextSubscriptionResults('0')
         random_traffic = copy.deepcopy(random_traffic)
 
         for ego_id in self.n_ego_dict.keys():
             if ego_id in random_traffic:
                 del random_traffic[ego_id]
-
         return random_traffic
 
     def init_light(self):
@@ -299,9 +294,7 @@ class Traffic(object):
 
     def _get_vehicles(self):
         self.n_ego_vehicles = defaultdict(list)
-        veh_infos_01 = traci.junction.getContextSubscriptionResults('a3')
-        veh_infos_02 = traci.junction.getContextSubscriptionResults('a4')
-        veh_infos = dict(veh_infos_01, **veh_infos_02)
+        veh_infos = traci.junction.getContextSubscriptionResults('0')
         for egoID in self.n_ego_dict.keys():
             veh_info_dict = copy.deepcopy(veh_infos)
             for i, veh in enumerate(veh_info_dict):
@@ -403,7 +396,7 @@ class Traffic(object):
 
 def test_traffic():
     import numpy as np
-    from dynamics_and_models import ReferencePath
+    from env_build.dynamics_and_models import ReferencePath
 
     def _reset_init_state():
         ref_path = ReferencePath('straight')
@@ -421,15 +414,16 @@ def test_traffic():
                              routeID='du',
                              ))
 
-    init_state = dict(ego=dict(v_x=8., v_y=0, r=0, x=-30, y=1.5, phi=180, l=4.8, w=2.2, routeID='dl',))
     # init_state = _reset_init_state()
-    traffic = Traffic(100., mode='training', init_n_ego_dict=init_state, training_task='left')
-    traffic.init_traffic(init_state)
+    init_state = dict(ego=dict(v_x=8., v_y=0, r=0, x=-1.875, y=-30, phi=180, l=4.8, w=2.2, routeID='dl',))
+    traffic = Traffic(100., mode='training', init_n_ego_dict=init_state)
+    traffic.init_light()
+    traffic.init_traffic(init_state, training_task='left')
     traffic.sim_step()
     for i in range(100000000):
-        # for j in range(50):
-            # traffic.set_own_car(init_state)
-            # traffic.sim_step()
+        for j in range(50):
+            traffic.set_own_car(init_state)
+            traffic.sim_step()
         # init_state = _reset_init_state()
         # traffic.init_traffic(init_state)
         traffic.sim_step()

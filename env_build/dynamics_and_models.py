@@ -16,7 +16,7 @@ import tensorflow as tf
 from tensorflow import logical_and
 
 from env_build.endtoend_env_utils import rotate_coordination, L, W, CROSSROAD_SIZE, LANE_WIDTH, LANE_NUMBER, \
-    VEHICLE_MODE_LIST, BIKE_MODE_LIST, PERSON_MODE_LIST, VEH_NUM, BIKE_NUM, PERSON_NUM, EXPECTED_V, BIKE_LANE_WIDTH, LIGHT, TASK_DICT
+    VEHICLE_MODE_LIST, BIKE_MODE_LIST, PERSON_MODE_LIST, VEH_NUM, BIKE_NUM, PERSON_NUM, EXPECTED_V, BIKE_LANE_WIDTH, LIGHT, TASK_DICT, Para
 
 tf.config.threading.set_inter_op_parallelism_threads(1)
 tf.config.threading.set_intra_op_parallelism_threads(1)
@@ -726,18 +726,19 @@ class ReferencePath(object):
         sl = 40  # straight length
         dece_dist = 20
         meter_pointnum_ratio = 30
-        control_ext = CROSSROAD_SIZE/3.
+        control_ext = 0.5 * (Para.CROSSROAD_SIZE_LAT + Para.CROSSROAD_SIZE_LON)/3.
         planed_trj_g = []
         planed_trj_r = []
         if task == 'left':
-            end_offsets = [LANE_WIDTH*(i+0.5) for i in range(LANE_NUMBER)]
-            start_offsets = [LANE_WIDTH*0.5]
+            lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+            end_offsets = [Para.OFFSET_L + Para.GREEN_BELT_LAT + sum(lane_width_flag[:i]) + 0.5 * lane_width_flag[i] for i in range(Para.LANE_NUMBER_LAT_OUT)]
+            start_offsets = [Para.OFFSET_D + Para.LANE_WIDTH_2 * 0.5]
             for start_offset in start_offsets:
                 for end_offset in end_offsets:
-                    control_point1 = start_offset, -CROSSROAD_SIZE/2
-                    control_point2 = start_offset, -CROSSROAD_SIZE/2 + control_ext
-                    control_point3 = -CROSSROAD_SIZE/2 + control_ext, end_offset
-                    control_point4 = -CROSSROAD_SIZE/2, end_offset
+                    control_point1 = start_offset, -Para.CROSSROAD_SIZE_LON/2
+                    control_point2 = start_offset, -Para.CROSSROAD_SIZE_LON/2 + control_ext
+                    control_point3 = -Para.CROSSROAD_SIZE_LAT/2 + control_ext, end_offset
+                    control_point4 = -Para.CROSSROAD_SIZE_LAT/2, end_offset
                     self.control_points.append([control_point1,control_point2,control_point3,control_point4])
 
                     node = np.asfortranarray([[control_point1[0], control_point2[0], control_point3[0], control_point4[0]],
@@ -747,9 +748,9 @@ class ReferencePath(object):
                     s_vals = np.linspace(0, 1.0, int(pi/2*(CROSSROAD_SIZE/2+LANE_WIDTH/2)) * meter_pointnum_ratio)
                     trj_data = curve.evaluate_multi(s_vals)
                     trj_data = trj_data.astype(np.float32)
-                    start_straight_line_x = LANE_WIDTH/2 * np.ones(shape=(sl * meter_pointnum_ratio,), dtype=np.float32)[:-1]
-                    start_straight_line_y = np.linspace(-CROSSROAD_SIZE/2 - sl, -CROSSROAD_SIZE/2, sl * meter_pointnum_ratio, dtype=np.float32)[:-1]
-                    end_straight_line_x = np.linspace(-CROSSROAD_SIZE/2, -CROSSROAD_SIZE/2 - sl, sl * meter_pointnum_ratio, dtype=np.float32)[1:]
+                    start_straight_line_x = (Para.OFFSET_D + Para.LANE_WIDTH_2 * 0.5) * np.ones(shape=(sl * meter_pointnum_ratio,), dtype=np.float32)[:-1]
+                    start_straight_line_y = np.linspace(-Para.CROSSROAD_SIZE_LON/2 - sl, -Para.CROSSROAD_SIZE_LON/2, sl * meter_pointnum_ratio, dtype=np.float32)[:-1]
+                    end_straight_line_x = np.linspace(-Para.CROSSROAD_SIZE_LAT/2, -Para.CROSSROAD_SIZE_LAT/2 - sl, sl * meter_pointnum_ratio, dtype=np.float32)[1:]
                     end_straight_line_y = end_offset * np.ones(shape=(sl * meter_pointnum_ratio,), dtype=np.float32)[1:]
                     planed_trj = np.append(np.append(start_straight_line_x, trj_data[0]), end_straight_line_x), \
                                  np.append(np.append(start_straight_line_y, trj_data[1]), end_straight_line_y)
@@ -774,14 +775,16 @@ class ReferencePath(object):
             self.path_list = {'green': planed_trj_g, 'red': planed_trj_r}
 
         elif task == 'straight':
-            end_offsets = [LANE_WIDTH*(i+0.5) for i in range(LANE_NUMBER)]
-            start_offsets = [LANE_WIDTH*1.5]
+            lane_width_flag = [Para.LANE_WIDTH_3, Para.LANE_WIDTH_3, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+            end_offsets = [Para.OFFSET_U + Para.GREEN_BELT_LON + sum(lane_width_flag[:i]) + 0.5 * lane_width_flag[i] for i in range(Para.LANE_NUMBER_LON_OUT)]
+            start_offsets = [Para.OFFSET_D + Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 * 0.5]
+
             for start_offset in start_offsets:
                 for end_offset in end_offsets:
-                    control_point1 = start_offset, -CROSSROAD_SIZE/2
-                    control_point2 = start_offset, -CROSSROAD_SIZE/2 + control_ext
-                    control_point3 = end_offset, CROSSROAD_SIZE/2 - control_ext
-                    control_point4 = end_offset, CROSSROAD_SIZE/2
+                    control_point1 = start_offset, -Para.CROSSROAD_SIZE_LON/2
+                    control_point2 = start_offset, -Para.CROSSROAD_SIZE_LON/2 + control_ext
+                    control_point3 = end_offset, Para.CROSSROAD_SIZE_LON/2 - control_ext
+                    control_point4 = end_offset, Para.CROSSROAD_SIZE_LON/2
                     self.control_points.append([control_point1,control_point2,control_point3,control_point4])
 
                     node = np.asfortranarray([[control_point1[0], control_point2[0], control_point3[0], control_point4[0]],
@@ -792,9 +795,9 @@ class ReferencePath(object):
                     trj_data = curve.evaluate_multi(s_vals)
                     trj_data = trj_data.astype(np.float32)
                     start_straight_line_x = start_offset * np.ones(shape=(sl * meter_pointnum_ratio,), dtype=np.float32)[:-1]
-                    start_straight_line_y = np.linspace(-CROSSROAD_SIZE/2 - sl, -CROSSROAD_SIZE/2, sl * meter_pointnum_ratio, dtype=np.float32)[:-1]
+                    start_straight_line_y = np.linspace(-Para.CROSSROAD_SIZE_LON/2 - sl, -Para.CROSSROAD_SIZE_LON/2, sl * meter_pointnum_ratio, dtype=np.float32)[:-1]
                     end_straight_line_x = end_offset * np.ones(shape=(sl * meter_pointnum_ratio,), dtype=np.float32)[1:]
-                    end_straight_line_y = np.linspace(CROSSROAD_SIZE/2, CROSSROAD_SIZE/2 + sl, sl * meter_pointnum_ratio, dtype=np.float32)[1:]
+                    end_straight_line_y = np.linspace(Para.CROSSROAD_SIZE_LON/2, Para.CROSSROAD_SIZE_LON/2 + sl, sl * meter_pointnum_ratio, dtype=np.float32)[1:]
                     planed_trj = np.append(np.append(start_straight_line_x, trj_data[0]), end_straight_line_x), \
                                  np.append(np.append(start_straight_line_y, trj_data[1]), end_straight_line_y)
                     xs_1, ys_1 = planed_trj[0][:-1], planed_trj[1][:-1]
@@ -818,16 +821,17 @@ class ReferencePath(object):
 
         else:
             assert task == 'right'
-            control_ext = CROSSROAD_SIZE/5.
-            end_offsets = [-LANE_WIDTH * 2.5, -LANE_WIDTH * 1.5, -LANE_WIDTH * 0.5]
-            start_offsets = [LANE_WIDTH*(LANE_NUMBER-0.5)]
+            control_ext = 0.5 * (Para.CROSSROAD_SIZE_LAT + Para.CROSSROAD_SIZE_LON)/5
+            lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+            end_offsets = [Para.OFFSET_R - sum(lane_width_flag[:i]) - 0.5 * lane_width_flag[i] for i in range(Para.LANE_NUMBER_LAT_OUT)]
+            start_offsets = [Para.OFFSET_D + Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_3 * 0.5]
 
             for start_offset in start_offsets:
                 for end_offset in end_offsets:
-                    control_point1 = start_offset, -CROSSROAD_SIZE/2
-                    control_point2 = start_offset, -CROSSROAD_SIZE/2 + control_ext
-                    control_point3 = CROSSROAD_SIZE/2 - control_ext, end_offset
-                    control_point4 = CROSSROAD_SIZE/2, end_offset
+                    control_point1 = start_offset, -Para.CROSSROAD_SIZE_LON/2
+                    control_point2 = start_offset, -Para.CROSSROAD_SIZE_LON/2 + control_ext
+                    control_point3 = Para.CROSSROAD_SIZE_LAT/2 - control_ext, end_offset
+                    control_point4 = Para.CROSSROAD_SIZE_LAT/2, end_offset
                     self.control_points.append([control_point1,control_point2,control_point3,control_point4])
 
                     node = np.asfortranarray([[control_point1[0], control_point2[0], control_point3[0], control_point4[0]],
@@ -838,8 +842,8 @@ class ReferencePath(object):
                     trj_data = curve.evaluate_multi(s_vals)
                     trj_data = trj_data.astype(np.float32)
                     start_straight_line_x = start_offset * np.ones(shape=(sl * meter_pointnum_ratio,), dtype=np.float32)[:-1]
-                    start_straight_line_y = np.linspace(-CROSSROAD_SIZE/2 - sl, -CROSSROAD_SIZE/2, sl * meter_pointnum_ratio, dtype=np.float32)[:-1]
-                    end_straight_line_x = np.linspace(CROSSROAD_SIZE/2, CROSSROAD_SIZE/2 + sl, sl * meter_pointnum_ratio, dtype=np.float32)[1:]
+                    start_straight_line_y = np.linspace(-Para.CROSSROAD_SIZE_LON/2 - sl, -Para.CROSSROAD_SIZE_LON/2, sl * meter_pointnum_ratio, dtype=np.float32)[:-1]
+                    end_straight_line_x = np.linspace(Para.CROSSROAD_SIZE_LAT/2, Para.CROSSROAD_SIZE_LAT/2 + sl, sl * meter_pointnum_ratio, dtype=np.float32)[1:]
                     end_straight_line_y = end_offset * np.ones(shape=(sl * meter_pointnum_ratio,), dtype=np.float32)[1:]
                     planed_trj = np.append(np.append(start_straight_line_x, trj_data[0]), end_straight_line_x), \
                                  np.append(np.append(start_straight_line_y, trj_data[1]), end_straight_line_y)
@@ -931,9 +935,13 @@ class ReferencePath(object):
 
     def plot_path(self, x, y):
         plt.axis('equal')
-        plt.plot(self.path_list[self.traffic_light][0][0], self.path_list[self.traffic_light][0][1], 'b')
-        plt.plot(self.path_list[self.traffic_light][1][0], self.path_list[self.traffic_light][1][1], 'r')
-        plt.plot(self.path_list[self.traffic_light][2][0], self.path_list[self.traffic_light][2][1], 'g')
+        color = ['blue', 'coral', 'darkcyan', 'pink']
+        for i, path in enumerate(self.path_list['green']):
+            plt.plot(path[0], path[1], color=color[i], alpha=1.0)
+
+        for _, point in enumerate(self.control_points):
+            for item in point:
+                plt.scatter(item[0], item[1], color='red')
         print(self.path_len_list)
 
         index, closest_point = self.find_closest_point(np.array([x], np.float32),
@@ -944,7 +952,7 @@ class ReferencePath(object):
 
 
 def test_ref_path():
-    path = ReferencePath('right', '0')
+    path = ReferencePath('right', 0)
     path.plot_path(1.875, 0)
 
 
@@ -1109,6 +1117,6 @@ def test_ref():
 
 
 if __name__ == '__main__':
-    test_ref()
+    test_ref_path()
 
 

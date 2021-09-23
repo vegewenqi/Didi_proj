@@ -18,6 +18,31 @@ PERSON_LANE_WIDTH = 2.0
 LANE_NUMBER = 3
 CROSSROAD_SIZE = 50
 EXPECTED_V = 8.
+
+
+class Para:
+    L, W = 4.8, 2.0
+    LANE_WIDTH_1 = 3.75
+    LANE_WIDTH_2 = 3.25
+    LANE_WIDTH_3 = 4.00
+    GREEN_BELT_LAT = 10
+    GREEN_BELT_LON = 2
+    BIKE_LANE_WIDTH = 1.0
+    PERSON_LANE_WIDTH = 2.0
+
+    OFFSET_L = -3
+    OFFSET_R = -7
+    OFFSET_U = 1
+    OFFSET_D = -0.38
+
+    LANE_NUMBER_LON_IN = 3
+    LANE_NUMBER_LON_OUT = 2
+    LANE_NUMBER_LAT_IN = 4
+    LANE_NUMBER_LAT_OUT = 3
+
+    CROSSROAD_SIZE_LAT = 64
+    CROSSROAD_SIZE_LON = 76
+
 dirname = os.path.dirname(__file__)
 TASK_DICT = dict(left=1.0, straight=0.0, right=-1.0)
 SUMOCFG_DIR = dirname + "/sumo_files/cross.sumocfg"
