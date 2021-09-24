@@ -173,7 +173,7 @@ class EnvironmentModel(object):  # all tensors
                           tf.cast(next_ego_infos[:, 4] - ego_lws * tf.sin(next_ego_infos[:, 5] * np.pi / 180.), dtype=tf.float32)
 
         veh2veh4real = tf.zeros_like(veh_infos[:, 0])
-        for veh_index in range(int(tf.shape(veh_infos)[1] / self.per_veh_info_dim)):
+        for veh_index in range(self.veh_num):
             vehs = veh_infos[:, veh_index * self.per_veh_info_dim:(veh_index + 1) * self.per_veh_info_dim]
             ego2veh_dist = tf.sqrt(tf.square(ego_infos[:, 3] - vehs[:, 0]) + tf.square(ego_infos[:, 4] - vehs[:, 1]))
 
@@ -233,7 +233,7 @@ class EnvironmentModel(object):  # all tensors
             veh2veh4real = tf.zeros_like(veh_infos[:, 0])
             veh2veh4training = tf.zeros_like(veh_infos[:, 0])
 
-            for veh_index in range(int(tf.shape(veh_infos)[1] / self.per_veh_info_dim)):
+            for veh_index in range(self.veh_num):
                 vehs = veh_infos[:, veh_index * self.per_veh_info_dim:(veh_index + 1) * self.per_veh_info_dim]
                 veh_lws = (vehs[:, 4] - vehs[:, 5]) / 2.
                 veh_front_points = tf.cast(vehs[:, 0] + veh_lws * tf.cos(vehs[:, 3] * np.pi / 180.), dtype=tf.float32), \
@@ -248,7 +248,7 @@ class EnvironmentModel(object):  # all tensors
 
             veh2bike4real = tf.zeros_like(veh_infos[:, 0])
             veh2bike4training = tf.zeros_like(veh_infos[:, 0])
-            for bike_index in range(int(tf.shape(bike_infos)[1] / self.per_bike_info_dim)):
+            for bike_index in range(self.bike_num):
                 bikes = bike_infos[:, bike_index * self.per_bike_info_dim:(bike_index + 1) * self.per_bike_info_dim]
                 bike_lws = (bikes[:, 4] - bikes[:, 5]) / 2.
                 bike_front_points = tf.cast(bikes[:, 0] + bike_lws * tf.cos(bikes[:, 3] * np.pi / 180.), dtype=tf.float32), \
@@ -263,7 +263,7 @@ class EnvironmentModel(object):  # all tensors
 
             veh2person4real = tf.zeros_like(veh_infos[:, 0])
             veh2person4training = tf.zeros_like(veh_infos[:, 0])
-            for person_index in range(int(tf.shape(person_infos)[1] / self.per_person_info_dim)):
+            for person_index in range(self.person_num):
                 persons = person_infos[:, person_index * self.per_person_info_dim:(person_index + 1) * self.per_person_info_dim]
                 person_point = tf.cast(persons[:, 0], dtype=tf.float32), tf.cast(persons[:, 1], dtype=tf.float32)
                 for ego_point in [ego_front_points, ego_rear_points]:
@@ -426,30 +426,30 @@ class EnvironmentModel(object):  # all tensors
     def convert_vehs_to_rela(self, obses_ego, obses_bike, obses_person, obses_veh):
         ego_x, ego_y = obses_ego[:, 3], obses_ego[:, 4]
         ego = tf.tile(tf.concat([tf.stack([ego_x, ego_y], axis=1), tf.zeros(shape=(len(ego_x), self.per_bike_info_dim-2))], axis=1),
-                                (1, int(tf.shape(obses_bike)[1]/self.per_bike_info_dim)))
+                                (1, self.bike_num))
         bikes_abso = obses_bike - ego
 
         ego = tf.tile(tf.concat([tf.stack([ego_x, ego_y], axis=1), tf.zeros(shape=(len(ego_x), self.per_person_info_dim-2))], axis=1),
-                                (1, int(tf.shape(obses_person)[1]/self.per_person_info_dim)))
+                                (1, self.person_num))
         persons_abso = obses_person - ego
 
         ego = tf.tile(tf.concat([tf.stack([ego_x, ego_y], axis=1), tf.zeros(shape=( len(ego_x), self.per_veh_info_dim-2))], axis=1),
-                                (1, int(tf.shape(obses_veh)[1]/self.per_veh_info_dim)))
+                                (1, self.veh_num))
         vehs_abso = obses_veh - ego
         return obses_ego, bikes_abso, persons_abso, vehs_abso
 
     def convert_vehs_to_abso(self, obses_ego, obses_bike, obses_person, obses_veh):
         ego_x, ego_y = obses_ego[:, 3], obses_ego[:, 4]
         ego = tf.tile(tf.concat([tf.stack([ego_x, ego_y], axis=1), tf.zeros(shape=(len(ego_x), self.per_bike_info_dim-2))], axis=1),
-                                (1, int(tf.shape(obses_bike)[1]/self.per_bike_info_dim)))
+                                (1, self.bike_num))
         bikes_abso = obses_bike + ego
 
         ego = tf.tile(tf.concat([tf.stack([ego_x, ego_y], axis=1), tf.zeros(shape=(len(ego_x), self.per_person_info_dim-2))], axis=1),
-                                (1, int(tf.shape(obses_person)[1]/self.per_person_info_dim)))
+                                (1, self.person_num))
         persons_abso = obses_person + ego
 
         ego = tf.tile(tf.concat([tf.stack([ego_x, ego_y], axis=1), tf.zeros(shape=( len(ego_x), self.per_veh_info_dim-2))], axis=1),
-                                (1, int(tf.shape(obses_veh)[1]/self.per_veh_info_dim)))
+                                (1, self.veh_num))
         vehs_abso = obses_veh + ego
         return obses_ego, bikes_abso, persons_abso, vehs_abso
 
@@ -498,7 +498,7 @@ class EnvironmentModel(object):  # all tensors
     def veh_predict(self, veh_infos):
         predictions_to_be_concat = []
 
-        for vehs_index in range(int(tf.shape(veh_infos)[1] / self.per_veh_info_dim)):
+        for vehs_index in range(self.veh_num):
             predictions_to_be_concat.append(self.predict_for_veh_mode(
                 veh_infos[:, vehs_index * self.per_veh_info_dim:(vehs_index + 1) * self.per_veh_info_dim]))
         pred = tf.concat(predictions_to_be_concat, 1)
