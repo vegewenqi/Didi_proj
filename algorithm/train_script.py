@@ -108,7 +108,7 @@ def built_AMPC_parser():
 
     # buffer
     parser.add_argument('--max_buffer_size', type=int, default=50000)
-    parser.add_argument('--replay_starts', type=int, default=3000)  # use a small value for debug
+    parser.add_argument('--replay_starts', type=int, default=1000)  # use a small value for debug
     parser.add_argument('--replay_batch_size', type=int, default=480)
     parser.add_argument('--replay_alpha', type=float, default=0.6)
     parser.add_argument('--replay_beta', type=float, default=0.4)
@@ -154,9 +154,9 @@ def built_AMPC_parser():
     # optimizer (PABAL)
     parser.add_argument('--max_sampled_steps', type=int, default=0)
     parser.add_argument('--max_iter', type=int, default=600000)
-    parser.add_argument('--num_workers', type=int, default=2)  # use a small value for debug
-    parser.add_argument('--num_learners', type=int, default=2)
-    parser.add_argument('--num_buffers', type=int, default=2)
+    parser.add_argument('--num_workers', type=int, default=6)  # use a small value for debug
+    parser.add_argument('--num_learners', type=int, default=12)
+    parser.add_argument('--num_buffers', type=int, default=6)
     parser.add_argument('--max_weight_sync_delay', type=int, default=300)
     parser.add_argument('--grads_queue_size', type=int, default=20)
     parser.add_argument('--grads_max_reuse', type=int, default=0)  # todo: if not 0, then obj_v_grad and pg_grad will be 0
