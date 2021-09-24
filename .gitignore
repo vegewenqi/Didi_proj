@@ -3,3 +3,6 @@
 /env_build/utils/models/straight/
 /env_build/hierarchical_decision/results/
 /algorithm/results/
+
+/algorithm/__pycache__/
+/env_build/__pycache__/
