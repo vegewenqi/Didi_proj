@@ -129,25 +129,25 @@ MODE2ROUTE = {'dr': ('1o', '2i'), 'du': ('1o', '3i'), 'dl': ('1o', '4i'),
 
 def judge_feasible(orig_x, orig_y, task):  # map dependant
     def is_in_straight_before1(orig_x, orig_y):
-        return 0 < orig_x < LANE_WIDTH and orig_y <= -CROSSROAD_SIZE / 2
+        return Para.OFFSET_D < orig_x < Para.LANE_WIDTH_2 + Para.OFFSET_D and orig_y <= -Para.CROSSROAD_SIZE_LON / 2
 
     def is_in_straight_before2(orig_x, orig_y):
-        return LANE_WIDTH < orig_x < LANE_WIDTH * 2 and orig_y <= -CROSSROAD_SIZE / 2
+        return Para.LANE_WIDTH_2 + Para.OFFSET_D < orig_x < Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 + Para.OFFSET_D and orig_y <= -Para.CROSSROAD_SIZE_LON / 2
 
     def is_in_straight_before3(orig_x, orig_y):
-        return LANE_WIDTH * 2 < orig_x < LANE_WIDTH * 3 and orig_y <= -CROSSROAD_SIZE / 2
+        return Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 + Para.OFFSET_D < orig_x < Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 * 2 + Para.OFFSET_D and orig_y <= -Para.CROSSROAD_SIZE_LON / 2
 
     def is_in_straight_after(orig_x, orig_y):
-        return 0 < orig_x < LANE_WIDTH * LANE_NUMBER and orig_y >= CROSSROAD_SIZE / 2
+        return Para.OFFSET_U + Para.GREEN_BELT_LON < orig_x < Para.OFFSET_U + Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 2 and orig_y >= Para.CROSSROAD_SIZE_LON / 2
 
     def is_in_left(orig_x, orig_y):
-        return 0 < orig_y < LANE_WIDTH * LANE_NUMBER and orig_x < -CROSSROAD_SIZE / 2
+        return Para.OFFSET_L + Para.GREEN_BELT_LAT < orig_y < Para.OFFSET_L + Para.GREEN_BELT_LAT + Para.LANE_WIDTH_1 * 3 and orig_x < -Para.CROSSROAD_SIZE_LAT / 2
 
     def is_in_right(orig_x, orig_y):
-        return -LANE_WIDTH * LANE_NUMBER < orig_y < 0 and orig_x > CROSSROAD_SIZE / 2
+        return Para.OFFSET_R - Para.LANE_WIDTH_1 * 3 < orig_y < Para.OFFSET_R and orig_x > Para.CROSSROAD_SIZE_LAT / 2
 
     def is_in_middle(orig_x, orig_y):
-        return True if -CROSSROAD_SIZE / 2 < orig_y < CROSSROAD_SIZE / 2 and -CROSSROAD_SIZE / 2 < orig_x < CROSSROAD_SIZE / 2 else False
+        return True if -Para.CROSSROAD_SIZE_LON / 2 < orig_y < Para.CROSSROAD_SIZE_LON / 2 and -Para.CROSSROAD_SIZE_LAT / 2 < orig_x < Para.CROSSROAD_SIZE_LAT / 2 else False
 
     if task == 'left':
         return True if is_in_straight_before1(orig_x, orig_y) or is_in_left(orig_x, orig_y) \
@@ -254,18 +254,24 @@ def cal_ego_info_in_transform_coordination(ego_dynamics, x, y, rotate_d):
 
 
 def xy2_edgeID_lane(x, y):
-    if y < -CROSSROAD_SIZE/2:
+    if y < -Para.CROSSROAD_SIZE_LON/2:
         edgeID = '1o'
-        lane = int((LANE_NUMBER-1)-int(x/LANE_WIDTH))
-    elif x < -CROSSROAD_SIZE/2:
+        if x <= Para.OFFSET_D + Para.LANE_WIDTH_2:
+            lane = 4
+        else:
+            lane = int((Para.LANE_NUMBER_LON_IN + 1) - int((x - Para.OFFSET_D - Para.LANE_WIDTH_2) / Para.LANE_WIDTH_3))
+    elif x < -Para.CROSSROAD_SIZE_LAT/2:
         edgeID = '4i'
-        lane = int((LANE_NUMBER-1)-int(y/LANE_WIDTH))
-    elif y > CROSSROAD_SIZE/2:
+        lane = int((Para.LANE_NUMBER_LAT_OUT + 1) - int((y - Para.OFFSET_L) / Para.LANE_WIDTH_1))
+    elif y > Para.CROSSROAD_SIZE_LON/2:
         edgeID = '3i'
-        lane = int((LANE_NUMBER-1)-int(x/LANE_WIDTH))
-    elif x > CROSSROAD_SIZE/2:
+        if x <= Para.OFFSET_U + Para.LANE_WIDTH_2:
+            lane = 3
+        else:
+            lane = int((Para.LANE_NUMBER_LON_IN + 1) - int((x - Para.OFFSET_U - Para.GREEN_BELT_LON - Para.LANE_WIDTH_2) / Para.LANE_WIDTH_3))
+    elif x > Para.CROSSROAD_SIZE_LAT/2:
         edgeID = '2i'
-        lane = int((LANE_NUMBER-1)-int(-y/LANE_WIDTH))
+        lane = int((Para.LANE_NUMBER_LAT_OUT + 1) - int(-(y - Para.OFFSET_R) / Para.LANE_WIDTH_1))
     else:
         edgeID = '0'
         lane = 0

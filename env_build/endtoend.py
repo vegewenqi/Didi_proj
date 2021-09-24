@@ -247,18 +247,18 @@ class CrossroadEnd2endMix(gym.Env):
             return True
 
     def _break_red_light(self):
-        return True if self.v_light != 0 and self.v_light != 1 and self.ego_dynamics['y'] > -CROSSROAD_SIZE/2 and self.training_task != 'right' else False
+        return True if self.v_light > 2 and self.ego_dynamics['y'] > -Para.CROSSROAD_SIZE_LON/2 and self.training_task != 'right' else False
 
     def _is_achieve_goal(self):
         x = self.ego_dynamics['x']
         y = self.ego_dynamics['y']
         if self.training_task == 'left':
-            return True if x < -CROSSROAD_SIZE/2 - 10 and 0 < y < LANE_NUMBER*LANE_WIDTH else False
+            return True if x < -Para.CROSSROAD_SIZE_LAT/2 - 10 and Para.OFFSET_L + Para.GREEN_BELT_LAT < y < Para.OFFSET_L + Para.GREEN_BELT_LAT + Para.LANE_WIDTH_1 * 3 else False
         elif self.training_task == 'right':
-            return True if x > CROSSROAD_SIZE/2 + 10 and -LANE_NUMBER*LANE_WIDTH < y < 0 else False
+            return True if x > Para.CROSSROAD_SIZE_LAT/2 + 10 and Para.OFFSET_R - Para.LANE_WIDTH_1 * 3 < y < Para.OFFSET_R else False
         else:
             assert self.training_task == 'straight'
-            return True if y > CROSSROAD_SIZE/2 + 10 and 0 < x < LANE_NUMBER*LANE_WIDTH else False
+            return True if y > Para.CROSSROAD_SIZE_LON/2 + 10 and Para.OFFSET_U + Para.GREEN_BELT_LON < x < Para.OFFSET_U + Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 2 else False
 
     def _action_transformation_for_end2end(self, action):  # [-1, 1]
         action = np.clip(action, -1.05, 1.05)
