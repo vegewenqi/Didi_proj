@@ -228,7 +228,7 @@ class EvaluatorWithAttention(object):
 
                 processed_obs_ego, processed_obs_others \
                     = self.preprocessor.tf_process_obses_attention(obs_ego, obs_others)
-                mask = tf.cast(self.info['mask'], dtype=tf.float32)
+                mask = tf.cast(info['mask'], dtype=tf.float32)
                 attention_obs_others = self.policy_with_value.compute_Attn(processed_obs_others, mask)
                 processed_obs = np.concatenate((processed_obs_ego, tf.squeeze(attention_obs_others, axis=0).numpy()), axis=0)
 
@@ -248,7 +248,7 @@ class EvaluatorWithAttention(object):
 
                 processed_obs_ego, processed_obs_others \
                     = self.preprocessor.tf_process_obses_attention(obs_ego, obs_others)
-                mask = tf.cast(self.info['mask'], dtype=tf.float32)
+                mask = tf.cast(info['mask'], dtype=tf.float32)
                 attention_obs_others = self.policy_with_value.compute_Attn(processed_obs_others, mask)
                 processed_obs = np.concatenate((processed_obs_ego, tf.squeeze(attention_obs_others, axis=0).numpy()), axis=0)
 

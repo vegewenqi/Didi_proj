@@ -1,3 +1,3 @@
-export SUMO_HOME="/home/yudongjie/sumo-1.7.0"
-export PYTHONPATH='/home/yudongjie/Desktop/Didi_proj'
+export SUMO_HOME="/home/guanyang/sumo-1.7.0"
+export PYTHONPATH='/home/guanyang/PycharmProjects/Didi_proj'
 python train_script.py

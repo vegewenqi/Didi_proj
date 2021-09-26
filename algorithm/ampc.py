@@ -317,7 +317,7 @@ class AMPCLearnerWithAttention(object):
         # no supplement vehicle currently
         processed_obses = self.get_states(processed_obses_ego, processed_obses_others, mb_mask, grad=False)
         obj_v_pred = self.policy_with_value.compute_obj_v(processed_obses)
-
+        print('ready for rollout')
         for _ in range(self.num_rollout_list_for_policy_update[0]):
             processed_obses_ego, processed_obses_others \
                 = self.preprocessor.tf_process_obses_attention(obses_ego, obses_others)
@@ -334,7 +334,7 @@ class AMPCLearnerWithAttention(object):
             veh2bike4real_sum += self.args.reward_scale * veh2bike4real
             veh2person4real_sum += self.args.reward_scale * veh2person4real
             entropy_sum += -logps
-
+        print("rollout finished")
         # obj v loss
         obj_v_loss = self.tf.reduce_mean(self.tf.square(obj_v_pred - self.tf.stop_gradient(-rewards_sum)))
         # con_v_loss = self.tf.reduce_mean(self.tf.square(con_v_pred - self.tf.stop_gradient(real_punish_terms_sum)))
@@ -362,13 +362,13 @@ class AMPCLearnerWithAttention(object):
             obj_v_loss, obj_loss, punish_term_for_training, punish_loss, pg_loss, \
             real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, veh2person4real, pf, policy_entropy\
                 = self.model_rollout_for_update(mb_obs_ego, mb_obs_others, ite, mb_ref_index, mb_mask)
-
+        print("rollout return")
         with self.tf.name_scope('policy_gradient') as scope:
             pg_grad = tape.gradient(pg_loss, self.policy_with_value.policy.trainable_weights)
             Attn_net_grad = tape.gradient(pg_loss, self.policy_with_value.Attn_net.trainable_weights)
         with self.tf.name_scope('obj_v_gradient') as scope:
             obj_v_grad = tape.gradient(obj_v_loss, self.policy_with_value.obj_v.trainable_weights)
-
+        print("grad computed finished")
         # with self.tf.name_scope('con_v_gradient') as scope:
         #     con_v_grad = tape.gradient(con_v_loss, self.policy_with_value.con_v.trainable_weights)
 
