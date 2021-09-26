@@ -9,7 +9,7 @@
 
 import warnings
 from collections import OrderedDict
-from math import cos, sin, pi
+from math import cos, sin, pi,sqrt
 import random
 from random import choice
 
@@ -20,7 +20,7 @@ from gym.utils import seeding
 
 from env_build.dynamics_and_models import VehicleDynamics, ReferencePath, EnvironmentModel
 from env_build.endtoend_env_utils import shift_coordination, rotate_coordination, rotate_and_shift_coordination, deal_with_phi, \
-    L, W, CROSSROAD_SIZE, LANE_WIDTH, LANE_NUMBER, judge_feasible, MODE2TASK, VEHICLE_MODE_DICT, BIKE_MODE_DICT, PERSON_MODE_DICT, \
+    L, W, CROSSROAD_SIZE, LANE_WIDTH, judge_feasible, VEHICLE_MODE_DICT, BIKE_MODE_DICT, PERSON_MODE_DICT, \
     VEH_NUM, BIKE_NUM, PERSON_NUM, TASK_DICT, Para, LIGHT_DICT
 from env_build.traffic import Traffic
 
@@ -48,6 +48,7 @@ class CrossroadEnd2endMix(gym.Env):
                  num_future_data=0,
                  mode='training',
                  multi_display=False,
+                 state_mode='fix',      # 'dyna'
                  **kwargs):
         self.dynamics = VehicleDynamics()
         self.interested_vehs = None
@@ -55,6 +56,7 @@ class CrossroadEnd2endMix(gym.Env):
         self.all_vehicles = None
         self.ego_dynamics = None
         self.num_future_data = num_future_data
+        self.state_mode = state_mode
         self.init_state = {}
         self.action_number = 2
         self.ego_l, self.ego_w = L, W
@@ -102,13 +104,13 @@ class CrossroadEnd2endMix(gym.Env):
         self.task_idx = TASK_DICT[self.training_task]
         self.light_vector = LIGHT_DICT[0] if self.training_task == 'right' else LIGHT_DICT[self.v_light]
         self.ref_path = ReferencePath(self.training_task, self.light_vector, **kwargs)
-        self.env_model = EnvironmentModel(self.training_task, self.num_future_data)
         self.veh_mode_dict = VEHICLE_MODE_DICT[self.training_task]
         self.bicycle_mode_dict = BIKE_MODE_DICT[self.training_task]
         self.person_mode_dict = PERSON_MODE_DICT[self.training_task]
         self.veh_num = VEH_NUM[self.training_task]
         self.bike_num = BIKE_NUM[self.training_task]
         self.person_num = PERSON_NUM[self.training_task]
+        self.env_model = EnvironmentModel(self.ref_path, self.veh_num, self.bike_num, self.person_num, self.num_future_data)
         self.init_state = self._reset_init_state()
         self.traffic.init_traffic(self.init_state, self.training_task)
         self.traffic.sim_step()
@@ -128,7 +130,7 @@ class CrossroadEnd2endMix(gym.Env):
         self.action = None
         self.reward_info = None
         self.done_type = 'not_done_yet'
-        return self.obs
+        return self.obs, self.vehs_mask
 
     def close(self):
         del self.traffic
@@ -145,7 +147,7 @@ class CrossroadEnd2endMix(gym.Env):
         self.done_type, done = self._judge_done()
         self.reward_info.update({'final_rew': reward})
         all_info.update({'reward_info': self.reward_info, 'ref_index': self.ref_path.ref_index,
-                         'task': self.training_task, 'mask': self.vehs_mask})
+                         'task': self.training_task, 'mask': self.vehs_mask, 'light': self.v_light})
         return self.obs, reward, done, all_info
 
     def _set_observation_space(self, observation):
@@ -375,19 +377,16 @@ class CrossroadEnd2endMix(gym.Env):
 
             # slice or fill to some number
             def slice_or_fill(sorted_list, fill_value, num):
-                mask = [True] * len(sorted_list)
                 if len(sorted_list) >= num:
-                    return sorted_list[:num], mask[:num]
+                    return sorted_list[:num]
                 else:
                     while len(sorted_list) < num:
                         sorted_list.append(fill_value)
-                        mask.extend([False])
-                    return sorted_list, mask
+                    return sorted_list
 
             for v in vs:
                 if v['type'] in ['bicycle_1', 'bicycle_2', 'bicycle_3']:
-                    v.update(partici_type=[1., 0., 0.])
-                    v.update(turn_rad=0.0)
+                    v.update(partici_type=[1., 0., 0.], turn_rad=0.0, exist=True)
                     route_list = v['route']
                     start = route_list[0]
                     end = route_list[1]
@@ -413,26 +412,8 @@ class CrossroadEnd2endMix(gym.Env):
                         ld_b.append(v)
 
                 elif v['type'] == 'DEFAULT_PEDTYPE':
-                    v.update(partici_type=[0., 1., 0.])
+                    v.update(partici_type=[0., 1., 0.], turn_rad=0.0, exist=True)
                     road_list = v['road']
-                    v.update(turn_rad=0.0)
-                    # print(road_list)
-                    # if road_list == ':1i_0':
-                    #     i1_0.append(v)
-                    # elif road_list == ':1o_0':
-                    #     o1_0.append(v)
-                    # elif road_list == ':2i_0':
-                    #     i2_0.append(v)
-                    # elif road_list == ':2o_0':
-                    #     o2_0.append(v)
-                    # elif road_list == ':3i_0':
-                    #     i3_0.append(v)
-                    # elif road_list == ':3o_0':
-                    #     o3_0.append(v)
-                    # elif road_list == ':4i_0':
-                    #     i4_0.append(v)
-                    # elif road_list == ':4o_0':
-                    #     o4_0.append(v)
                     if road_list == ':0_c0':
                         c0.append(v)
                     elif road_list == ':0_c1':
@@ -441,17 +422,9 @@ class CrossroadEnd2endMix(gym.Env):
                         c2.append(v)
                     elif road_list == ':0_c3':
                         c3.append(v)
-                    # elif road_list == 'c_w0':
-                    #     c_w0.append(v)
-                    # elif road_list == 'c_w1':
-                    #     c_w1.append(v)
-                    # elif road_list == 'c_w2':
-                    #     c_w2.append(v)
-                    # elif road_list == 'c_w3':
-                    #     c_w3.append(v)
 
                 else:
-                    v.update(partici_type=[0., 0., 1.])
+                    v.update(partici_type=[0., 0., 1.], exist=True)
                     route_list = v['route']
                     start = route_list[0]
                     end = route_list[1]
@@ -497,48 +470,50 @@ class CrossroadEnd2endMix(gym.Env):
 
             # fetch bicycle in range
             if task == 'straight':
-                du_b = list(filter(lambda v: ego_y - 2 < v['y'] < CROSSROAD_SIZE / 2 and v['x'] < ego_x + 8, du_b))
+                du_b = list(filter(lambda v: ego_y - 2 < v['y'] < Para.CROSSROAD_SIZE_LON / 2 and v['x'] < ego_x + 8, du_b))
             elif task == 'right':
                 du_b = list(filter(lambda v: ego_y - 2 < v['y'] < 0 and v['x'] < ego_x + 8, du_b))
-            # dr_b = list(filter(lambda v: v['x'] < CROSSROAD_SIZE / 2 + 10 and v['y'] > ego_y - 2, dr_b))  # interest of right
-            # rl_b = rl_b  # not interest in case of traffic light
-            # ru_b = list(filter(lambda v: v['x'] < CROSSROAD_SIZE / 2 + 10 and v['y'] < CROSSROAD_SIZE / 2 + 10, ru_b))  # interest of straight
-            ud_b = list(filter(lambda v: max(ego_y - 2, -CROSSROAD_SIZE/2) < v['y'] < CROSSROAD_SIZE / 2 and ego_x > v['x'], ud_b))  # interest of left
-            # ul_b = list(filter(lambda v: -CROSSROAD_SIZE / 2 - 10 < v['x'] < ego_x and v['y'] < CROSSROAD_SIZE / 2, ul_b))  # interest of left
-            lr_b = list(filter(lambda v: 0 < v['x'] < CROSSROAD_SIZE / 2 + 10, lr_b))  # interest of right
-            # ld_b = ld_b  # not interest in case of traffic light
+            ud_b = list(filter(lambda v: max(ego_y - 2, -Para.CROSSROAD_SIZE_LON/2) < v['y'] < Para.CROSSROAD_SIZE_LON / 2 and ego_x > v['x'], ud_b))  # interest of left
+            lr_b = list(filter(lambda v: 0 < v['x'] < Para.CROSSROAD_SIZE_LAT / 2 + 10, lr_b))  # interest of right
 
             # sort
             du_b = sorted(du_b, key=lambda v: v['y'])
-            # dr_b = sorted(dr_b, key=lambda v: (v['y'], v['x']))
-            # ru_b = sorted(ru_b, key=lambda v: (-v['x'], v['y']), reverse=True)
             ud_b = sorted(ud_b, key=lambda v: v['y'])
-            # ul_b = sorted(ul_b, key=lambda v: (-v['y'], -v['x']), reverse=True)
             lr_b = sorted(lr_b, key=lambda v: -v['x'])
 
             mode2fillvalue_b = dict(
-                du_b=dict(type="bicycle_1", x=LANE_WIDTH * LANE_NUMBER + 1, y=-(CROSSROAD_SIZE / 2 + 30), v=0,
-                        phi=90, w=0.48, l=2, route=('1o', '3i'), partici_type=[1., 0., 0.], turn_rad=0.),
-                # dr=dict(type="bicycle_1", x=LANE_WIDTH * LANE_NUMBER + 1, y=-(CROSSROAD_SIZE / 2 + 30), v=0,
-                #         phi=90, w=0.48, l=2, route=('1o', '2i')),
-                # ru=dict(type="bicycle_1", x=(CROSSROAD_SIZE / 2 + 15), y=LANE_WIDTH * LANE_NUMBER + 1, v=0,
-                #         phi=180, w=0.48, l=2, route=('2o', '3i')),
-                ud_b=dict(type="bicycle_1", x=-LANE_WIDTH * LANE_NUMBER - 1, y=(CROSSROAD_SIZE / 2 + 20), v=0,
-                        phi=-90, w=0.48, l=2, route=('3o', '1i'), partici_type=[1., 0., 0.], turn_rad=0.),
-                # ul=dict(type="bicycle_1", x=-LANE_WIDTH * LANE_NUMBER - 1, y=(CROSSROAD_SIZE / 2 + 20), v=0,
-                #         phi=-90, w=0.48, l=2, route=('3o', '4i')),
-                lr_b=dict(type="bicycle_1", x=-(CROSSROAD_SIZE / 2 + 20), y=-LANE_WIDTH * LANE_NUMBER - 1,
-                        v=0, phi=0, w=0.48, l=2, route=('4o', '2i'), partici_type=[1., 0., 0.], turn_rad=0.))
+                du_b=dict(type="bicycle_1", x=Para.OFFSET_D + Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_3 + Para.BIKE_LANE_WIDTH / 2, y=-(Para.CROSSROAD_SIZE_LON / 2 + 30), v=0,
+                        phi=90, w=0.48, l=2, route=('1o', '3i'), partici_type=[1., 0., 0.], turn_rad=0., exist=False),
 
-            tmp_b = OrderedDict()
-            masks_b = OrderedDict()
-            for mode, num in BIKE_MODE_DICT[task].items():
-                tmp_b[mode], masks_b[mode] = slice_or_fill(eval(mode), mode2fillvalue_b[mode], num)
+                ud_b=dict(type="bicycle_1", x=Para.OFFSET_U-(Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_3 + Para.BIKE_LANE_WIDTH / 2), y=(Para.CROSSROAD_SIZE_LON / 2 + 20), v=0,
+                        phi=-90, w=0.48, l=2, route=('3o', '1i'), partici_type=[1., 0., 0.], turn_rad=0., exist=False),
+
+                lr_b=dict(type="bicycle_1", x=-(Para.CROSSROAD_SIZE_LAT / 2 + 20), y=-(Para.OFFSET_L + Para.LANE_WIDTH_1 * Para.LANE_NUMBER_LON_IN + Para.BIKE_LANE_WIDTH / 2),
+                        v=0, phi=0, w=0.48, l=2, route=('4o', '2i'), partici_type=[1., 0., 0.], turn_rad=0., exist=False))
+
+            tmp_b = []
+            if self.state_mode == 'fix':
+                for mode, num in BIKE_MODE_DICT[task].items():
+                    tmp_b_mode = slice_or_fill(eval(mode), mode2fillvalue_b[mode], num)
+                    tmp_b.extend(tmp_b_mode)
+            elif self.state_mode == 'dyna':
+                for mode, num in BIKE_MODE_DICT[task].items():
+                    tmp_b.extend(eval(mode))
+                while len(tmp_b) < self.bike_num:
+                    if self.training_task == 'left':
+                        tmp_b.append(mode2fillvalue_b['ud_b'])
+                    elif self.training_task == 'straight':
+                        tmp_b.append(mode2fillvalue_b['du_b'])
+                    else:
+                        tmp_b.append(mode2fillvalue_b['du_b'])
+                if len(tmp_b) > self.bike_num:
+                    tmp_b = sorted(tmp_b, key=lambda v: (sqrt((v['y']-ego_y)**2+(v['x']-ego_x)**2)))
+                    tmp_b = tmp_b[:self.bike_num]
 
             # fetch person in range
-            c1 = list(filter(lambda v: v['y'] < 6 and v['x'] > ego_x - 6, c1))  # interest of right
-            c2 = list(filter(lambda v: 0 < v['x'] and v['y'] > ego_y - 4, c2))  # interest of right
-            c3 = list(filter(lambda v: -6 < v['y'] and v['x'] < ego_x + 6, c3))  # interest of left
+            c1 = list(filter(lambda v: v['y'] < 6 and v['x'] > ego_x - 6, c1))  # interest of right  # todo
+            c2 = list(filter(lambda v: 0 < v['x'] and v['y'] > ego_y - 4, c2))  # interest of right  # todo
+            c3 = list(filter(lambda v: -6 < v['y'] and v['x'] < ego_x + 6, c3))  # interest of left  # todo
 
             # sort
             c1 = sorted(c1, key=lambda v: (abs(v['y'] - ego_y), v['x']))
@@ -546,34 +521,51 @@ class CrossroadEnd2endMix(gym.Env):
             c3 = sorted(c3, key=lambda v: (abs(v['y'] - ego_y), -v['x']))
 
             mode2fillvalue_p = dict(
-                c1=dict(type='DEFAULT_PEDTYPE', x=LANE_WIDTH*LANE_NUMBER+3, y=-(CROSSROAD_SIZE / 2 + 30), v=0, phi=90, w=0.525,l=0.75, road="0_c1", partici_type=[0., 1., 0.], turn_rad=0.),
-                c2=dict(type='DEFAULT_PEDTYPE', x=-(CROSSROAD_SIZE/2+20), y=-(LANE_WIDTH*LANE_NUMBER+3), v=0, phi=0, w=0.525, l=0.75, road="0_c2", partici_type=[0., 1., 0.], turn_rad=0.),
-                c3=dict(type='DEFAULT_PEDTYPE', x=-(LANE_WIDTH*LANE_NUMBER+3), y=(CROSSROAD_SIZE/2+20), v=0, phi=-90, w=0.525, l=0.75, road="0_c3", partici_type=[0., 1., 0.], turn_rad=0.))
+                c1=dict(type='DEFAULT_PEDTYPE', x=Para.OFFSET_D + Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_3 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH/2, y=-(Para.CROSSROAD_SIZE_LON / 2 + 30),
+                        v=0, phi=90, w=0.525,l=0.75, road="0_c1", partici_type=[0., 1., 0.], turn_rad=0., exist=False),
+                c2=dict(type='DEFAULT_PEDTYPE', x=-(Para.CROSSROAD_SIZE_LAT/2+20), y=-(Para.OFFSET_L + Para.LANE_WIDTH_1 * Para.LANE_NUMBER_LON_IN + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH/2),
+                        v=0, phi=0, w=0.525, l=0.75, road="0_c2", partici_type=[0., 1., 0.], turn_rad=0., exist=False),
+                c3=dict(type='DEFAULT_PEDTYPE', x=-(Para.LANE_WIDTH_2+Para.LANE_WIDTH_3 * 2 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH/2)+Para.OFFSET_U, y=(Para.CROSSROAD_SIZE_LON/2+20),
+                        v=0, phi=-90, w=0.525, l=0.75, road="0_c3", partici_type=[0., 1., 0.], turn_rad=0., exist=False))
 
-            tmp_p = OrderedDict()
-            masks_p = OrderedDict()
-            for mode, num in PERSON_MODE_DICT[task].items():
-                tmp_p[mode], masks_p[mode] = slice_or_fill(eval(mode), mode2fillvalue_p[mode], num)
+            tmp_p = []
+            if self.state_mode == 'fix':
+                for mode, num in PERSON_MODE_DICT[task].items():
+                    tmp_p_mode = slice_or_fill(eval(mode), mode2fillvalue_p[mode], num)
+                    tmp_p.extend(tmp_p_mode)
+            elif self.state_mode == 'dyna':
+                for mode, num in PERSON_MODE_DICT[task].items():
+                    tmp_p.extend(eval(mode))
+                while len(tmp_p) < self.person_num:
+                    if self.training_task == 'left':
+                        tmp_p.append(mode2fillvalue_p['c3'])
+                    elif self.training_task == 'straight':
+                        tmp_p.append(mode2fillvalue_p['c2'])
+                    else:
+                        tmp_p.append(mode2fillvalue_p['c1'])
+                if len(tmp_p) > self.person_num:
+                    tmp_p = sorted(tmp_p, key=lambda v: (sqrt((v['y']-ego_y)**2+(v['x']-ego_x)**2)))
+                    tmp_p = tmp_p[:self.veh_num]
 
             # fetch veh in range
-            dl = list(filter(lambda v: v['x'] > -CROSSROAD_SIZE/2-10 and v['y'] > ego_y-2, dl))  # interest of left straight
-            du = list(filter(lambda v: ego_y-2 < v['y'] < CROSSROAD_SIZE/2+10 and v['x'] < ego_x+5, du))  # interest of left straight
+            dl = list(filter(lambda v: v['x'] > -Para.CROSSROAD_SIZE_LAT / 2-10 and v['y'] > ego_y-2, dl))           # interest of left straight
+            du = list(filter(lambda v: ego_y-2 < v['y'] < Para.CROSSROAD_SIZE_LON / 2+10 and v['x'] < ego_x+5, du))  # interest of left straight
 
-            dr = list(filter(lambda v: v['x'] < CROSSROAD_SIZE/2+10 and v['y'] > ego_y, dr))  # interest of right
+            dr = list(filter(lambda v: v['x'] < Para.CROSSROAD_SIZE_LAT / 2+10 and v['y'] > ego_y, dr))  # interest of right
 
             rd = rd  # not interest in case of traffic light
             rl = rl  # not interest in case of traffic light
-            ru = list(filter(lambda v: v['x'] < CROSSROAD_SIZE/2+10 and v['y'] < CROSSROAD_SIZE/2+10, ru))  # interest of straight
+            ru = list(filter(lambda v: v['x'] < Para.CROSSROAD_SIZE_LAT / 2+10 and v['y'] < Para.CROSSROAD_SIZE_LON / 2+10, ru))  # interest of straight
 
             if task == 'straight':
-                ur = list(filter(lambda v: v['x'] < ego_x + 7 and ego_y < v['y'] < CROSSROAD_SIZE/2+10, ur))  # interest of straight
+                ur = list(filter(lambda v: v['x'] < ego_x + 7 and ego_y < v['y'] < Para.CROSSROAD_SIZE_LON / 2+10, ur))  # interest of straight
             elif task == 'right':
-                ur = list(filter(lambda v: v['x'] < CROSSROAD_SIZE/2+10 and v['y'] < CROSSROAD_SIZE/2, ur))  # interest of right
-            ud = list(filter(lambda v: max(ego_y-2, -CROSSROAD_SIZE/2) < v['y'] < CROSSROAD_SIZE/2 and ego_x > v['x'], ud))  # interest of left
-            ul = list(filter(lambda v: -CROSSROAD_SIZE/2-10 < v['x'] < ego_x and v['y'] < CROSSROAD_SIZE/2, ul))  # interest of left
+                ur = list(filter(lambda v: v['x'] < Para.CROSSROAD_SIZE_LAT/2+10 and v['y'] < Para.CROSSROAD_SIZE_LON/2, ur))  # interest of right
+            ud = list(filter(lambda v: max(ego_y-2, -Para.CROSSROAD_SIZE_LON / 2) < v['y'] < Para.CROSSROAD_SIZE_LON / 2 and ego_x > v['x'], ud))  # interest of left
+            ul = list(filter(lambda v: -Para.CROSSROAD_SIZE_LAT / 2-10 < v['x'] < ego_x and v['y'] < Para.CROSSROAD_SIZE_LON / 2, ul))  # interest of left
 
             lu = lu  # not interest in case of traffic light
-            lr = list(filter(lambda v: -CROSSROAD_SIZE/2-10 < v['x'] < CROSSROAD_SIZE/2+10, lr))  # interest of right
+            lr = list(filter(lambda v: -Para.CROSSROAD_SIZE_LAT / 2-10 < v['x'] < Para.CROSSROAD_SIZE_LAT / 2+10, lr))  # interest of right
             ld = ld  # not interest in case of traffic light
 
             # sort
@@ -594,38 +586,43 @@ class CrossroadEnd2endMix(gym.Env):
             lr = sorted(lr, key=lambda v: -v['x'])
 
             mode2fillvalue = dict(
-                dl=dict(type="car_1", x=LANE_WIDTH/2, y=-(CROSSROAD_SIZE/2+30), v=0, phi=90, w=2.5, l=5, route=('1o', '4i'), partici_type=[0., 0., 1.], turn_rad=1/(CROSSROAD_SIZE/2+0.5*LANE_WIDTH)),
-                du=dict(type="car_1", x=LANE_WIDTH*1.5, y=-(CROSSROAD_SIZE/2+30), v=0, phi=90, w=2.5, l=5, route=('1o', '3i'), partici_type=[0., 0., 1.], turn_rad=0.),
-                dr=dict(type="car_1", x=LANE_WIDTH*(LANE_NUMBER-0.5), y=-(CROSSROAD_SIZE/2+30), v=0, phi=90, w=2.5, l=5, route=('1o', '2i'), partici_type=[0., 0., 1.], turn_rad=-1 / (CROSSROAD_SIZE/2-2.5*LANE_WIDTH)),
-                ru=dict(type="car_1", x=(CROSSROAD_SIZE/2+15), y=LANE_WIDTH*(LANE_NUMBER-0.5), v=0, phi=180, w=2.5, l=5, route=('2o', '3i'), partici_type=[0., 0., 1.], turn_rad=-1 / (CROSSROAD_SIZE/2-2.5*LANE_WIDTH)),
-                ur=dict(type="car_1", x=-LANE_WIDTH/2, y=(CROSSROAD_SIZE/2+20), v=0, phi=-90, w=2.5, l=5, route=('3o', '2i'), partici_type=[0., 0., 1.], turn_rad=1/(CROSSROAD_SIZE/2+0.5*LANE_WIDTH)),
-                ud=dict(type="car_1", x=-LANE_WIDTH*1.5, y=(CROSSROAD_SIZE/2+20), v=0, phi=-90, w=2.5, l=5, route=('3o', '1i'), partici_type=[0., 0., 1.], turn_rad=0.),
-                ul=dict(type="car_1", x=-LANE_WIDTH*(LANE_NUMBER-0.5), y=(CROSSROAD_SIZE/2+20), v=0, phi=-90, w=2.5, l=5, route=('3o', '4i'), partici_type=[0., 0., 1.], turn_rad=-1 / (CROSSROAD_SIZE/2-2.5*LANE_WIDTH)),
-                lr=dict(type="car_1", x=-(CROSSROAD_SIZE/2+20), y=-LANE_WIDTH*1.5, v=0, phi=0, w=2.5, l=5, route=('4o', '2i'), partici_type=[0., 0., 1.], turn_rad=0.))
+                dl=dict(type="car_1", x=Para.OFFSET_D + Para.LANE_WIDTH_2/2, y=-(Para.CROSSROAD_SIZE_LON/2+30), v=0, phi=90, w=2.5, l=5, route=('1o', '4i'), partici_type=[0., 0., 1.], turn_rad=1/(CROSSROAD_SIZE/2+0.5*LANE_WIDTH), exist=False),
+                du=dict(type="car_1", x=Para.OFFSET_D + Para.LANE_WIDTH_2+Para.LANE_WIDTH_3/2, y=-(Para.CROSSROAD_SIZE_LON/2+30), v=0, phi=90, w=2.5, l=5, route=('1o', '3i'), partici_type=[0., 0., 1.], turn_rad=0., exist=False),
+                dr=dict(type="car_1", x=Para.OFFSET_D + Para.LANE_WIDTH_2+Para.LANE_WIDTH_3 * 1.5, y=-(Para.CROSSROAD_SIZE_LON/2+30), v=0, phi=90, w=2.5, l=5, route=('1o', '2i'), partici_type=[0., 0., 1.], turn_rad=-1 / (CROSSROAD_SIZE/2-2.5*LANE_WIDTH), exist=False),
+                ru=dict(type="car_1", x=(Para.CROSSROAD_SIZE_LAT/2+15), y=Para.LANE_WIDTH_3*(Para.LANE_NUMBER_LAT_IN-0.5) + Para.OFFSET_R + Para.GREEN_BELT_LAT, v=0, phi=180, w=2.5, l=5, route=('2o', '3i'), partici_type=[0., 0., 1.], turn_rad=-1 / (CROSSROAD_SIZE/2-2.5*LANE_WIDTH), exist=False),
+                ur=dict(type="car_1", x=-(Para.LANE_WIDTH_2/2)+Para.OFFSET_U, y=(Para.CROSSROAD_SIZE_LON/2+20), v=0, phi=-90, w=2.5, l=5, route=('3o', '2i'), partici_type=[0., 0., 1.], turn_rad=1/(CROSSROAD_SIZE/2+0.5*LANE_WIDTH), exist=False),
+                ud=dict(type="car_1", x=-(Para.LANE_WIDTH_2+Para.LANE_WIDTH_3 * 0.5)+Para.OFFSET_U, y=(Para.CROSSROAD_SIZE_LON/2+20), v=0, phi=-90, w=2.5, l=5, route=('3o', '1i'), partici_type=[0., 0., 1.], turn_rad=0., exist=False),
+                ul=dict(type="car_1", x=-(Para.LANE_WIDTH_2+Para.LANE_WIDTH_3 * 1.5)+Para.OFFSET_U, y=(Para.CROSSROAD_SIZE_LON/2+20), v=0, phi=-90, w=2.5, l=5, route=('3o', '4i'), partici_type=[0., 0., 1.], turn_rad=-1 / (CROSSROAD_SIZE/2-2.5*LANE_WIDTH), exist=False),
+                lr=dict(type="car_1", x=-(Para.CROSSROAD_SIZE_LAT/2+20), y=-(Para.OFFSET_L + Para.LANE_WIDTH_1 * (Para.LANE_NUMBER_LON_IN-0.5)), v=0, phi=0, w=2.5, l=5, route=('4o', '2i'), partici_type=[0., 0., 1.], turn_rad=0., exist=False))
 
-            tmp_v = OrderedDict()
-            masks_v = OrderedDict()
-            for mode, num in VEHICLE_MODE_DICT[task].items():
-                tmp_v[mode], masks_v[mode] = slice_or_fill(eval(mode), mode2fillvalue[mode], num)
+            tmp_v = []
+            if self.state_mode == 'fix':
+                for mode, num in VEHICLE_MODE_DICT[task].items():
+                    tmp_v_mode = slice_or_fill(eval(mode), mode2fillvalue[mode], num)
+                    tmp_v.extend(tmp_v_mode)
+            elif self.state_mode == 'dyna':
+                for mode, num in VEHICLE_MODE_DICT[task].items():
+                    tmp_v.extend(eval(mode))
+                while len(tmp_v) < self.veh_num:
+                    if self.training_task == 'left':
+                        tmp_v.append(mode2fillvalue['dl'])
+                    elif self.training_task == 'straight':
+                        tmp_v.append(mode2fillvalue['du'])
+                    else:
+                        tmp_v.append(mode2fillvalue['dr'])
+                if len(tmp_v) > self.veh_num:
+                    tmp_v = sorted(tmp_v, key=lambda v: (sqrt((v['y']-ego_y)**2+(v['x']-ego_x)**2), -v['x']))
+                    tmp_v = tmp_v[:self.veh_num]
+            tmp = tmp_b + tmp_p + tmp_v
+            return tmp
 
-            tmp1 = dict(tmp_b, **tmp_p)
-            tmp = dict(tmp1, **tmp_v)
-            masks_dict = dict(dict(masks_b, **masks_p), **masks_v)
-            return tmp, masks_dict
+        self.interested_vehs = filter_interested_participants(self.all_vehicles, self.training_task)
 
-        list_of_interested_veh_dict = []
-        self.interested_vehs, self.mask_mode = filter_interested_participants(self.all_vehicles, self.training_task)
-        for part in list(self.interested_vehs.values()):
-            list_of_interested_veh_dict.extend(part)
-        for part in list(self.mask_mode.values()):
-            self.vehs_mask.extend(part)
-
-        for veh in list_of_interested_veh_dict:
-            veh_x, veh_y, veh_v, veh_phi, veh_l, veh_w, veh_partici_type, veh_turn_rad = veh['x'], veh['y'], veh['v'], veh['phi'], \
-                                                                           veh['l'], veh['w'], veh['partici_type'], veh['turn_rad']
-            vehs_vector.extend([veh_x, veh_y, veh_v, veh_phi, veh_l, veh_w])
-            vehs_vector.extend(veh_partici_type)
-            vehs_vector.extend([veh_turn_rad])
+        for veh in self.interested_vehs:
+            veh_x, veh_y, veh_v, veh_phi, veh_l, veh_w, veh_partici_type, veh_turn_rad, veh_mask = \
+                veh['x'], veh['y'], veh['v'], veh['phi'], veh['l'], veh['w'], veh['partici_type'], veh['turn_rad'], veh['exist']
+            vehs_vector.extend([veh_x, veh_y, veh_v, veh_phi, veh_l, veh_w] + veh_partici_type + [veh_turn_rad])
+            self.vehs_mask.append(veh_mask)
         return np.array(vehs_vector, dtype=np.float32)
 
     def recover_orig_position_fn(self, transformed_x, transformed_y, x, y, d):  # x, y, d are used to transform
@@ -666,7 +663,7 @@ class CrossroadEnd2endMix(gym.Env):
         obses, actions = obs[np.newaxis, :], action[np.newaxis, :]
 
         # extract infos for each kind of participants
-        start = 0; end = start + self.ego_info_dim + self.track_info_dim + self.per_path_info_dim * self.num_future_data + self.light_info_dim + self.task_info_dim
+        start = 0; end = start + self.ego_info_dim + self.track_info_dim + self.per_path_info_dim * self.num_future_data + self.light_info_dim + self.task_info_dim + self.ref_info_dim
         obses_ego = obses[:, start:end]
         start = end; end = start + self.per_bike_info_dim * self.bike_num
         obses_bike = obses[:, start:end]
@@ -953,80 +950,22 @@ class CrossroadEnd2endMix(gym.Env):
                     plot_phi_line(veh_type, veh_x, veh_y, veh_phi, veh_color)
                     draw_rotate_rec(veh_x, veh_y, veh_phi, veh_l, veh_w, veh_color)
 
-            # plot_interested vehs
-            for mode, num in self.veh_mode_dict.items():
-                for i in range(num):
-                    veh = self.interested_vehs[mode][i]
-                    mask = self.mask_mode[mode][i]
-                    veh_x = veh['x']
-                    veh_y = veh['y']
-                    veh_phi = veh['phi']
-                    veh_l = veh['l']
-                    veh_w = veh['w']
-                    veh_type = veh['type']
-                    task2color = {'left': 'b', 'straight': 'c', 'right': 'm'}
-
-                    if is_in_plot_area(veh_x, veh_y):
-                        plot_phi_line(veh_type, veh_x, veh_y, veh_phi, 'black')
-                        task = MODE2TASK[mode]
-                        color = task2color[task]
-                        draw_rotate_rec(veh_x, veh_y, veh_phi, veh_l, veh_w, color, linestyle=':')
-                        plt.text(veh_x, veh_y, str(mask)[0])
-
-            # plot_interested bicycle
-            for mode, num in self.bicycle_mode_dict.items():
-                for i in range(num):
-                    veh = self.interested_vehs[mode][i]
-                    mask = self.mask_mode[mode][i]
-                    veh_x = veh['x']
-                    veh_y = veh['y']
-                    veh_phi = veh['phi']
-                    veh_l = veh['l']
-                    veh_w = veh['w']
-                    veh_type = veh['type']
-                    task2color = {'left': 'b', 'straight': 'c', 'right': 'm'}
-
-                    if is_in_plot_area(veh_x, veh_y):
-                        plot_phi_line(veh_type, veh_x, veh_y, veh_phi, 'black')
-                        task = MODE2TASK[mode]
-                        color = task2color[task]
-                        draw_rotate_rec(veh_x, veh_y, veh_phi, veh_l, veh_w, color, linestyle=':')
-                        plt.text(veh_x, veh_y, str(mask)[0])
-
-            # plot_interested person
-            for mode, num in self.person_mode_dict.items():
-                for i in range(num):
-                    veh = self.interested_vehs[mode][i]
-                    mask = self.mask_mode[mode][i]
-                    veh_x = veh['x']
-                    veh_y = veh['y']
-                    veh_phi = veh['phi']
-                    veh_l = veh['l']
-                    veh_w = veh['w']
-                    veh_type = veh['type']
-                    task2color = {'left': 'b', 'straight': 'c', 'right': 'm'}
-
-                    if is_in_plot_area(veh_x, veh_y):
-                        plot_phi_line(veh_type, veh_x, veh_y, veh_phi, 'black')
-                        task = MODE2TASK[mode]
-                        color = task2color[task]
-                        draw_rotate_rec(veh_x, veh_y, veh_phi, veh_l, veh_w, color, linestyle=':')
-                        plt.text(veh_x, veh_y, str(mask)[0])
+            # plot interested participants
+            for i in range(len(self.interested_vehs)):
+                veh = self.interested_vehs[i]
+                mask = veh['exist']
+                veh_x = veh['x']
+                veh_y = veh['y']
+                veh_phi = veh['phi']
+                veh_l = veh['l']
+                veh_w = veh['w']
+                veh_type = veh['type']
+                if 1:
+                    plot_phi_line(veh_type, veh_x, veh_y, veh_phi, 'black')
+                    draw_rotate_rec(veh_x, veh_y, veh_phi, veh_l, veh_w, color='m', linestyle=':')
+                    plt.text(veh_x, veh_y, str(mask)[0])
 
             # plot own car
-            # dict(v_x=ego_dict['v_x'],
-            #      v_y=ego_dict['v_y'],
-            #      r=ego_dict['r'],
-            #      x=ego_dict['x'],
-            #      y=ego_dict['y'],
-            #      phi=ego_dict['phi'],
-            #      l=ego_dict['l'],
-            #      w=ego_dict['w'],
-            #      Corner_point=self.cal_corner_point_of_ego_car(ego_dict)
-            #      alpha_f_bound=alpha_f_bound,
-            #      alpha_r_bound=alpha_r_bound,
-            #      r_bound=r_bound)
-
             ego_v_x = self.ego_dynamics['v_x']
             ego_v_y = self.ego_dynamics['v_y']
             ego_r = self.ego_dynamics['r']
@@ -1138,11 +1077,11 @@ class CrossroadEnd2endMix(gym.Env):
 
 def test_end2end():
     env = CrossroadEnd2endMix(num_future_data=1)
-    obs = env.reset()
-    env_model = EnvironmentModel(training_task=env.training_task, num_future_data=env.num_future_data)
+    obs,_ = env.reset()
+    env_model = EnvironmentModel(env.ref_path, env.veh_num, env.bike_num, env.person_num, env.num_future_data)
     i = 0
     while i < 100000:
-        for j in range(200):
+        for j in range(100):
             i += 1
             # action=2*np.random.random(2)-1
             if obs[4] < -18:
@@ -1155,20 +1094,20 @@ def test_end2end():
             obses, actions = obs[np.newaxis, :], action[np.newaxis, :]
             # extract infos for each kind of participants
             ego_dim = env.ego_info_dim + env.track_info_dim + env.num_future_data * env.per_path_info_dim + env.light_info_dim + env.task_info_dim + env.ref_info_dim
-            obses_ego = obses[:, env.ego_info_dim + env.track_info_dim + env.num_future_data * env.per_path_info_dim:ego_dim]
+            obses_ego = obses[:, :ego_dim]
             print(obses_ego)
-            # obses_others = obses[:, ego_dim:]
-            # env_model.reset(np.tile(obses_ego, (2, 1)), np.tile(obses_others, (2, 1)), [env.ref_path.ref_index, random.randint(0, 2)])
-            # env_model.mode = 'training'
-            # for _ in range(10):
-            #     obses_ego, obses_others, rewards, punish_term_for_training, \
-            #         real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, veh2person4real = env_model.rollout_out(np.tile(actions, (2, 1)))
+            obses_others = obses[:, ego_dim:]
+            env_model.reset(np.tile(obses_ego, (2, 1)), np.tile(obses_others, (2, 1)), [env.ref_path.ref_index, random.randint(0, 2)])
+            env_model.mode = 'training'
+            for _ in range(10):
+                obses_ego, obses_others, rewards, punish_term_for_training, \
+                    real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, veh2person4real = env_model.rollout_out(np.tile(actions, (2, 1)))
             # print(obses_ego.shape, obses_others.shape)
             env.render()
             # if done:
             #     break
         obs = env.reset()
-        # env_model = EnvironmentModel(training_task=env.training_task, num_future_data=env.num_future_data)
+        env_model = EnvironmentModel(env.ref_path, env.veh_num, env.bike_num, env.person_num, env.num_future_data)
         env.render()
 
 

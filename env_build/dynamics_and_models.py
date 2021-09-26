@@ -15,8 +15,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import logical_and
 
-from env_build.endtoend_env_utils import rotate_coordination, L, W, CROSSROAD_SIZE, LANE_WIDTH, LANE_NUMBER, \
-    VEHICLE_MODE_LIST, BIKE_MODE_LIST, PERSON_MODE_LIST, VEH_NUM, BIKE_NUM, PERSON_NUM, EXPECTED_V, BIKE_LANE_WIDTH, LIGHT, TASK_DICT, Para, REF_ENCODER
+from env_build.endtoend_env_utils import rotate_coordination, L, W, CROSSROAD_SIZE, LANE_WIDTH, LANE_NUMBER, LIGHT, \
+    TASK_DICT, Para, REF_ENCODER
 
 tf.config.threading.set_inter_op_parallelism_threads(1)
 tf.config.threading.set_intra_op_parallelism_threads(1)
@@ -87,22 +87,20 @@ class VehicleDynamics(object):
 
 
 class EnvironmentModel(object):  # all tensors
-    def __init__(self, training_task, num_future_data=0, mode='training'):
-        self.task = training_task
+    def __init__(self, ref_path,veh_num, bike_num, person_num, num_future_data=0, mode='training'):
         self.mode = mode
         self.vehicle_dynamics = VehicleDynamics()
         self.base_frequency = 10.
         self.obses = None
         self.ego_params = None
         self.actions = None
-        self.ref_path = ReferencePath(self.task)
+        self.ref_path = ref_path
         self.ref_indexes = None
         self.num_future_data = num_future_data
-        self.exp_v = EXPECTED_V
         self.reward_info = None
-        self.veh_num = VEH_NUM[self.task]
-        self.bike_num = BIKE_NUM[self.task]
-        self.person_num = PERSON_NUM[self.task]
+        self.veh_num = veh_num
+        self.bike_num = bike_num
+        self.person_num = person_num
         self.ego_info_dim = 6
         self.track_info_dim = 3
         self.light_info_dim = 2
@@ -116,6 +114,7 @@ class EnvironmentModel(object):  # all tensors
         self.obses_bike = None
         self.obses_person =None
         self.obses_veh =None
+        self.steer_store = []
 
     def reset(self, obses_ego, obses_others, ref_indexes=None):  # input are all tensors
         self.obses_ego = obses_ego
@@ -125,6 +124,7 @@ class EnvironmentModel(object):  # all tensors
         self.ref_indexes = ref_indexes
         self.actions = None
         self.reward_info = None
+        self.steer_store = []
 
     def add_traj(self, obses_ego, obses_bike, obses_person, obses_veh, path_index):
         self.obses_ego = obses_ego
@@ -136,6 +136,7 @@ class EnvironmentModel(object):  # all tensors
     def rollout_out(self, actions):  # obses and actions are tensors, think of actions are in range [-1, 1]
         with tf.name_scope('model_step') as scope:
             self.actions = self._action_transformation_for_end2end(actions)
+            self.steer_store.append(self.actions)
             rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, \
                 veh2person4real, _ = self.compute_rewards(self.obses_ego, self.obses_bike, self.obses_person, self.obses_veh, self.actions)
             self.obses_ego, self.obses_bike, self.obses_person, self.obses_veh = \
@@ -214,7 +215,16 @@ class EnvironmentModel(object):  # all tensors
 
             steers, a_xs = actions[:, 0], actions[:, 1]
             # rewards related to action
-            punish_steer = -tf.square(steers)
+            if len(self.steer_store) > 2:
+                steers_1st_order = (self.steer_store[-1] - self.steer_store[-2]) * self.base_frequency
+                steers_2st_order = (self.steer_store[-1] - 2 * self.steer_store[-2] + self.steer_store[-3]) * (self.base_frequency ** 2)
+            elif len(self.steer_store) == 2:
+                steers_1st_order = (self.steer_store[-1] - self.steer_store[-2]) * self.base_frequency
+                steers_2st_order = tf.zeros_like(steers)
+            else:
+                steers_1st_order = tf.zeros_like(steers)
+                steers_2st_order = tf.zeros_like(steers)
+            punish_steer = -tf.square(steers) - tf.square(steers_1st_order) - tf.square(steers_2st_order)
             punish_a_x = -tf.square(a_xs)
 
             # rewards related to ego stability
@@ -400,7 +410,7 @@ class EnvironmentModel(object):  # all tensors
             for task, task_idx in TASK_DICT.items():                # choose task
                 self.ref_path = ReferencePath(task)
                 for light_idx, light_name in LIGHT.items():         # choose light
-                    flag_temp = logical_and(task_infos == task_idx, light_infos == light_idx)
+                    flag_temp = logical_and(task_infos == task_idx, light_infos == eval(light_idx))
                     if tf.reduce_any(flag_temp):
                         for ref_idx, path in enumerate(self.ref_path.path_list[light_name]):     # choose path
                             filter = logical_and(flag_temp, ref_indexes == ref_idx)
@@ -464,20 +474,17 @@ class EnvironmentModel(object):  # all tensors
         return ego_next_infos
 
     def bike_predict(self, bike_infos):
-        bike_mode_list = BIKE_MODE_LIST[self.task]
         predictions_to_be_concat = []
-        for bikes_index in range(len(bike_mode_list)):
+        for bikes_index in range(self.bike_num):
             predictions_to_be_concat.append(self.predict_for_bike_mode(
-                bike_infos[:, bikes_index * self.per_bike_info_dim:(bikes_index + 1) * self.per_bike_info_dim],
-                bike_mode_list[bikes_index]))
+                bike_infos[:, bikes_index * self.per_bike_info_dim:(bikes_index + 1) * self.per_bike_info_dim]))
         pred = tf.stop_gradient(tf.concat(predictions_to_be_concat, 1))
         return pred
 
     def person_predict(self, person_infos):
-        person_mode_list = PERSON_MODE_LIST[self.task]
         pred = []
 
-        for persons_index in range(len(person_mode_list)):
+        for persons_index in range(self.person_num):
             persons = person_infos[:, persons_index * self.per_person_info_dim:(persons_index + 1) * self.per_person_info_dim]
 
             person_xs, person_ys, person_vs, person_phis = persons[:, 0], persons[:, 1], persons[:, 2], persons[:, 3]
@@ -506,7 +513,7 @@ class EnvironmentModel(object):  # all tensors
         pred = tf.stop_gradient(tf.concat(predictions_to_be_concat, 1))
         return pred
 
-    def predict_for_bike_mode(self, bikes, mode):
+    def predict_for_bike_mode(self, bikes):
         bike_xs, bike_ys, bike_vs, bike_phis = bikes[:, 0], bikes[:, 1], bikes[:, 2], bikes[:, 3]
         bike_phis_rad = bike_phis * np.pi / 180.
 
