@@ -15,30 +15,30 @@ import os
 
 import ray
 
-from buffer import ReplayBuffer
-from evaluator import Evaluator
-from ampc import AMPCLearner
+from buffer import ReplayBuffer, ReplayBufferWithAttention
+from evaluator import Evaluator, EvaluatorWithAttention
+from ampc import AMPCLearner, AMPCLearnerWithAttention
 from optimizer import OffPolicyAsyncOptimizer, SingleProcessOffPolicyOptimizer
-from policy import Policy4Toyota
+from policy import Policy4Toyota, AttentionPolicy4Toyota
 from tester import Tester
 from trainer import Trainer
-from worker import OffPolicyWorker
+from worker import OffPolicyWorker, OffPolicyWorkerWithAttention
 from utils.misc import args2envkwargs
 
-from env_build.endtoend import CrossroadEnd2endMixPiFix
+from env_build.endtoend import CrossroadEnd2endMix
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-NAME2WORKERCLS = dict([('OffPolicyWorker', OffPolicyWorker)])
-NAME2LEARNERCLS = dict([('AMPC', AMPCLearner)])
-NAME2BUFFERCLS = dict([('normal', ReplayBuffer), ('None', None)])
+NAME2WORKERCLS = dict([('OffPolicyWorker', OffPolicyWorker), ('OffPolicyWorkerWithAttention', OffPolicyWorkerWithAttention)])
+NAME2LEARNERCLS = dict([('AMPC', AMPCLearner), ('AMPCWithAttention', AMPCLearnerWithAttention)])
+NAME2BUFFERCLS = dict([('normal', ReplayBuffer), ('normalWithAttention', ReplayBufferWithAttention), ('None', None)])
 NAME2OPTIMIZERCLS = dict([('OffPolicyAsync', OffPolicyAsyncOptimizer),
                           ('SingleProcessOffPolicy', SingleProcessOffPolicyOptimizer)])
-NAME2POLICIES = dict([('Policy4Toyota', Policy4Toyota)])
-NAME2EVALUATORS = dict([('Evaluator', Evaluator), ('None', None)])
+NAME2POLICIES = dict([('Policy4Toyota', Policy4Toyota), ('AttentionPolicy4Toyota', AttentionPolicy4Toyota)])
+NAME2EVALUATORS = dict([('Evaluator', Evaluator), ('None', None), ('EvaluatorWithAttention', EvaluatorWithAttention)])
 
 def built_AMPC_parser():
     parser = argparse.ArgumentParser()
@@ -62,15 +62,15 @@ def built_AMPC_parser():
         return parser.parse_args()
 
     # trainer
-    parser.add_argument('--policy_type', type=str, default='Policy4Toyota')
-    parser.add_argument('--worker_type', type=str, default='OffPolicyWorker')
-    parser.add_argument('--evaluator_type', type=str, default='Evaluator')
-    parser.add_argument('--buffer_type', type=str, default='normal')
+    parser.add_argument('--policy_type', type=str, default='AttentionPolicy4Toyota')
+    parser.add_argument('--worker_type', type=str, default='OffPolicyWorkerWithAttention')
+    parser.add_argument('--evaluator_type', type=str, default='EvaluatorWithAttention')
+    parser.add_argument('--buffer_type', type=str, default='normalWithAttention')
     parser.add_argument('--optimizer_type', type=str, default='OffPolicyAsync')
     parser.add_argument('--off_policy', type=str, default=True)
 
     # env
-    parser.add_argument('--env_id', default='CrossroadEnd2endMixPiFix-v0')
+    parser.add_argument('--env_id', default='CrossroadEnd2endMix-v0')
     parser.add_argument('--env_kwargs_num_future_data', type=int, default=0)
     parser.add_argument('--env_kwargs_training_task', type=str, default='left')
     parser.add_argument('--max_step', type=int, default=200)
@@ -92,7 +92,7 @@ def built_AMPC_parser():
     parser.add_argument('--per_veh_dim', type=int, default=None)
 
     # learner
-    parser.add_argument('--alg_name', default='AMPC')
+    parser.add_argument('--alg_name', default='AMPCWithAttention')
     parser.add_argument('--M', type=int, default=1)
     parser.add_argument('--num_rollout_list_for_policy_update', type=list, default=[25])
     parser.add_argument('--gamma', type=float, default=1.)
@@ -108,7 +108,7 @@ def built_AMPC_parser():
 
     # buffer
     parser.add_argument('--max_buffer_size', type=int, default=50000)
-    parser.add_argument('--replay_starts', type=int, default=3000)
+    parser.add_argument('--replay_starts', type=int, default=500)  # use a small value for debug
     parser.add_argument('--replay_batch_size', type=int, default=480)
     parser.add_argument('--replay_alpha', type=float, default=0.6)
     parser.add_argument('--replay_beta', type=float, default=0.4)
@@ -128,7 +128,7 @@ def built_AMPC_parser():
     parser.add_argument('--num_hidden_layers', type=int, default=2)
     parser.add_argument('--num_hidden_units', type=int, default=256)
     parser.add_argument('--hidden_activation', type=str, default='gelu')
-    parser.add_argument('--deterministic_policy', default=True, action='store_true')
+    parser.add_argument('--deterministic_policy', default=False, action='store_true')
     parser.add_argument('--policy_out_activation', type=str, default='tanh')
     parser.add_argument('--action_range', type=float, default=None)
 
@@ -140,6 +140,10 @@ def built_AMPC_parser():
     parser.add_argument('--PI_hidden_activation', type=str, default='gelu')
     parser.add_argument('--PI_out_activation', type=str, default='linear')
 
+    # model for Attn_net
+    parser.add_argument('--Attn_model_cls', type=str, default='Attention')
+    parser.add_argument('--Attn_lr_schedule', type=list, default=[8e-4, 600000, 1e-5])
+
     # preprocessor
     parser.add_argument('--obs_preprocess_type', type=str, default='scale')
     parser.add_argument('--obs_scale', type=list, default=None)
@@ -150,8 +154,8 @@ def built_AMPC_parser():
     # optimizer (PABAL)
     parser.add_argument('--max_sampled_steps', type=int, default=0)
     parser.add_argument('--max_iter', type=int, default=600000)
-    parser.add_argument('--num_workers', type=int, default=4)
-    parser.add_argument('--num_learners', type=int, default=10)
+    parser.add_argument('--num_workers', type=int, default=4)  # use a small value for debug
+    parser.add_argument('--num_learners', type=int, default=3)
     parser.add_argument('--num_buffers', type=int, default=4)
     parser.add_argument('--max_weight_sync_delay', type=int, default=300)
     parser.add_argument('--grads_queue_size', type=int, default=20)
@@ -196,8 +200,36 @@ def built_parser(alg_name):
         args.obs_dim, args.act_dim = args.PI_out_dim + args.state_ego_dim + args.state_track_dim, act_space.shape[0]
         return args
 
+def built_attention_parser(alg_name):
+    if alg_name == 'AMPC':
+        args = built_AMPC_parser()
+        env = CrossroadEnd2endMix(**args2envkwargs(args))
+        obs_space, act_space = env.observation_space, env.action_space
+        args.state_ego_dim = env.ego_info_dim # 6
+        args.state_track_dim = env.track_info_dim + env.per_path_info_dim * env.num_future_data # 3 + 4*n
+        args.state_light_dim = env.light_info_dim # 1
+        args.state_task_dim = env.task_info_dim # 1
+
+        args.state_bike_dim = env.per_bike_info_dim * env.bike_num # n * 10
+        args.state_person_dim = env.per_person_info_dim * env.person_num # n * 10
+        args.state_veh_dim = env.per_veh_info_dim * env.veh_num # n * 10
+        
+        args.per_bike_dim = env.per_bike_info_dim
+        args.per_person_dim = env.per_person_info_dim
+        args.per_veh_dim = env.per_veh_info_dim
+
+        if args.per_bike_dim == args.per_person_dim == args.per_veh_dim:
+            args.Attn_in_per_dim = env.per_veh_info_dim # 10
+            args.Attn_in_total_dim = obs_space.shape[0] - args.state_ego_dim - args.state_track_dim - 2
+        else:
+            raise ValueError
+        args.Attn_out_dim = 64
+        args.obs_dim, args.act_dim = args.Attn_out_dim + args.state_ego_dim + args.state_track_dim + 2, act_space.shape[0]
+        return args
+
+
 def main(alg_name):
-    args = built_parser(alg_name)
+    args = built_attention_parser(alg_name)
     logger.info('begin training agents with parameter {}'.format(str(args)))
     if args.mode == 'training':
         ray.init(object_store_memory=5120*1024*1024)

@@ -20,7 +20,7 @@ import numpy as np
 import tensorflow as tf
 
 from env_build.dynamics_and_models import EnvironmentModel, ReferencePath
-from env_build.endtoend import CrossroadEnd2endMixPiFix
+from env_build.endtoend import CrossroadEnd2endMix
 from env_build.endtoend_env_utils import rotate_coordination, CROSSROAD_SIZE, LANE_WIDTH, LANE_NUMBER, MODE2TASK
 from multi_path_generator import MultiPathGenerator
 from env_build.utils.load_policy import LoadPolicy
@@ -33,7 +33,7 @@ class HierarchicalDecision(object):
         self.task = task
         self.policy = LoadPolicy('../utils/models/{}/{}'.format(task, train_exp_dir), ite)
         self.args = self.policy.args
-        self.env = CrossroadEnd2endMixPiFix(training_task=self.task, mode='testing')
+        self.env = CrossroadEnd2endMix(training_task=self.task, mode='testing')
         self.model = EnvironmentModel(self.task, mode='selecting')
         self.recorder = Recorder()
         self.episode_counter = -1
