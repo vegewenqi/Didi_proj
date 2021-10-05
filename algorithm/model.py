@@ -7,11 +7,10 @@
 # @FileName: model.py
 # =====================================
 
+import numpy as np
 import tensorflow as tf
-from tensorflow import Variable
 from tensorflow.keras import Model, Sequential
 from tensorflow.keras.layers import Dense, Conv1D
-import numpy as np
 
 tf.config.experimental.set_visible_devices([], 'GPU')
 tf.config.threading.set_inter_op_parallelism_threads(1)
@@ -70,13 +69,13 @@ class AttentionNet(Model):
         self.build(input_shape=[(None, self.d_others), (None, self.num_objs)])
     
     def call(self, x, **kwargs):
-        '''
+        """
         :x[0]: all the other participants in the intersection, [B, d_others]
         :x[1]: padding mask [B, N], 1 for real, 0 for padding
 
         return:
             :output: [B, d_model]
-        '''
+        """
         x_others, x_mask = x[0], x[1]
         x_others = self.embedding(tf.reshape(x_others, [-1, self.num_objs, self.d_obj])) # [B, N, d_model]
         assert x_others.shape[1] == x_mask.shape[-1], print(x_others.shape[1], x_mask.shape[-1])
@@ -91,63 +90,7 @@ class AttentionNet(Model):
         output = tf.squeeze(tf.matmul(tf.expand_dims(attention_weights, axis=1), x_real), axis=-2)
 
         return output
-        
-
-def test_attrib():
-    a = Variable(0, name='d')
-
-    p = MLPNet(2, 2, 128, 1, name='ttt')
-    print(hasattr(p, 'get_weights'))
-    print(hasattr(p, 'trainable_weights'))
-    print(hasattr(a, 'get_weights'))
-    print(hasattr(a, 'trainable_weights'))
-    print(type(a))
-    print(type(p))
-    # print(a.name)
-    # print(p.name)
-    # p.build((None, 2))
-    p.summary()
-    # inp = np.random.random([10, 2])
-    # out = p.forward(inp)
-    # print(p.get_weights())
-    # print(p.trainable_weights)
-
-
-def test_clone():
-    p = MLPNet(2, 2, 128, 1, name='ttt')
-    print(p._is_graph_network)
-    s = tf.keras.models.clone_model(p)
-    print(s)
-
-def test_out():
-    import numpy as np
-    Qs = tuple(MLPNet(8, 2, 128, 1, name='Q' + str(i)) for i in range(2))
-    inp = np.random.random((128, 8))
-    out = [Q(inp) for Q in Qs]
-    print(out)
-
-
-def test_memory():
-    import time
-    Q = MLPNet(8, 2, 128, 1)
-    time.sleep(111111)
-
-def test_memory2():
-    import time
-    model = tf.keras.Sequential([tf.keras.layers.Dense(10, input_shape=(30,), activation='relu'),
-                                 tf.keras.layers.Dense(20, activation='relu'),
-                                 tf.keras.layers.Dense(20, activation='relu'),
-                                 tf.keras.layers.Dense(10, activation='relu')])
-    time.sleep(10000)
-
-def test_attention():
-    pi = AttentionNet(15, 5, 128, name='policy')
-    others = tf.constant(np.random.randn(1, 15))
-    mask = tf.constant(np.random.randint(low=0, high=2, size=(1, 3)), dtype=tf.float32)
-    print(mask)
-    output = pi([others, mask])
-    print(output)
 
 
 if __name__ == '__main__':
-    test_attention()
+    pass

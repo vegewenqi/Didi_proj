@@ -11,16 +11,9 @@ import math
 import os
 from collections import OrderedDict
 
-L, W = 4.8, 2.0
-LANE_WIDTH = 3.75
-BIKE_LANE_WIDTH = 2.0
-PERSON_LANE_WIDTH = 2.0
-LANE_NUMBER = 3
-CROSSROAD_SIZE = 50
-EXPECTED_V = 8.
-
 
 class Para:
+    # MAP
     L, W = 4.8, 2.0
     LANE_WIDTH_1 = 3.75
     LANE_WIDTH_2 = 3.25
@@ -43,30 +36,42 @@ class Para:
     CROSSROAD_SIZE_LAT = 64
     CROSSROAD_SIZE_LON = 76
 
+    # DIM
+    EGO_ENCODING_DIM = 6
+    TRACK_ENCODING_DIM = 4
+    LIGHT_ENCODING_DIM = 2
+    TASK_ENCODING_DIM = 3
+    REF_ENCODING_DIM = 3
+    PER_OTHER_INFO_DIM = 10
 
-dirname = os.path.dirname(__file__)
-TASK_DICT = dict(left=[1.0, 0.0, 0.0], straight=[0.0, 1.0, 0.0], right=[0.0, 0.0, 1.0])
-LIGHT_DICT = {0: [1.0, 0.0], 1: [1.0, 0.0], 2: [1.0, 1.0], 3: [0.0, 1.0], 4: [0.0, 1.0], 5: [0.0, 1.0], 6: [0.0, 1.0]}
-LIGHT = {'[1.0, 0.0]': 'green', '[0.0, 1.0]': 'red'}
-REF_ENCODER = dict(left={0: [1.0, 0.0, 0.0], 1: [0.0, 1.0, 0.0], 2: [0.0, 0.0, 1.0]},
-                   straight={0: [1.0, 0.0, 0.0], 1: [0.0, 1.0, 0.0], 2: [0.0, 0.0, 1.0]},
-                   right={0: [1.0, 0.0, 0.0], 1: [0.0, 1.0, 0.0], 2: [0.0, 0.0, 1.0]})
-SUMOCFG_DIR = dirname + "/sumo_files/cross.sumocfg"
+    # MAX NUM
+    MAX_VEH_NUM = 8  # to be align with VEHICLE_MODE_DICT
+    MAX_BIKE_NUM = 4  # to be align with BIKE_MODE_DICT
+    MAX_PERSON_NUM = 4  # to be align with PERSON_MODE_DICT
+
+
+LIGHT_PHASE_TO_GREEN_OR_RED = {0: 'green', 1: 'greed', 2: 'red', 3: 'red',
+                                 4: 'red', 5: 'red', 6: 'red'}  # 0: green, 1: red
+TASK_ENCODING = dict(left=[1.0, 0.0, 0.0], straight=[0.0, 1.0, 0.0], right=[0.0, 0.0, 1.0])
+LIGHT_ENCODING = {0: [1.0, 0.0], 1: [1.0, 0.0], 2: [1.0, 1.0], 3: [0.0, 1.0], 4: [0.0, 1.0], 5: [0.0, 1.0], 6: [0.0, 1.0]}
+REF_ENCODING = {0: [1.0, 0.0, 0.0], 1: [0.0, 1.0, 0.0], 2: [0.0, 0.0, 1.0]}
+
+SUMOCFG_DIR = os.path.dirname(__file__) + "/sumo_files/cross.sumocfg"
 VEHICLE_MODE_DICT = dict(left=OrderedDict(dl=2, du=2, ud=2, ul=2),
                          straight=OrderedDict(dl=2, du=2, ru=2, ur=2),
                          right=OrderedDict(dr=2, du=2, ur=2, lr=2))
 BIKE_MODE_DICT = dict(left=OrderedDict(ud_b=4),
-                         straight=OrderedDict(du_b=4),
-                         right=OrderedDict(du_b=2, lr_b=2)) # 2 0
+                      straight=OrderedDict(du_b=4),
+                      right=OrderedDict(du_b=2, lr_b=2))  # 2 0
 PERSON_MODE_DICT = dict(left=OrderedDict(c3=4),
-                         straight=OrderedDict(c2=4), # 0
-                         right=OrderedDict(c1=4, c2=0))
+                        straight=OrderedDict(c2=4),  # 0
+                        right=OrderedDict(c1=4, c2=0))
 
 
 def dict2flat(inp):
     out = []
     for key, val in inp.items():
-        out.extend([key]*val)
+        out.extend([key] * val)
     return out
 
 
@@ -76,18 +81,6 @@ def dict2num(inp):
         out += val
     return out
 
-
-VEH_NUM = dict(left=dict2num(VEHICLE_MODE_DICT['left']),
-               straight=dict2num(VEHICLE_MODE_DICT['straight']),
-               right=dict2num(VEHICLE_MODE_DICT['right']))
-
-BIKE_NUM = dict(left=dict2num(BIKE_MODE_DICT['left']),
-                straight=dict2num(BIKE_MODE_DICT['straight']),
-                right=dict2num(BIKE_MODE_DICT['right']))
-
-PERSON_NUM = dict(left=dict2num(PERSON_MODE_DICT['left']),
-                  straight=dict2num(PERSON_MODE_DICT['straight']),
-                  right=dict2num(PERSON_MODE_DICT['right']))
 
 VEHICLE_MODE_LIST = dict(left=dict2flat(VEHICLE_MODE_DICT['left']),
                          straight=dict2flat(VEHICLE_MODE_DICT['straight']),
@@ -99,14 +92,6 @@ PERSON_MODE_LIST = dict(left=dict2flat(PERSON_MODE_DICT['left']),
                         straight=dict2flat(PERSON_MODE_DICT['straight']),
                         right=dict2flat(PERSON_MODE_DICT['right']))
 
-# Things related to lane number: static path generation (which further influences obs initialization),
-# observation formulation (especially other vehicles selection and number), rewards formulation
-# other vehicle prediction
-# feasibility judgement
-# the sumo files, obviously,
-# the render func,
-# it is hard to unify them using one set of code, better be a case-by-case setting.
-
 ROUTE2MODE = {('1o', '2i'): 'dr', ('1o', '3i'): 'du', ('1o', '4i'): 'dl',
               ('2o', '1i'): 'rd', ('2o', '3i'): 'ru', ('2o', '4i'): 'rl',
               ('3o', '1i'): 'ud', ('3o', '2i'): 'ur', ('3o', '4i'): 'ul',
@@ -116,8 +101,8 @@ MODE2TASK = {'dr': 'right', 'du': 'straight', 'dl': 'left',
              'rd': 'left', 'ru': 'right', 'rl': ' straight',
              'ud': 'straight', 'ur': 'left', 'ul': 'right',
              'ld': 'right', 'lr': 'straight', 'lu': 'left',
-             'ud_b': 'straight', 'du_b':'straight', 'lr_b':'straight',
-             'c1':'straight', 'c2':'straight', 'c3':'straight'}
+             'ud_b': 'straight', 'du_b': 'straight', 'lr_b': 'straight',
+             'c1': 'straight', 'c2': 'straight', 'c3': 'straight'}
 
 TASK2ROUTEID = {'left': 'dl', 'straight': 'du', 'right': 'dr'}
 
@@ -162,13 +147,13 @@ def judge_feasible(orig_x, orig_y, task):  # map dependant
 
 
 def shift_coordination(orig_x, orig_y, coordi_shift_x, coordi_shift_y):
-    '''
+    """
     :param orig_x: original x
     :param orig_y: original y
     :param coordi_shift_x: coordi_shift_x along x axis
     :param coordi_shift_y: coordi_shift_y along y axis
     :return: shifted_x, shifted_y
-    '''
+    """
     shifted_x = orig_x - coordi_shift_x
     shifted_y = orig_y - coordi_shift_y
     return shifted_x, shifted_y
@@ -233,12 +218,13 @@ def cal_info_in_transform_coordination(filtered_objects, x, y, rotate_d):  # rot
                         'phi': trans_heading,
                         'w': width,
                         'l': length,
-                        'route': route,})
+                        'route': route, })
     return results
 
 
 def cal_ego_info_in_transform_coordination(ego_dynamics, x, y, rotate_d):
-    orig_x, orig_y, orig_a, corner_points = ego_dynamics['x'], ego_dynamics['y'], ego_dynamics['phi'], ego_dynamics['Corner_point']
+    orig_x, orig_y, orig_a, corner_points = ego_dynamics['x'], ego_dynamics['y'], ego_dynamics['phi'], ego_dynamics[
+        'Corner_point']
     shifted_x, shifted_y = shift_coordination(orig_x, orig_y, x, y)
     trans_x, trans_y, trans_a = rotate_coordination(shifted_x, shifted_y, orig_a, rotate_d)
     trans_corner_points = []
@@ -254,22 +240,19 @@ def cal_ego_info_in_transform_coordination(ego_dynamics, x, y, rotate_d):
 
 
 def xy2_edgeID_lane(x, y):
-    if y < -Para.CROSSROAD_SIZE_LON/2:
+    if y < -Para.CROSSROAD_SIZE_LON / 2:
         edgeID = '1o'
         if x <= Para.OFFSET_D + Para.LANE_WIDTH_2:
             lane = 4
         else:
-            lane = int((Para.LANE_NUMBER_LON_IN + 1) - int((x - Para.OFFSET_D - Para.LANE_WIDTH_2) / Para.LANE_WIDTH_3))
-    elif x < -Para.CROSSROAD_SIZE_LAT/2:
+            lane = int(Para.LANE_NUMBER_LON_IN - int((x - Para.OFFSET_D - Para.LANE_WIDTH_2) / Para.LANE_WIDTH_3))
+    elif x < -Para.CROSSROAD_SIZE_LAT / 2:
         edgeID = '4i'
         lane = int((Para.LANE_NUMBER_LAT_OUT + 1) - int((y - Para.OFFSET_L) / Para.LANE_WIDTH_1))
-    elif y > Para.CROSSROAD_SIZE_LON/2:
+    elif y > Para.CROSSROAD_SIZE_LON / 2:
         edgeID = '3i'
-        if x <= Para.OFFSET_U + Para.LANE_WIDTH_2:
-            lane = 3
-        else:
-            lane = int((Para.LANE_NUMBER_LON_IN + 1) - int((x - Para.OFFSET_U - Para.GREEN_BELT_LON - Para.LANE_WIDTH_2) / Para.LANE_WIDTH_3))
-    elif x > Para.CROSSROAD_SIZE_LAT/2:
+        lane = 3 if x <= Para.OFFSET_U + Para.LANE_WIDTH_2 else 2
+    elif x > Para.CROSSROAD_SIZE_LAT / 2:
         edgeID = '2i'
         lane = int((Para.LANE_NUMBER_LAT_OUT + 1) - int(-(y - Para.OFFSET_R) / Para.LANE_WIDTH_1))
     else:

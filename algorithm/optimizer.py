@@ -16,9 +16,9 @@ import threading
 import ray
 import tensorflow as tf
 
-from utils.misc import judge_is_nan, TimerStat
-from utils.misc import random_choice_with_index
-from utils.task_pool import TaskPool
+from algorithm.utils.misc import judge_is_nan, TimerStat
+from algorithm.utils.misc import random_choice_with_index
+from algorithm.utils.task_pool import TaskPool
 from queue import Empty
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,6 @@ class UpdateThread(threading.Thread):
         self.update_timer = TimerStat()
         self.grad_queue_get_timer = TimerStat()
         self.grad_apply_timer = TimerStat()
-        self.grad_reuse = 0
         self.grad = None
         self.learner_stats = None
         self.writer = tf.summary.create_file_writer(self.log_dir + '/optimizer')
@@ -69,20 +68,14 @@ class UpdateThread(threading.Thread):
                                          update_throughput=self.update_timer.mean_throughput,
                                          grad_queue_get_time=self.grad_queue_get_timer.mean,
                                          grad_apply_timer=self.grad_apply_timer.mean,
-                                         grad_reuse=self.grad_reuse
                                     ))
         # fetch grad
         with self.grad_queue_get_timer:
             try:
                 block = True if self.grad is None else False
                 self.grad, self.learner_stats = self.inqueue.get(block=block)
-                self.grad_reuse = 0
             except Empty:
-                if self.grad_reuse < self.args.grads_max_reuse:
-                    self.grad_reuse += 1
-                else:
-                    self.grad, self.learner_stats = self.inqueue.get(timeout=30)
-                    self.grad_reuse = 0
+                self.grad, self.learner_stats = self.inqueue.get(block=True)
         # apply grad
         with self.grad_apply_timer:
             # try:
@@ -112,27 +105,17 @@ class UpdateThread(threading.Thread):
         # evaluate
         if self.iteration % self.args.eval_interval == 0:
             self.evaluator.set_weights.remote(self.local_worker.get_weights())
-            if self.args.obs_preprocess_type == 'normalize' or self.args.reward_preprocess_type == 'normalize':
-                self.evaluator.set_ppc_params.remote(self.local_worker.get_ppc_params())
             self.evaluator.run_evaluation.remote(self.iteration)
 
         # save
         if self.iteration % self.args.save_interval == 0:
             self.local_worker.save_weights(self.model_dir, self.iteration)
-            self.workers['remote_workers'][0].save_ppc_params.remote(self.model_dir)
 
         self.iteration += 1
 
 
 class OffPolicyAsyncOptimizer(object):
     def __init__(self, workers, learners, replay_buffers, evaluator, args):
-        """Initialize an off-policy async optimizers.
-
-        Arguments:
-            workers (dict): {local worker, remote workers (list)>=0}
-            learners (list): list of remote learners, len >= 1
-            replay_buffers (list): list of replay buffers, len >= 1
-        """
         self.args = args
         self.workers = workers
         self.local_worker = self.workers['local_worker']
@@ -209,22 +192,16 @@ class OffPolicyAsyncOptimizer(object):
 
     def _set_learners(self):
         weights = self.local_worker.get_weights()
-        ppc_params = self.workers['remote_workers'][0].get_ppc_params.remote()
         for learner in self.learners:
             learner.set_weights.remote(weights)
-            if self.args.obs_preprocess_type == 'normalize' or \
-                    self.args.reward_preprocess_type == 'normalize':
-                learner.set_ppc_params.remote(ppc_params)
             rb, _ = random_choice_with_index(self.replay_buffers)
             samples = ray.get(rb.replay.remote())
-            self.learn_tasks.add(learner, learner.compute_gradient.remote(samples[:-1], rb, samples[-1],
-                                                                          self.local_worker.iteration))
+            self.learn_tasks.add(learner, learner.compute_gradient.remote(samples[:-1], self.local_worker.iteration))
 
     def step(self):
         assert self.update_thread.is_alive()
         assert len(self.workers['remote_workers']) > 0
         weights = None
-        ppc_params = None
 
         # sampling
         with self.timers['sampling_timer']:
@@ -233,7 +210,6 @@ class OffPolicyAsyncOptimizer(object):
                 random.choice(self.replay_buffers).add_batch.remote(sample_batch)
                 self.num_sampled_steps += count
                 self.steps_since_update[worker] += count
-                ppc_params = worker.get_ppc_params.remote()
                 if self.steps_since_update[worker] >= self.max_weight_sync_delay:
                     judge_is_nan(self.local_worker.policy_with_value.policy.trainable_weights)
                     if weights is None:
@@ -250,26 +226,18 @@ class OffPolicyAsyncOptimizer(object):
                     self.num_samples_dropped += 1
                 else:
                     samples = ray.get(replay)
-                    self.learner_queue.put((rb, samples))
+                    self.learner_queue.put(samples)
 
         # learning
         with self.timers['learning_timer']:
             for learner, objID in self.learn_tasks.completed():
                 grads = ray.get(objID)
                 learner_stats = ray.get(learner.get_stats.remote())
-                if self.args.buffer_type == 'priority':
-                    info_for_buffer = ray.get(learner.get_info_for_buffer.remote())
-                    info_for_buffer['rb'].update_priorities.remote(info_for_buffer['indexes'],
-                                                                   info_for_buffer['td_error'])
-                rb, samples = self.learner_queue.get(block=False)
-                if ppc_params and \
-                        (self.args.obs_preprocess_type == 'normalize' or self.args.reward_preprocess_type == 'normalize'):
-                    learner.set_ppc_params.remote(ppc_params)
-                    self.local_worker.set_ppc_params(ppc_params)
+                samples = self.learner_queue.get(block=False)
                 if weights is None:
                     weights = ray.put(self.local_worker.get_weights())
                 learner.set_weights.remote(weights)
-                self.learn_tasks.add(learner, learner.compute_gradient.remote(samples[:-1], rb, samples[-1],
+                self.learn_tasks.add(learner, learner.compute_gradient.remote(samples[:-1],
                                                                               self.local_worker.iteration))
                 if self.update_thread.inqueue.full():
                     self.num_grads_dropped += 1
@@ -343,22 +311,16 @@ class SingleProcessOffPolicyOptimizer(object):
         # learning
         with self.timers['learning_timer']:
             self.learner.set_weights(self.worker.get_weights())
-            if self.args.obs_preprocess_type == 'normalize' or \
-                    self.args.reward_preprocess_type == 'normalize':
-                self.learner.set_ppc_params(self.worker.get_ppc_params())
-            grads = self.learner.compute_gradient(samples[:-1], self.replay_buffer, samples[-1], self.iteration)
+            grads = self.learner.compute_gradient(samples[:-1], self.iteration)
             learner_stats = self.learner.get_stats()
-            if self.args.buffer_type == 'priority':
-                info_for_buffer = self.learner.get_info_for_buffer()
-                info_for_buffer['rb'].update_priorities(info_for_buffer['indexes'], info_for_buffer['td_error'])
 
         # apply grad
         with self.timers['grad_apply_timer']:
-            try:
-                judge_is_nan(grads)
-            except ValueError:
-                grads = [tf.zeros_like(grad) for grad in grads]
-                logger.info('Grad is nan!, zero it')
+            # try:
+            #     judge_is_nan(grads)
+            # except ValueError:
+            #     grads = [tf.zeros_like(grad) for grad in grads]
+            #     logger.info('Grad is nan!, zero it')
             self.worker.apply_gradients(self.iteration, grads)
 
         # log
@@ -382,13 +344,11 @@ class SingleProcessOffPolicyOptimizer(object):
         # evaluate
         if self.iteration % self.args.eval_interval == 0 and self.evaluator is not None:
             self.evaluator.set_weights(self.worker.get_weights())
-            self.evaluator.set_ppc_params(self.worker.get_ppc_params())
             self.evaluator.run_evaluation(self.iteration)
 
         # save
         if self.iteration % self.args.save_interval == 0:
             self.worker.save_weights(self.model_dir, self.iteration)
-            self.worker.save_ppc_params(self.model_dir)
 
         self.get_stats()
         self.iteration += 1

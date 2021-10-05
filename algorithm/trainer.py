@@ -60,14 +60,6 @@ class Trainer(object):
             self.local_worker.load_weights(load_dir, iteration)
             self.sync_remote_workers()
 
-    def load_ppc_params(self, load_dir):
-        if self.args.optimizer_type.startswith('SingleProcess'):
-            self.local_worker.load_ppc_params(load_dir)
-        else:
-            self.local_worker.load_ppc_params(load_dir)
-            for remote_worker in self.remote_workers:
-                remote_worker.load_ppc_params.remote(load_dir)
-
     def sync_remote_workers(self):
         weights = ray.put(self.local_worker.get_weights())
         for e in self.workers['remote_workers']:
