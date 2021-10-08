@@ -429,13 +429,13 @@ class CrossroadEnd2endMix(gym.Env):
                 elif v['type'] == 'DEFAULT_PEDTYPE':
                     v.update(partici_type=[0., 1., 0.], turn_rad=0.0, exist=True)
                     road_list = v['road']
-                    if road_list == ':0_c0':
+                    if road_list in [':0_c0', ':3_w0']:
                         c0.append(v)
-                    elif road_list == ':0_c1':
+                    elif road_list in [':0_c1', ':2_w0', ':0_w3']:
                         c1.append(v)
-                    elif road_list == ':0_c2':
+                    elif road_list in [':0_c2', ':0_w5', ':1_w0']:
                         c2.append(v)
-                    elif road_list == ':0_c3':
+                    elif road_list in [':0_c3', ':4_w0']:
                         c3.append(v)
 
                 else:
