@@ -123,7 +123,7 @@ class EnvironmentModel(object):  # all tensors
     def rollout_out(self, actions, ref_points):  # ref_points [#batch, 4]
         with tf.name_scope('model_step') as scope:
             self.actions = self._action_transformation_for_end2end(actions)
-            self.steer_store.append(self.actions)
+            self.steer_store.append(self.actions[:, 0])
             self.obses = self.compute_next_obses(self.obses, self.actions, ref_points)
 
             rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, \
@@ -206,7 +206,7 @@ class EnvironmentModel(object):  # all tensors
             else:
                 steers_1st_order = tf.zeros_like(steers)
                 steers_2st_order = tf.zeros_like(steers)
-            punish_steer = -tf.square(steers)  # - tf.square(steers_1st_order) - tf.square(steers_2st_order) todo
+            punish_steer = -tf.square(steers) - tf.square(steers_1st_order) - tf.square(steers_2st_order)
             punish_a_x = -tf.square(a_xs)
 
             # rewards related to ego stability
@@ -279,7 +279,7 @@ class EnvironmentModel(object):  # all tensors
                     veh2person_dist = tf.sqrt(
                         tf.square(ego_point[0] - person_point[0]) + tf.square(ego_point[1] - person_point[1]))
                     veh2person4training += tf.where(veh2person_dist - 4.5 < 0, tf.square(veh2person_dist - 4.5),
-                                                    tf.zeros_like(veh_infos[:, 0]))  # todo
+                                                    tf.zeros_like(veh_infos[:, 0]))
                     veh2person4real += tf.where(veh2person_dist - 2.5 < 0, tf.square(veh2person_dist - 2.5),
                                                 tf.zeros_like(veh_infos[:, 0]))
 
@@ -401,7 +401,7 @@ class EnvironmentModel(object):  # all tensors
         dist_a2c = tf.sqrt(tf.square(ego_xs - ref_xs) + tf.square(ego_ys - ref_ys))
         dist_c2line = tf.abs(tf.sin(ref_phis_rad) * ego_xs - tf.cos(ref_phis_rad) * ego_ys
                              - tf.sin(ref_phis_rad) * ref_xs + tf.cos(ref_phis_rad) * ref_ys)
-        dist_longdi = tf.sqrt(tf.square(dist_a2c) - tf.square(dist_c2line))
+        dist_longdi = tf.sqrt(tf.abs(tf.square(dist_a2c) - tf.square(dist_c2line)))
         signed_dist_lateral = tf.where(self._judge_is_left(a, b, c), dist_c2line, -dist_c2line)
         signed_dist_longi = tf.where(self._judge_is_ahead(a, b, c), dist_longdi, -dist_longdi)
         delta_phi = deal_with_phi_diff(ego_phis - ref_phis)
@@ -413,14 +413,14 @@ class EnvironmentModel(object):  # all tensors
         x2, y2 = b
         x3, y3 = c
         featured = (x1 - x3) * (y2 - y3) - (y1 - y3) * (x2 - x3)
-        return featured < 0.
+        return featured <= 0.
 
     def _judge_is_ahead(self, a, b, c):
         x1, y1 = a
         x2, y2 = b
         x3, y3 = c
         featured = (x2 - x1) * (x3 - x1) + (y2 - y1) * (y3 - y1)
-        return featured > 0.
+        return featured >= 0.
 
     def _convert_to_rela(self, obses):
         obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_other = self._split_all(obses)
@@ -461,8 +461,8 @@ class EnvironmentModel(object):  # all tensors
                                      obses_other_reshape[:, :, -1]
         phis_rad = phis * np.pi / 180.
 
-        xs_delta = vs / self.base_frequency * tf.cos(phis)
-        ys_delta = vs / self.base_frequency * tf.sin(phis)
+        xs_delta = vs / self.base_frequency * tf.cos(phis_rad)
+        ys_delta = vs / self.base_frequency * tf.sin(phis_rad)
         phis_rad_delta = vs / self.base_frequency * turn_rad
 
         next_xs, next_ys, next_vs, next_phis_rad = xs + xs_delta, ys + ys_delta, vs, phis_rad + phis_rad_delta
@@ -505,152 +505,367 @@ class EnvironmentModel(object):  # all tensors
         steer_scale, a_xs_scale = 0.4 * steer_norm, 2.25 * a_xs_norm - 0.75
         return tf.stack([steer_scale, a_xs_scale], 1)
 
-    # def render(self, mode='human'):
-    #     if mode == 'human':
-    #         # plot basic map
-    #         square_length = CROSSROAD_SIZE
-    #         extension = 40
-    #         lane_width = LANE_WIDTH
-    #         dotted_line_style = '--'
-    #         solid_line_style = '-'
-    #
-    #         plt.cla()
-    #         plt.title("Crossroad")
-    #         ax = plt.axes(xlim=(-square_length / 2 - extension, square_length / 2 + extension),
-    #                       ylim=(-square_length / 2 - extension, square_length / 2 + extension))
-    #         plt.axis("equal")
-    #         plt.axis('off')
-    #
-    #         # ax.add_patch(plt.Rectangle((-square_length / 2, -square_length / 2),
-    #         #                            square_length, square_length, edgecolor='black', facecolor='none'))
-    #         ax.add_patch(plt.Rectangle((-square_length / 2 - extension, -square_length / 2 - extension),
-    #                                    square_length + 2 * extension, square_length + 2 * extension, edgecolor='black',
-    #                                    facecolor='none'))
-    #
-    #         # ----------horizon--------------
-    #         plt.plot([-square_length / 2 - extension, -square_length / 2], [0, 0], color='black')
-    #         plt.plot([square_length / 2 + extension, square_length / 2], [0, 0], color='black')
-    #
-    #         #
-    #         for i in range(1, LANE_NUMBER+1):
-    #             linestyle = dotted_line_style if i < LANE_NUMBER else solid_line_style
-    #             plt.plot([-square_length / 2 - extension, -square_length / 2], [i*lane_width, i*lane_width],
-    #                      linestyle=linestyle, color='black')
-    #             plt.plot([square_length / 2 + extension, square_length / 2], [i*lane_width, i*lane_width],
-    #                      linestyle=linestyle, color='black')
-    #             plt.plot([-square_length / 2 - extension, -square_length / 2], [-i * lane_width, -i * lane_width],
-    #                      linestyle=linestyle, color='black')
-    #             plt.plot([square_length / 2 + extension, square_length / 2], [-i * lane_width, -i * lane_width],
-    #                      linestyle=linestyle, color='black')
-    #
-    #         # ----------vertical----------------
-    #         plt.plot([0, 0], [-square_length / 2 - extension, -square_length / 2], color='black')
-    #         plt.plot([0, 0], [square_length / 2 + extension, square_length / 2], color='black')
-    #
-    #         #
-    #         for i in range(1, LANE_NUMBER+1):
-    #             linestyle = dotted_line_style if i < LANE_NUMBER else solid_line_style
-    #             plt.plot([i*lane_width, i*lane_width], [-square_length / 2 - extension, -square_length / 2],
-    #                      linestyle=linestyle, color='black')
-    #             plt.plot([i*lane_width, i*lane_width], [square_length / 2 + extension, square_length / 2],
-    #                      linestyle=linestyle, color='black')
-    #             plt.plot([-i * lane_width, -i * lane_width], [-square_length / 2 - extension, -square_length / 2],
-    #                      linestyle=linestyle, color='black')
-    #             plt.plot([-i * lane_width, -i * lane_width], [square_length / 2 + extension, square_length / 2],
-    #                      linestyle=linestyle, color='black')
-    #
-    #         # ----------stop line--------------
-    #         plt.plot([0, LANE_NUMBER * lane_width], [-square_length / 2, -square_length / 2], color='black')
-    #         plt.plot([-LANE_NUMBER * lane_width, 0], [square_length / 2, square_length / 2], color='black')
-    #         plt.plot([-square_length / 2, -square_length / 2], [0, -LANE_NUMBER * lane_width], color='black')
-    #         plt.plot([square_length / 2, square_length / 2], [LANE_NUMBER * lane_width, 0], color='black')
-    #
-    #         # ----------Oblique--------------
-    #         plt.plot([LANE_NUMBER * lane_width, square_length / 2], [-square_length / 2, -LANE_NUMBER * lane_width],
-    #                  color='black')
-    #         plt.plot([LANE_NUMBER * lane_width, square_length / 2], [square_length / 2, LANE_NUMBER * lane_width],
-    #                  color='black')
-    #         plt.plot([-LANE_NUMBER * lane_width, -square_length / 2], [-square_length / 2, -LANE_NUMBER * lane_width],
-    #                  color='black')
-    #         plt.plot([-LANE_NUMBER * lane_width, -square_length / 2], [square_length / 2, LANE_NUMBER * lane_width],
-    #                  color='black')
-    #
-    #         def is_in_plot_area(x, y, tolerance=5):
-    #             if -square_length / 2 - extension + tolerance < x < square_length / 2 + extension - tolerance and \
-    #                     -square_length / 2 - extension + tolerance < y < square_length / 2 + extension - tolerance:
-    #                 return True
-    #             else:
-    #                 return False
-    #
-    #         def draw_rotate_rec(x, y, a, l, w, color):
-    #             RU_x, RU_y, _ = rotate_coordination(l / 2, w / 2, 0, -a)
-    #             RD_x, RD_y, _ = rotate_coordination(l / 2, -w / 2, 0, -a)
-    #             LU_x, LU_y, _ = rotate_coordination(-l / 2, w / 2, 0, -a)
-    #             LD_x, LD_y, _ = rotate_coordination(-l / 2, -w / 2, 0, -a)
-    #             ax.plot([RU_x + x, RD_x + x], [RU_y + y, RD_y + y], color=color)
-    #             ax.plot([RU_x + x, LU_x + x], [RU_y + y, LU_y + y], color=color)
-    #             ax.plot([LD_x + x, RD_x + x], [LD_y + y, RD_y + y], color=color)
-    #             ax.plot([LD_x + x, LU_x + x], [LD_y + y, LU_y + y], color=color)
-    #
-    #         def plot_phi_line(x, y, phi, color):
-    #             line_length = 3
-    #             x_forw, y_forw = x + line_length * cos(phi * pi / 180.), \
-    #                              y + line_length * sin(phi * pi / 180.)
-    #             plt.plot([x, x_forw], [y, y_forw], color=color, linewidth=0.5)
-    #
-    #         # abso_obs = self.convert_vehs_to_abso(self.obses)
-    #         obses = self.obses.numpy()
-    #         ego_info, tracing_info, vehs_info = obses[0, :self.ego_info_dim], \
-    #                                             obses[0, self.ego_info_dim:self.ego_info_dim + self.per_tracking_info_dim * (
-    #                                                                                       self.num_future_data + 1)], \
-    #                                             obses[0, self.ego_info_dim + self.per_tracking_info_dim * (
-    #                                                         self.num_future_data + 1):]
-    #         # plot cars
-    #         for veh_index in range(int(len(vehs_info) / self.per_item_info_dim)):
-    #             veh = vehs_info[self.per_item_info_dim * veh_index:self.per_item_info_dim * (veh_index + 1)]
-    #             veh_x, veh_y, veh_v, veh_phi = veh
-    #
-    #             if is_in_plot_area(veh_x, veh_y):
-    #                 plot_phi_line(veh_x, veh_y, veh_phi, 'black')
-    #                 draw_rotate_rec(veh_x, veh_y, veh_phi, L, W, 'black')
-    #
-    #         # plot own car
-    #         delta_y, delta_phi = tracing_info[0], tracing_info[1]
-    #         ego_v_x, ego_v_y, ego_r, ego_x, ego_y, ego_phi = ego_info
-    #
-    #         plot_phi_line(ego_x, ego_y, ego_phi, 'red')
-    #         draw_rotate_rec(ego_x, ego_y, ego_phi, L, W, 'red')
-    #
-    #         # plot text
-    #         text_x, text_y_start = -110, 60
-    #         ge = iter(range(0, 1000, 4))
-    #         plt.text(text_x, text_y_start - next(ge), 'ego_x: {:.2f}m'.format(ego_x))
-    #         plt.text(text_x, text_y_start - next(ge), 'ego_y: {:.2f}m'.format(ego_y))
-    #         plt.text(text_x, text_y_start - next(ge), 'delta_y: {:.2f}m'.format(delta_y))
-    #         plt.text(text_x, text_y_start - next(ge), r'ego_phi: ${:.2f}\degree$'.format(ego_phi))
-    #         plt.text(text_x, text_y_start - next(ge), r'delta_phi: ${:.2f}\degree$'.format(delta_phi))
-    #
-    #         plt.text(text_x, text_y_start - next(ge), 'v_x: {:.2f}m/s'.format(ego_v_x))
-    #         plt.text(text_x, text_y_start - next(ge), 'exp_v: {:.2f}m/s'.format(self.exp_v))
-    #         plt.text(text_x, text_y_start - next(ge), 'v_y: {:.2f}m/s'.format(ego_v_y))
-    #         plt.text(text_x, text_y_start - next(ge), 'yaw_rate: {:.2f}rad/s'.format(ego_r))
-    #
-    #         if self.actions is not None:
-    #             steer, a_x = self.actions[0, 0], self.actions[0, 1]
-    #             plt.text(text_x, text_y_start - next(ge),
-    #                      r'steer: {:.2f}rad (${:.2f}\degree$)'.format(steer, steer * 180 / np.pi))
-    #             plt.text(text_x, text_y_start - next(ge), 'a_x: {:.2f}m/s^2'.format(a_x))
-    #
-    #         text_x, text_y_start = 70, 60
-    #         ge = iter(range(0, 1000, 4))
-    #
-    #         # reward info
-    #         if self.reward_info is not None:
-    #             for key, val in self.reward_info.items():
-    #                 plt.text(text_x, text_y_start - next(ge), '{}: {:.4f}'.format(key, val))
-    #
-    #         plt.show()
-    #         plt.pause(0.1)
+    def render(self, mode='human'):
+        if mode == 'human':
+            # plot basic map
+            extension = 40
+            dotted_line_style = '--'
+            solid_line_style = '-'
+
+            plt.cla()
+            ax = plt.axes([-0.05, -0.05, 1.1, 1.1])
+            ax = plt.gca()
+            ax.spines['top'].set_visible(False)
+            ax.spines['bottom'].set_visible(False)
+            ax.spines['left'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.axis("equal")
+
+            ax.add_patch(plt.Rectangle((-Para.CROSSROAD_SIZE_LAT / 2 - extension, Para.OFFSET_L),
+                                       extension, Para.GREEN_BELT_LAT, edgecolor='black', facecolor='green',
+                                       linewidth=1))
+            ax.add_patch(plt.Rectangle((Para.CROSSROAD_SIZE_LAT / 2, Para.OFFSET_R),
+                                       extension, Para.GREEN_BELT_LAT, edgecolor='black', facecolor='green',
+                                       linewidth=1))
+            ax.add_patch(plt.Rectangle((Para.OFFSET_U, Para.CROSSROAD_SIZE_LON / 2),
+                                       Para.GREEN_BELT_LON, extension, edgecolor='black', facecolor='green',
+                                       linewidth=1))
+            ax.add_patch(plt.Rectangle((Para.OFFSET_D - Para.GREEN_BELT_LON, -Para.CROSSROAD_SIZE_LON / 2 - extension),
+                                       Para.GREEN_BELT_LON, extension, edgecolor='black', facecolor='green',
+                                       linewidth=1))
+
+            # Left out lane
+            for i in range(1, Para.LANE_NUMBER_LAT_OUT + 2):
+                lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1,
+                                   Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+                base = Para.OFFSET_L + Para.GREEN_BELT_LAT
+                linestyle = dotted_line_style if i < Para.LANE_NUMBER_LAT_OUT else solid_line_style
+                linewidth = 1 if i < Para.LANE_NUMBER_LAT_OUT else 1
+                plt.plot([-Para.CROSSROAD_SIZE_LAT / 2 - extension, -Para.CROSSROAD_SIZE_LAT / 2],
+                         [base + sum(lane_width_flag[:i]), base + sum(lane_width_flag[:i])],
+                         linestyle=linestyle, color='black', linewidth=linewidth)
+            # Left in lane
+            for i in range(1, Para.LANE_NUMBER_LAT_IN + 2):
+                lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1,
+                                   Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+                base = Para.OFFSET_L
+                linestyle = dotted_line_style if i < Para.LANE_NUMBER_LAT_IN else solid_line_style
+                linewidth = 1 if i < Para.LANE_NUMBER_LAT_IN else 1
+                plt.plot([-Para.CROSSROAD_SIZE_LAT / 2 - extension, -Para.CROSSROAD_SIZE_LAT / 2],
+                         [base - sum(lane_width_flag[:i]), base - sum(lane_width_flag[:i])],
+                         linestyle=linestyle, color='black', linewidth=linewidth)
+
+            # Right out lane
+            for i in range(1, Para.LANE_NUMBER_LAT_OUT + 2):
+                lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1,
+                                   Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+                base = Para.OFFSET_R
+                linestyle = dotted_line_style if i < Para.LANE_NUMBER_LAT_OUT else solid_line_style
+                linewidth = 1 if i < Para.LANE_NUMBER_LAT_OUT else 1
+                plt.plot([Para.CROSSROAD_SIZE_LAT / 2, Para.CROSSROAD_SIZE_LAT / 2 + extension],
+                         [base - sum(lane_width_flag[:i]), base - sum(lane_width_flag[:i])],
+                         linestyle=linestyle, color='black', linewidth=linewidth)
+
+            # Right in lane
+            for i in range(1, Para.LANE_NUMBER_LAT_IN + 2):
+                lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1,
+                                   Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+                base = Para.OFFSET_R + Para.GREEN_BELT_LAT
+                linestyle = dotted_line_style if i < Para.LANE_NUMBER_LAT_IN else solid_line_style
+                linewidth = 1 if i < Para.LANE_NUMBER_LAT_IN else 1
+                plt.plot([Para.CROSSROAD_SIZE_LAT / 2, Para.CROSSROAD_SIZE_LAT / 2 + extension],
+                         [base + sum(lane_width_flag[:i]), base + sum(lane_width_flag[:i])],
+                         linestyle=linestyle, color='black', linewidth=linewidth)
+
+            # Up in lane
+            for i in range(1, Para.LANE_NUMBER_LON_IN + 2):
+                lane_width_flag = [Para.LANE_WIDTH_2, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
+                                   Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+                base = Para.OFFSET_U
+                linestyle = dotted_line_style if i < Para.LANE_NUMBER_LON_IN else solid_line_style
+                linewidth = 1 if i < Para.LANE_NUMBER_LON_IN else 1
+                plt.plot([base - sum(lane_width_flag[:i]), base - sum(lane_width_flag[:i])],
+                         [Para.CROSSROAD_SIZE_LON / 2 + extension, Para.CROSSROAD_SIZE_LON / 2],
+                         linestyle=linestyle, color='black', linewidth=linewidth)
+
+            # Up out lane
+            for i in range(1, Para.LANE_NUMBER_LON_OUT + 2):
+                lane_width_flag = [Para.LANE_WIDTH_3, Para.LANE_WIDTH_3, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+                base = Para.OFFSET_U + Para.GREEN_BELT_LON
+                linestyle = dotted_line_style if i < Para.LANE_NUMBER_LON_OUT else solid_line_style
+                linewidth = 1 if i < Para.LANE_NUMBER_LON_OUT else 1
+                plt.plot([base + sum(lane_width_flag[:i]), base + sum(lane_width_flag[:i])],
+                         [Para.CROSSROAD_SIZE_LON / 2 + extension, Para.CROSSROAD_SIZE_LON / 2],
+                         linestyle=linestyle, color='black', linewidth=linewidth)
+
+            # Down in lane
+            for i in range(1, Para.LANE_NUMBER_LON_IN + 2):
+                lane_width_flag = [Para.LANE_WIDTH_2, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
+                                   Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+                base = Para.OFFSET_D
+                linestyle = dotted_line_style if i < Para.LANE_NUMBER_LON_IN else solid_line_style
+                linewidth = 1 if i < Para.LANE_NUMBER_LON_IN else 1
+                plt.plot([base + sum(lane_width_flag[:i]), base + sum(lane_width_flag[:i])],
+                         [-Para.CROSSROAD_SIZE_LON / 2 - extension, -Para.CROSSROAD_SIZE_LON / 2],
+                         linestyle=linestyle, color='black', linewidth=linewidth)
+
+            # Down out lane
+            for i in range(1, Para.LANE_NUMBER_LON_OUT + 2):
+                lane_width_flag = [Para.LANE_WIDTH_3, Para.LANE_WIDTH_3, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+                base = Para.OFFSET_D - Para.GREEN_BELT_LON
+                linestyle = dotted_line_style if i < Para.LANE_NUMBER_LON_OUT else solid_line_style
+                linewidth = 1 if i < Para.LANE_NUMBER_LON_OUT else 1
+                plt.plot([base - sum(lane_width_flag[:i]), base - sum(lane_width_flag[:i])],
+                         [-Para.CROSSROAD_SIZE_LON / 2 - extension, -Para.CROSSROAD_SIZE_LON / 2],
+                         linestyle=linestyle, color='black', linewidth=linewidth)
+
+            # Oblique
+            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, Para.OFFSET_U - (
+                        Para.LANE_NUMBER_LON_IN - 1) * Para.LANE_WIDTH_3 - Para.LANE_WIDTH_2 - Para.BIKE_LANE_WIDTH - Para.PERSON_LANE_WIDTH],
+                     [
+                         Para.OFFSET_L + Para.GREEN_BELT_LAT + Para.LANE_NUMBER_LAT_OUT * Para.LANE_WIDTH_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH,
+                         Para.CROSSROAD_SIZE_LON / 2],
+                     color='black', linewidth=1)
+            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2,
+                      Para.OFFSET_D - Para.GREEN_BELT_LON - Para.LANE_NUMBER_LON_OUT * Para.LANE_WIDTH_3 - Para.BIKE_LANE_WIDTH - Para.PERSON_LANE_WIDTH],
+                     [
+                         Para.OFFSET_L - Para.LANE_NUMBER_LAT_IN * Para.LANE_WIDTH_1 - Para.BIKE_LANE_WIDTH - Para.PERSON_LANE_WIDTH,
+                         -Para.CROSSROAD_SIZE_LON / 2],
+                     color='black', linewidth=1)
+            plt.plot([Para.CROSSROAD_SIZE_LAT / 2,
+                      Para.OFFSET_D + (
+                                  Para.LANE_NUMBER_LON_IN - 1) * Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH],
+                     [
+                         Para.OFFSET_R - Para.LANE_NUMBER_LAT_OUT * Para.LANE_WIDTH_1 - Para.BIKE_LANE_WIDTH - Para.PERSON_LANE_WIDTH,
+                         -Para.CROSSROAD_SIZE_LON / 2],
+                     color='black', linewidth=1)
+            plt.plot([Para.CROSSROAD_SIZE_LAT / 2,
+                      Para.OFFSET_U + Para.GREEN_BELT_LON + Para.LANE_NUMBER_LON_OUT * Para.LANE_WIDTH_3 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH],
+                     [
+                         Para.OFFSET_R + Para.GREEN_BELT_LAT + Para.LANE_NUMBER_LAT_IN * Para.LANE_WIDTH_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH,
+                         Para.CROSSROAD_SIZE_LON / 2],
+                     color='black', linewidth=1)
+
+            # stop line
+            lane_width_flag = [Para.LANE_WIDTH_2, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
+                               Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # Down
+            plt.plot([Para.OFFSET_D, Para.OFFSET_D + sum(lane_width_flag[:Para.LANE_NUMBER_LON_IN])],
+                     [-Para.CROSSROAD_SIZE_LON / 2, -Para.CROSSROAD_SIZE_LON / 2], color='black')
+            lane_width_flag = [Para.LANE_WIDTH_2, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
+                               Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # Up
+            plt.plot([-sum(lane_width_flag[:Para.LANE_NUMBER_LON_IN]) + Para.OFFSET_U, Para.OFFSET_U],
+                     [Para.CROSSROAD_SIZE_LON / 2, Para.CROSSROAD_SIZE_LON / 2], color='black')
+            lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1,
+                               Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, -Para.CROSSROAD_SIZE_LAT / 2],
+                     [Para.OFFSET_L, Para.OFFSET_L - sum(lane_width_flag[:Para.LANE_NUMBER_LAT_IN])],
+                     color='black')  # left
+            lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1,
+                               Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+            plt.plot([Para.CROSSROAD_SIZE_LAT / 2, Para.CROSSROAD_SIZE_LAT / 2], [Para.OFFSET_R + Para.GREEN_BELT_LAT,
+                                                                                  Para.OFFSET_R + Para.GREEN_BELT_LAT + sum(
+                                                                                      lane_width_flag[
+                                                                                      :Para.LANE_NUMBER_LAT_IN])],
+                     color='black')
+
+            # traffic light
+            v_light = 1
+            light_line_width = 2
+            if v_light == 0 or v_light == 1:
+                v_color_1, v_color_2, h_color_1, h_color_2 = 'green', 'green', 'red', 'red'
+            elif v_light == 2:
+                v_color_1, v_color_2, h_color_1, h_color_2 = 'orange', 'orange', 'red', 'red'
+            elif v_light == 3:
+                v_color_1, v_color_2, h_color_1, h_color_2 = 'red', 'red', 'red', 'green'
+            elif v_light == 4:
+                v_color_1, v_color_2, h_color_1, h_color_2 = 'red', 'red', 'red', 'orange'
+            elif v_light == 5:
+                v_color_1, v_color_2, h_color_1, h_color_2 = 'red', 'red', 'green', 'red'
+            else:
+                v_color_1, v_color_2, h_color_1, h_color_2 = 'red', 'red', 'orange', 'red'
+
+            lane_width_flag = [Para.LANE_WIDTH_2, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
+                               Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # Down
+            plt.plot([Para.OFFSET_D, Para.OFFSET_D + sum(lane_width_flag[:1])],
+                     [-Para.CROSSROAD_SIZE_LON / 2, -Para.CROSSROAD_SIZE_LON / 2],
+                     color=v_color_1, linewidth=light_line_width)
+            plt.plot([Para.OFFSET_D + sum(lane_width_flag[:1]), Para.OFFSET_D + sum(lane_width_flag[:2])],
+                     [-Para.CROSSROAD_SIZE_LON / 2, -Para.CROSSROAD_SIZE_LON / 2],
+                     color=v_color_2, linewidth=light_line_width)
+            plt.plot([Para.OFFSET_D + sum(lane_width_flag[:2]), Para.OFFSET_D + sum(lane_width_flag[:3])],
+                     [-Para.CROSSROAD_SIZE_LON / 2, -Para.CROSSROAD_SIZE_LON / 2],
+                     color='green', linewidth=light_line_width)
+
+            lane_width_flag = [Para.LANE_WIDTH_2, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
+                               Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # Up
+            plt.plot([-sum(lane_width_flag[:1]) + Para.OFFSET_U, Para.OFFSET_U],
+                     [Para.CROSSROAD_SIZE_LON / 2, Para.CROSSROAD_SIZE_LON / 2],
+                     color=v_color_1, linewidth=light_line_width)
+            plt.plot([-sum(lane_width_flag[:2]) + Para.OFFSET_U, -sum(lane_width_flag[:1]) + Para.OFFSET_U],
+                     [Para.CROSSROAD_SIZE_LON / 2, Para.CROSSROAD_SIZE_LON / 2],
+                     color=v_color_2, linewidth=light_line_width)
+            plt.plot([-sum(lane_width_flag[:3]) + Para.OFFSET_U, -sum(lane_width_flag[:2]) + Para.OFFSET_U],
+                     [Para.CROSSROAD_SIZE_LON / 2, Para.CROSSROAD_SIZE_LON / 2],
+                     color='green', linewidth=light_line_width)
+
+            lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1,
+                               Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # left
+            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, -Para.CROSSROAD_SIZE_LAT / 2],
+                     [Para.OFFSET_L, Para.OFFSET_L - sum(lane_width_flag[:1])],
+                     color=h_color_1, linewidth=light_line_width)
+            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, -Para.CROSSROAD_SIZE_LAT / 2],
+                     [Para.OFFSET_L - sum(lane_width_flag[:1]), Para.OFFSET_L - sum(lane_width_flag[:3])],
+                     color=h_color_2, linewidth=light_line_width)
+            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, -Para.CROSSROAD_SIZE_LAT / 2],
+                     [Para.OFFSET_L - sum(lane_width_flag[:3]), Para.OFFSET_L - sum(lane_width_flag[:4])],
+                     color='green', linewidth=light_line_width)
+
+            lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1,
+                               Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # right
+            plt.plot([Para.CROSSROAD_SIZE_LAT / 2, Para.CROSSROAD_SIZE_LAT / 2],
+                     [Para.OFFSET_R + Para.GREEN_BELT_LAT,
+                      Para.OFFSET_R + Para.GREEN_BELT_LAT + sum(lane_width_flag[:1])],
+                     color=h_color_1, linewidth=light_line_width)
+            plt.plot([Para.CROSSROAD_SIZE_LAT / 2, Para.CROSSROAD_SIZE_LAT / 2],
+                     [Para.OFFSET_R + Para.GREEN_BELT_LAT + sum(lane_width_flag[:1]),
+                      Para.OFFSET_R + Para.GREEN_BELT_LAT + sum(lane_width_flag[:3])],
+                     color=h_color_2, linewidth=light_line_width)
+            plt.plot([Para.CROSSROAD_SIZE_LAT / 2, Para.CROSSROAD_SIZE_LAT / 2],
+                     [Para.OFFSET_R + Para.GREEN_BELT_LAT + sum(lane_width_flag[:3]),
+                      Para.OFFSET_R + Para.GREEN_BELT_LAT + sum(lane_width_flag[:4])],
+                     color='green', linewidth=light_line_width)
+
+            # zebra crossing
+            j1, j2 = 20.5, 6.75
+            for ii in range(19):
+                if ii <= 3:
+                    continue
+                ax.add_patch(
+                    plt.Rectangle((-Para.CROSSROAD_SIZE_LON / 2 + j1 + ii * 1.6, -Para.CROSSROAD_SIZE_LON / 2 + 0.5),
+                                  0.8, 4,
+                                  color='lightgray', alpha=0.5))
+                ii += 1
+            for ii in range(19):
+                if ii <= 3:
+                    continue
+                ax.add_patch(
+                    plt.Rectangle((-Para.CROSSROAD_SIZE_LON / 2 + j1 + ii * 1.6, Para.CROSSROAD_SIZE_LON / 2 - 0.5 - 4),
+                                  0.8, 4,
+                                  color='lightgray', alpha=0.5))
+                ii += 1
+            for ii in range(28):
+                if ii <= 3:
+                    continue
+                ax.add_patch(
+                    plt.Rectangle(
+                        (-Para.CROSSROAD_SIZE_LAT / 2 + 0.5, Para.CROSSROAD_SIZE_LAT / 2 - j2 - 0.8 - ii * 1.6), 4, 0.8,
+                        color='lightgray',
+                        alpha=0.5))
+                ii += 1
+            for ii in range(28):
+                if ii <= 3:
+                    continue
+                ax.add_patch(
+                    plt.Rectangle(
+                        (Para.CROSSROAD_SIZE_LAT / 2 - 0.5 - 4, Para.CROSSROAD_SIZE_LAT / 2 - j2 - 0.8 - ii * 1.6), 4,
+                        0.8,
+                        color='lightgray',
+                        alpha=0.5))
+                ii += 1
+
+            def is_in_plot_area(x, y, tolerance=5):
+                if -Para.CROSSROAD_SIZE_LAT / 2 - extension + tolerance < x < Para.CROSSROAD_SIZE_LAT / 2 + extension - tolerance and \
+                        -Para.CROSSROAD_SIZE_LON / 2 - extension + tolerance < y < Para.CROSSROAD_SIZE_LON / 2 + extension - tolerance:
+                    return True
+                else:
+                    return False
+
+            def draw_rotate_rec(type, x, y, a, l, w, color, linestyle='-', patch=False):
+                RU_x, RU_y, _ = rotate_coordination(l / 2, w / 2, 0, -a)
+                RD_x, RD_y, _ = rotate_coordination(l / 2, -w / 2, 0, -a)
+                LU_x, LU_y, _ = rotate_coordination(-l / 2, w / 2, 0, -a)
+                LD_x, LD_y, _ = rotate_coordination(-l / 2, -w / 2, 0, -a)
+                if patch:
+                    if type in ['bicycle_1', 'bicycle_2', 'bicycle_3']:
+                        item_color = 'purple'
+                    elif type == 'DEFAULT_PEDTYPE':
+                        item_color = 'lime'
+                    else:
+                        item_color = 'lightgray'
+                    ax.add_patch(plt.Rectangle((x + LU_x, y + LU_y), w, l, edgecolor=item_color,facecolor=item_color, angle=-(90 - a), zorder=30))
+                else:
+                    ax.plot([RU_x + x, RD_x + x], [RU_y + y, RD_y + y], color=color, linestyle=linestyle)
+                    ax.plot([RU_x + x, LU_x + x], [RU_y + y, LU_y + y], color=color, linestyle=linestyle)
+                    ax.plot([LD_x + x, RD_x + x], [LD_y + y, RD_y + y], color=color, linestyle=linestyle)
+                    ax.plot([LD_x + x, LU_x + x], [LD_y + y, LU_y + y], color=color, linestyle=linestyle)
+
+            def plot_phi_line(type, x, y, phi, color):
+                if type in ['bicycle_1', 'bicycle_2', 'bicycle_3']:
+                    line_length = 2
+                elif type == 'DEFAULT_PEDTYPE':
+                    line_length = 1
+                else:
+                    line_length = 5
+                x_forw, y_forw = x + line_length * cos(phi * pi / 180.), \
+                                 y + line_length * sin(phi * pi / 180.)
+                plt.plot([x, x_forw], [y, y_forw], color=color, linewidth=0.5)
+
+            obses = self._convert_to_abso(self.obses)
+            obses = obses.numpy()
+            obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_other = self._split_all(obses)
+
+            # plot others
+            for index in range(self.veh_num + self.bike_num + self.person_num):
+                item = obses_other[:, self.per_other_info_dim * index:self.per_other_info_dim * (index + 1)]
+                other_x, other_y, other_v, other_phi, other_l, other_w = item[:, 0], item[:, 1], item[:, 2], item[:, 3], item[:, 4], item[:, 5]
+                if index < self.bike_num:
+                    type = 'bicycle_1'
+                elif self.bike_num <= index < self.person_num + self.bike_num:
+                    type = 'DEFAULT_PEDTYPE'
+                else:
+                    type = 'veh'
+                if 1:
+                    plot_phi_line(type, other_x, other_y, other_phi, 'black')
+                    draw_rotate_rec(type, other_x, other_y, other_phi, other_l, other_w, 'black')
+
+            # plot own car
+            delta_lon, delta_lat, delta_phi, delta_v = np.squeeze(obses_track, axis=0)
+            ego_v_x, ego_v_y, ego_r, ego_x, ego_y, ego_phi = np.squeeze(obses_ego, axis=0)
+
+            plot_phi_line('self_car', ego_x, ego_y, ego_phi, 'red')
+            draw_rotate_rec("self_car", ego_x, ego_y, ego_phi, Para.L, Para.W, 'red')
+
+            # plot text
+            text_x, text_y_start = -110, 60
+            ge = iter(range(0, 1000, 4))
+            plt.text(text_x, text_y_start - next(ge), 'ego_x: {:.2f}m'.format(ego_x))
+            plt.text(text_x, text_y_start - next(ge), 'ego_y: {:.2f}m'.format(ego_y))
+            plt.text(text_x, text_y_start - next(ge), 'delta_lon: {:.2f}m'.format(delta_lon))
+            plt.text(text_x, text_y_start - next(ge), 'delta_lat: {:.2f}m'.format(delta_lat))
+            plt.text(text_x, text_y_start - next(ge), r'ego_phi: ${:.2f}\degree$'.format(ego_phi))
+            plt.text(text_x, text_y_start - next(ge), r'delta_phi: ${:.2f}\degree$'.format(delta_phi))
+
+            plt.text(text_x, text_y_start - next(ge), 'v_x: {:.2f}m/s'.format(ego_v_x))
+            # plt.text(text_x, text_y_start - next(ge), 'exp_v: {:.2f}m/s'.format(self.exp_v))
+            plt.text(text_x, text_y_start - next(ge), 'v_y: {:.2f}m/s'.format(ego_v_y))
+            plt.text(text_x, text_y_start - next(ge), 'yaw_rate: {:.2f}rad/s'.format(ego_r))
+
+            if self.actions is not None:
+                steer, a_x = self.actions[0, 0], self.actions[0, 1]
+                plt.text(text_x, text_y_start - next(ge),
+                         r'steer: {:.2f}rad (${:.2f}\degree$)'.format(steer, steer * 180 / np.pi))
+                plt.text(text_x, text_y_start - next(ge), 'a_x: {:.2f}m/s^2'.format(a_x))
+
+            text_x, text_y_start = 70, 60
+            ge = iter(range(0, 1000, 4))
+
+            # reward info
+            if self.reward_info is not None:
+                for key, val in self.reward_info.items():
+                    plt.text(text_x, text_y_start - next(ge), '{}: {:.4f}'.format(key, val))
+
+            plt.show()
+            plt.pause(0.1)
 
 
 def deal_with_phi_diff(phi_diff):
@@ -706,8 +921,8 @@ class ReferencePath(object):
         a, b, c = (x0, y0), (x0 + cos(phi0_rad), y0 + sin(phi0_rad)), (ego_x, ego_y)
         dist_a2c = np.sqrt(np.square(ego_x - x0) + np.square(ego_y - y0))
         dist_c2line = abs(sin(phi0_rad) * ego_x - cos(phi0_rad) * ego_y - sin(phi0_rad) * x0 + cos(phi0_rad) * y0)
-        signed_dist_lateral = self._judge_sign_left_or_right(a, b, c) * dist_c2line
-        signed_dist_longi = self._judge_sign_ahead_or_behind(a, b, c) * np.sqrt(dist_a2c ** 2 - dist_c2line ** 2)
+        signed_dist_lateral = self._judge_sign_left_or_right(a, b, c) * dist_c2line         # TODO:检测结果左边为负，右边为正
+        signed_dist_longi = self._judge_sign_ahead_or_behind(a, b, c) * np.sqrt(np.abs(dist_a2c ** 2 - dist_c2line ** 2))
         return np.array([signed_dist_longi, signed_dist_lateral, deal_with_phi_diff(ego_phi - phi0), ego_v - v0])
 
     def idx2point(self, idx):
@@ -720,7 +935,10 @@ class ReferencePath(object):
         x2, y2 = b
         x3, y3 = c
         featured = (x1 - x3) * (y2 - y3) - (y1 - y3) * (x2 - x3)
-        return -featured / abs(featured)
+        if abs(featured) < 1e-8:
+            return 0.
+        else:
+            return -featured / abs(featured)
 
     def _judge_sign_ahead_or_behind(self, a, b, c):
         # return +1 if head else -1
@@ -730,7 +948,10 @@ class ReferencePath(object):
         vector1 = np.array([x2 - x1, y2 - y1])
         vector2 = np.array([x3 - x1, y3 - y1])
         mul = np.sum(vector1 * vector2)
-        return mul / np.abs(mul)
+        if abs(mul) < 1e-8:
+            return 0.
+        else:
+            return mul / np.abs(mul)
 
     def _construct_ref_path(self, task):
         sl = 40  # straight length
@@ -758,8 +979,9 @@ class ReferencePath(object):
                          [control_point1[1], control_point2[1], control_point3[1], control_point4[1]]],
                         dtype=np.float32)
                     curve = bezier.Curve(node, degree=3)
-                    s_vals = np.linspace(0, 1.0, int(
-                        pi / 2 * (Para.CROSSROAD_SIZE_LON / 2 + Para.LANE_WIDTH_1 / 2)) * meter_pointnum_ratio)  # todo
+                    # 打印最大距离，最小距离
+                    s_vals = np.linspace(0, 1.0, int(pi / 2 * (Para.CROSSROAD_SIZE_LON / 2 +
+                                            Para.OFFSET_L + Para.GREEN_BELT_LAT + 0.5 * Para.LANE_WIDTH_1)) * meter_pointnum_ratio)
                     trj_data = curve.evaluate_multi(s_vals)
                     trj_data = trj_data.astype(np.float32)
                     start_straight_line_x = (Para.OFFSET_D + Para.LANE_WIDTH_2 * 0.5) * np.ones(
@@ -778,15 +1000,12 @@ class ReferencePath(object):
 
                     vs_green = np.array([8.33] * len(start_straight_line_x) + [7.0] * (len(trj_data[0]) - 1) + [8.33] *
                                         len(end_straight_line_x), dtype=np.float32)
-                    vs_red_0 = np.array(
-                        [8.33] * (len(start_straight_line_x) - meter_pointnum_ratio * (sl - dece_dist + int(Para.L))),
-                        dtype=np.float32)  # todo
+                    vs_red_0 = np.array([8.33] * (len(start_straight_line_x) - meter_pointnum_ratio * (sl - dece_dist + int(Para.L))), dtype=np.float32)
                     vs_red_1 = np.linspace(8.33, 0.0, meter_pointnum_ratio * dece_dist, endpoint=True, dtype=np.float32)
                     vs_red_2 = np.linspace(0.0, 0.0, meter_pointnum_ratio * (dece_dist // 2), endpoint=True,
                                            dtype=np.float32)
-                    vs_red_3 = np.array([8.33] * (
-                                meter_pointnum_ratio * (int(Para.L) - dece_dist // 2) + len(trj_data[0]) - 1 + len(
-                            end_straight_line_x)), dtype=np.float32)  # todo
+                    vs_red_3 = np.array([7.0] * (meter_pointnum_ratio * (int(Para.L) - dece_dist // 2) + len(trj_data[0]) - 1) + [8.33] * len(
+                            end_straight_line_x), dtype=np.float32)
                     vs_red = np.append(np.append(np.append(vs_red_0, vs_red_1), vs_red_2), vs_red_3)
 
                     planed_trj_green = xs_1, ys_1, phis_1, vs_green
@@ -833,15 +1052,13 @@ class ReferencePath(object):
 
                     vs_green = np.array([8.33] * len(start_straight_line_x) + [7.0] * (len(trj_data[0]) - 1) + [8.33] *
                                         len(end_straight_line_x), dtype=np.float32)
-                    vs_red_0 = np.array(
-                        [8.33] * (len(start_straight_line_x) - meter_pointnum_ratio * (sl - dece_dist + int(Para.L))),
-                        dtype=np.float32)  # todo
+                    vs_red_0 = np.array([8.33] * (len(start_straight_line_x) - meter_pointnum_ratio * (sl - dece_dist + int(Para.L))),
+                        dtype=np.float32)
                     vs_red_1 = np.linspace(8.33, 0.0, meter_pointnum_ratio * dece_dist, endpoint=True, dtype=np.float32)
                     vs_red_2 = np.linspace(0.0, 0.0, meter_pointnum_ratio * (dece_dist // 2), endpoint=True,
                                            dtype=np.float32)
-                    vs_red_3 = np.array([8.33] * (
-                                meter_pointnum_ratio * (int(Para.L) - dece_dist // 2) + len(trj_data[0]) - 1 + len(
-                            end_straight_line_x)), dtype=np.float32)  # todo
+                    vs_red_3 = np.array([7.0] * (meter_pointnum_ratio * (int(Para.L) - dece_dist // 2) + len(trj_data[0]) - 1) +
+                                        [8.33] * len(end_straight_line_x), dtype=np.float32)
                     vs_red = np.append(np.append(np.append(vs_red_0, vs_red_1), vs_red_2), vs_red_3)
 
                     planed_trj_green = xs_1, ys_1, phis_1, vs_green
@@ -873,8 +1090,7 @@ class ReferencePath(object):
                          [control_point1[1], control_point2[1], control_point3[1], control_point4[1]]],
                         dtype=np.float32)
                     curve = bezier.Curve(node, degree=3)
-                    s_vals = np.linspace(0, 1.0, int(pi / 2 * (Para.CROSSROAD_SIZE_LON / 2 - Para.LANE_WIDTH_1 * (
-                                3 - 0.5))) * meter_pointnum_ratio)  # todo
+                    s_vals = np.linspace(0, 1.0, int(pi / 2 * (Para.CROSSROAD_SIZE_LON / 2 - 3.9 * Para.LANE_WIDTH_1)) * meter_pointnum_ratio)
                     trj_data = curve.evaluate_multi(s_vals)
                     trj_data = trj_data.astype(np.float32)
                     start_straight_line_x = start_offset * np.ones(shape=(sl * meter_pointnum_ratio,),
@@ -943,38 +1159,88 @@ def test_future_n_data():
     plt.show()
 
 
-def test_tracking_error_vector():
-    path = ReferencePath('straight', "0")
-    xs = np.array([1.875, 1.875, -10, -20], np.float32)
-    ys = np.array([-20, 0, -10, -1], np.float32)
-    phis = np.array([90, 135, 135, 180], np.float32)
-    vs = np.array([10, 12, 10, 10], np.float32)
+def test_compute_next_track_info():
+    model = EnvironmentModel()
+    next_ego_infos = np.array([[10., 0., 0, Para.OFFSET_D + Para.LANE_WIDTH_2 / 2, -Para.CROSSROAD_SIZE_LON/2 - 10, 90]])
+    ref_points = np.array([[Para.OFFSET_D + Para.LANE_WIDTH_2 / 2, -Para.CROSSROAD_SIZE_LON/2 - 10, 90, 10]])
+    next_obses_track = model._compute_next_track_info(next_ego_infos, ref_points)
+    print(next_obses_track.numpy())
 
-    tracking_error_vector = path.tracking_error_vector(xs, ys, phis, vs, 10)
-    print(tracking_error_vector)
+    next_ego_infos = np.array([[10., 0., 0, Para.OFFSET_D + Para.LANE_WIDTH_2 / 2, -Para.CROSSROAD_SIZE_LON/2 - 10, 90]])
+    ref_points = np.array([[Para.OFFSET_D + Para.LANE_WIDTH_2 / 2 + 5, -Para.CROSSROAD_SIZE_LON/2 - 10, 90, 10]])
+    next_obses_track = model._compute_next_track_info(next_ego_infos, ref_points)
+    print(next_obses_track.numpy())
+
+    next_ego_infos = np.array([[10., 0., 0, Para.OFFSET_D + Para.LANE_WIDTH_2 / 2, -Para.CROSSROAD_SIZE_LON/2 - 10, 90]])
+    ref_points = np.array([[Para.OFFSET_D + Para.LANE_WIDTH_2 / 2 - 5, -Para.CROSSROAD_SIZE_LON/2 - 10, 90, 10]])
+    next_obses_track = model._compute_next_track_info(next_ego_infos, ref_points)
+    print(next_obses_track.numpy())
+
+    next_ego_infos = np.array([[10., 0., 0, Para.OFFSET_D + Para.LANE_WIDTH_2 / 2, -Para.CROSSROAD_SIZE_LON/2 - 8, 90]])
+    ref_points = np.array([[Para.OFFSET_D + Para.LANE_WIDTH_2 / 2, -Para.CROSSROAD_SIZE_LON/2 - 10, 90, 10]])
+    next_obses_track = model._compute_next_track_info(next_ego_infos, ref_points)
+    print(next_obses_track.numpy())
+
+    next_ego_infos = np.array([[10., 0., 0, Para.OFFSET_D + Para.LANE_WIDTH_2 / 2, -Para.CROSSROAD_SIZE_LON/2 - 15, 90]])
+    ref_points = np.array([[Para.OFFSET_D + Para.LANE_WIDTH_2 / 2, -Para.CROSSROAD_SIZE_LON/2 - 10, 90, 10]])
+    next_obses_track = model._compute_next_track_info(next_ego_infos, ref_points)
+    print(next_obses_track.numpy())
+
+def test_tracking_error_vector():
+    # path = ReferencePath('straight', green_or_red='green')
+    # x, y, phi, v = Para.OFFSET_D + Para.LANE_WIDTH_2 / 2, -Para.CROSSROAD_SIZE_LON/2 - 10, 90, 10
+    # tracking_error_vector = path.tracking_error_vector(x, y, phi, v)
+    # print(tracking_error_vector, [-0.026, -3.625,  0, 1.67])
+    #
+    # x, y, phi, v = Para.OFFSET_D + Para.LANE_WIDTH_2 * 3, -Para.CROSSROAD_SIZE_LON/2 - 10, 90, 10
+    # tracking_error_vector = path.tracking_error_vector(x, y, phi, v)
+    # print(tracking_error_vector, [-0.026, 4.5,  0, 1.67])
+    #
+    # x, y, phi, v = Para.OFFSET_D + Para.LANE_WIDTH_2 + Para.LANE_WIDTH_1 / 2, -Para.CROSSROAD_SIZE_LON/2 - 10, 90, 10
+    # tracking_error_vector = path.tracking_error_vector(x, y, phi, v)
+    # print(tracking_error_vector, [-0.026, -0.125,  0, 1.67])
+
+    path = ReferencePath('left', green_or_red='green')
+    x, y, phi, v = -Para.CROSSROAD_SIZE_LAT/2 - 10, Para.OFFSET_L + Para.GREEN_BELT_LAT + Para.LANE_WIDTH_1 / 2, 180, 10
+    tracking_error_vector = path.tracking_error_vector(x, y, phi, v)
+    print(tracking_error_vector, [-0.075, -7.5,  0, 1.67])
+
+    x, y, phi, v = -Para.CROSSROAD_SIZE_LAT/2 - 10, Para.OFFSET_L + Para.GREEN_BELT_LAT + Para.LANE_WIDTH_1 * 3, 180, 10
+    tracking_error_vector = path.tracking_error_vector(x, y, phi, v)
+    print(tracking_error_vector, [-0.075, 9.375,  0, 1.67])
+
+    path = ReferencePath('right', green_or_red='green')
+    x, y, phi, v = Para.CROSSROAD_SIZE_LAT/2, Para.OFFSET_R - Para.LANE_WIDTH_1 / 2, 180, 10
+    tracking_error_vector = path.tracking_error_vector(x, y, phi, v)
+    print(tracking_error_vector, [-0.0, -7.5,  0, 1.67])
+
+    x, y, phi, v = Para.CROSSROAD_SIZE_LAT/2, Para.OFFSET_R - Para.LANE_WIDTH_1 *3, 0, 10
+    tracking_error_vector = path.tracking_error_vector(x, y, phi, v)
+    print(tracking_error_vector, [-0.075, 9.375,  0, 1.67])
 
 
 def test_model():
-    from endtoend import CrossroadEnd2end
-    env = CrossroadEnd2end('left', 0)
-    model = EnvironmentModel('left', '0', 0)
-    obs_list = []
-    obs = env.reset()
-    done = 0
-    # while not done:
-    for i in range(10):
-        obs_list.append(obs)
-        action = np.array([0, -1], dtype=np.float32)
-        obs, reward, done, info = env.step(action)
-        env.render()
-    obses = np.stack(obs_list, 0)
-    model.reset(obses, 'left')
-    print(obses.shape)
-    for rollout_step in range(100):
-        actions = tf.tile(tf.constant([[0.5, 0]], dtype=tf.float32), tf.constant([len(obses), 1]))
-        obses, rewards, punish1, punish2, _, _ = model.rollout_out(actions)
-        print(rewards.numpy()[0], punish1.numpy()[0])
-        model.render()
+    from endtoend import CrossroadEnd2endMix
+    env = CrossroadEnd2endMix()
+    model = EnvironmentModel()
+    while 1:
+        obs, info = env.reset()
+        for i in range(35):
+            obs_list, future_point_list = [], []
+            obs_list.append(obs)
+            future_point_list.append(info['future_n_point'])
+            action = np.array([0, -1], dtype=np.float32)
+            obs, reward, done, info = env.step(action)
+            env.render()
+            obses = np.stack(obs_list, 0)
+            future_points = np.array(future_point_list)
+            model.reset(obses)
+            print(obses.shape, future_points.shape)
+            # for rollout_step in range(25):
+            #     actions = tf.tile(tf.constant([[0.5, 0]], dtype=tf.float32), tf.constant([len(obses), 1]))
+            #     obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
+            #     veh2bike4real, veh2person4real = model.rollout_out(actions, future_points[:, :, i])
+            #     model.render()
 
 
 def test_ref():
@@ -1032,4 +1298,6 @@ def test_ref():
 
 
 if __name__ == '__main__':
-    test_ref_path()
+    # test_model()
+    # test_tracking_error_vector()
+    test_compute_next_track_info()

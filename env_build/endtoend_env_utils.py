@@ -18,6 +18,7 @@ class Para:
     LANE_WIDTH_1 = 3.75
     LANE_WIDTH_2 = 3.25
     LANE_WIDTH_3 = 4.00
+    WALK_WIDTH = 6.00
     GREEN_BELT_LAT = 10
     GREEN_BELT_LON = 2
     BIKE_LANE_WIDTH = 1.0
