@@ -1193,7 +1193,7 @@ def test_end2end():
             env_model.reset(obses)
             for i in range(5):
                 obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
-                veh2bike4real, veh2person4real = env_model.rollout_out(np.tile(actions, (2, 1)), ref_points[:, :, i])
+                veh2bike4real, veh2person4real = env_model.rollout_out(np.tile(action, (2, 1)), ref_points[:, :, i])
                 env_model.render()
             env.render()
             # if done:
