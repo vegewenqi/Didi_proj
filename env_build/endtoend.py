@@ -453,19 +453,14 @@ class CrossroadEnd2endMix(gym.Env):
 
                 elif v['type'] == 'DEFAULT_PEDTYPE':
                     v.update(partici_type=[0., 1., 0.], turn_rad=0.0, exist=True)
-                    if (Para.OFFSET_U - (Para.LANE_NUMBER_LON_IN-1) * Para.LANE_WIDTH_2 - Para.LANE_WIDTH_3 - Para.BIKE_LANE_WIDTH <= v['x'] <= Para.OFFSET_U + Para.GREEN_BELT_LON + Para.LANE_NUMBER_LON_OUT * Para.LANE_WIDTH_1 + Para.BIKE_LANE_WIDTH) and \
-                            (Para.CROSSROAD_SIZE_LON / 2 <= v['y'] <= Para.CROSSROAD_SIZE_LON / 2 + Para.WALK_WIDTH):
+                    road_list = v['road']
+                    if road_list in [':0_c0', ':3_w0']:
                         c0.append(v)
-                    elif (Para.CROSSROAD_SIZE_LAT / 2 - Para.WALK_WIDTH <= v['x'] <= Para.CROSSROAD_SIZE_LAT / 2) and \
-                         (Para.OFFSET_R - Para.LANE_WIDTH_1 * Para.LANE_NUMBER_LAT_OUT - Para.BIKE_LANE_WIDTH <= v[
-                             'y'] <= Para.OFFSET_R + Para.GREEN_BELT_LAT + Para.LANE_WIDTH_1 * Para.LANE_NUMBER_LAT_IN + Para.BIKE_LANE_WIDTH):
+                    elif road_list in [':0_c1', ':2_w0', ':0_w3']:
                         c1.append(v)
-                    elif (Para.OFFSET_D - Para.GREEN_BELT_LON - Para.LANE_NUMBER_LON_OUT * Para.LANE_WIDTH_1 - Para.BIKE_LANE_WIDTH <= v['x'] <= Para.OFFSET_D + (Para.LANE_NUMBER_LON_IN-1) * Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3+ Para.BIKE_LANE_WIDTH) and \
-                            (-Para.CROSSROAD_SIZE_LON / 2 <= v['y'] <= -Para.CROSSROAD_SIZE_LON / 2 + Para.WALK_WIDTH):
+                    elif road_list in [':0_c2', ':0_w5', ':1_w0']:
                         c2.append(v)
-                    elif (-Para.CROSSROAD_SIZE_LAT / 2 <= v['x'] <= -Para.CROSSROAD_SIZE_LAT / 2 + Para.WALK_WIDTH) and \
-                         (Para.OFFSET_L - Para.LANE_WIDTH_1 * Para.LANE_NUMBER_LAT_IN - Para.BIKE_LANE_WIDTH <= v['y'] <=
-                          Para.OFFSET_L + Para.GREEN_BELT_LAT + Para.LANE_WIDTH_1 * Para.LANE_NUMBER_LAT_OUT + Para.BIKE_LANE_WIDTH):
+                    elif road_list in [':0_c3', ':4_w0']:
                         c3.append(v)
                 else:
                     v.update(partici_type=[0., 0., 1.], turn_rad=cal_turn_rad(v), exist=True)
