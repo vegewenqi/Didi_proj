@@ -80,7 +80,7 @@ class EvaluatorWithAttention(object):
                 action = self.policy_with_value.compute_mode(state[np.newaxis, :])
                 obs, reward, done, info = self.env.step(action.numpy()[0])
                 reward_info_dict_list.append(info['reward_info'])
-                if render: self.env.render(weights=attention_weights)
+                if render: self.env.render(weights=attn_weights)
                 reward_list.append(reward)
         else:
             while not done:
@@ -90,7 +90,7 @@ class EvaluatorWithAttention(object):
                 action = self.policy_with_value.compute_mode(state[np.newaxis, :])
                 obs, reward, done, info = self.env.step(action.numpy()[0])
                 reward_info_dict_list.append(info['reward_info'])
-                if render: self.env.render(weights=attention_weights)
+                if render: self.env.render(weights=attn_weights)
                 reward_list.append(reward)
 
         episode_return = sum(reward_list)

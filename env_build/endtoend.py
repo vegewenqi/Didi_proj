@@ -739,7 +739,8 @@ class CrossroadEnd2endMix(gym.Env):
         return reward.numpy()[0], reward_dict
 
     def render(self, mode='human', weights=None):
-        assert weights.shape == (self.other_number,), print(weights.shape)
+        if weights is not None:
+            assert weights.shape == (self.other_number,), print(weights.shape)
         if mode == 'human':
             # plot basic map
             extension = 40
@@ -1183,15 +1184,17 @@ def test_end2end():
     while i < 100000:
         for j in range(100):
             i += 1
+            obs, all_info = env.reset()
             action = np.array([0, 0.3], dtype=np.float32)
             obs, reward, done, info = env.step(action)
-            obses, actions = obs[np.newaxis, :], action[np.newaxis, :]
+            # obses, actions = obs[np.newaxis, :], action[np.newaxis, :]
             obses = np.tile(obses, (2, 1))
             ref_points = np.tile(info['future_n_point'], (2, 1, 1))
             env_model.reset(obses)
             for i in range(5):
                 obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
                 veh2bike4real, veh2person4real = env_model.rollout_out(np.tile(actions, (2, 1)), ref_points[:, :, i])
+                env_model.render()
             env.render()
             # if done:
             #     break

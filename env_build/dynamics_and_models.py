@@ -128,7 +128,12 @@ class EnvironmentModel(object):  # all tensors
             self.obses = self.compute_next_obses(self.obses, self.actions, ref_points)
 
             rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, \
-            veh2person4real, _ = self.compute_rewards(self.obses, self.actions)
+            veh2person4real, reward_dict = self.compute_rewards(self.obses, self.actions)
+
+            tf.print('-------')
+            tf.print(rewards)
+            tf.print(reward_dict)
+            tf.print('-------')
 
         return self.obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
                veh2bike4real, veh2person4real
