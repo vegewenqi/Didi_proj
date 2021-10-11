@@ -122,7 +122,7 @@ class AttentionPolicy4Toyota(tf.Module):
     @tf.function
     def compute_attn(self, obs_others, mask):
         with self.tf.name_scope('compute_attn') as scope:
-            return self.attn_net([obs_others, mask])
+            return self.attn_net([obs_others, mask]) # return (logits, weights) tuple
 
 
 if __name__ == '__main__':

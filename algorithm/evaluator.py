@@ -59,10 +59,12 @@ class EvaluatorWithAttention(object):
         self.load_weights(model_load_dir, iteration)
 
     def _get_state(self, obs, mask):
-        obs_other = self.policy_with_value.compute_attn(obs[self.args.other_start_dim:][np.newaxis, :],
-                                                        mask[np.newaxis, :]).numpy()[0]
+        obs_other, weights = self.policy_with_value.compute_attn(obs[self.args.other_start_dim:][np.newaxis, :],
+                                                                 mask[np.newaxis, :])
+        obs_other = obs_other.numpy()[0]
+        weights = weights.numpy()[0]
         state = np.concatenate((obs[:self.args.other_start_dim], obs_other), axis=0)
-        return state
+        return state, weights
 
     def run_an_episode(self, steps=None, render=True):
         reward_list = []
@@ -74,21 +76,21 @@ class EvaluatorWithAttention(object):
             for _ in range(steps):
                 processed_obs = self.preprocessor.process_obs(obs)
                 mask = info['mask']
-                state = self._get_state(processed_obs, mask)
+                state, attn_weights = self._get_state(processed_obs, mask)
                 action = self.policy_with_value.compute_mode(state[np.newaxis, :])
                 obs, reward, done, info = self.env.step(action.numpy()[0])
                 reward_info_dict_list.append(info['reward_info'])
-                if render: self.env.render()
+                if render: self.env.render(weights=attention_weights)
                 reward_list.append(reward)
         else:
             while not done:
                 processed_obs = self.preprocessor.process_obs(obs)
                 mask = info['mask']
-                state = self._get_state(processed_obs, mask)
+                state, attn_weights = self._get_state(processed_obs, mask)
                 action = self.policy_with_value.compute_mode(state[np.newaxis, :])
                 obs, reward, done, info = self.env.step(action.numpy()[0])
                 reward_info_dict_list.append(info['reward_info'])
-                if render: self.env.render()
+                if render: self.env.render(weights=attention_weights)
                 reward_list.append(reward)
 
         episode_return = sum(reward_list)

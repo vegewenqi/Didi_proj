@@ -72,8 +72,9 @@ class OffPolicyWorkerWithAttention(object):
         self.policy_with_value.apply_gradients(tf.constant(iteration, dtype=tf.int32), grads)
 
     def _get_state(self, obs, mask):
-        obs_other = self.policy_with_value.compute_attn(obs[self.args.other_start_dim:][np.newaxis, :],
-                                                        mask[np.newaxis, :]).numpy()[0]
+        obs_other, _ = self.policy_with_value.compute_attn(obs[self.args.other_start_dim:][np.newaxis, :],
+                                                           mask[np.newaxis, :])
+        obs_other = obs_other.numpy()[0]
         state = np.concatenate((obs[:self.args.other_start_dim], obs_other), axis=0)
         return state
 
@@ -88,15 +89,15 @@ class OffPolicyWorkerWithAttention(object):
             action, logp = self.policy_with_value.compute_action(state[np.newaxis, :])
             if self.explore_sigma is not None:
                 action += np.random.normal(0, self.explore_sigma, np.shape(action))
-            # try:
-            #     judge_is_nan([action])
-            # except ValueError:
-            #     print('processed_obs', processed_obs)
-            #     print('preprocessor_params', self.preprocessor.get_params())
-            #     print('policy_weights', self.policy_with_value.policy.trainable_weights)
-            #     action, logp = self.policy_with_value.compute_action(processed_obs[np.newaxis, :])
-            #     judge_is_nan([action])
-            #     raise ValueError
+            try:
+                judge_is_nan([action])
+            except ValueError:
+                print('processed_obs', processed_obs)
+                print('preprocessor_params', self.preprocessor.get_params())
+                print('policy_weights', self.policy_with_value.policy.trainable_weights)
+                action, logp = self.policy_with_value.compute_action(processed_obs[np.newaxis, :])
+                judge_is_nan([action])
+                raise ValueError
             obs_tp1, reward, self.done, info = self.env.step(action.numpy()[0])
             sample_count += 1
             self.done = 1 if sample_count > self.args.max_step else self.done

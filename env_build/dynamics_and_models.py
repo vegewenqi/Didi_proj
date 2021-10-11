@@ -122,6 +122,7 @@ class EnvironmentModel(object):  # all tensors
 
     def rollout_out(self, actions, ref_points):  # ref_points [#batch, 4]
         with tf.name_scope('model_step') as scope:
+            # tf.print(ref_points[:10, :])
             self.actions = self._action_transformation_for_end2end(actions)
             self.steer_store.append(self.actions[:, 0])
             self.obses = self.compute_next_obses(self.obses, self.actions, ref_points)

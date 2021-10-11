@@ -75,6 +75,7 @@ class AttentionNet(Model):
 
         return:
             :output: [B, d_model]
+            :weights: [B, N] all elements \in (0, 1)
         """
         x_others, x_mask = x[0], x[1]
         x_others = self.embedding(tf.reshape(x_others, [-1, self.num_objs, self.d_obj])) # [B, N, d_model]
@@ -89,7 +90,7 @@ class AttentionNet(Model):
         attention_weights = tf.nn.softmax(logits, axis=-1) # (B, N)
         output = tf.squeeze(tf.matmul(tf.expand_dims(attention_weights, axis=1), x_real), axis=-2)
 
-        return output
+        return output, attention_weights
 
 
 if __name__ == '__main__':

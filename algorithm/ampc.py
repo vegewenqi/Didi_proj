@@ -13,7 +13,7 @@ import numpy as np
 from env_build.dynamics_and_models import EnvironmentModel
 
 from algorithm.preprocessor import Preprocessor
-from algorithm.utils.misc import TimerStat, args2envkwargs
+from algorithm.utils.misc import TimerStat, args2envkwargs, judge_is_nan
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -44,7 +44,7 @@ class AMPCLearnerWithAttention(object):
         return self.stats
     
     def get_states(self, mb_obs, mb_mask):
-        mb_obs_others = self.policy_with_value.compute_attn(mb_obs[:, self.args.other_start_dim:], mb_mask)
+        mb_obs_others, mb_attn_weights = self.policy_with_value.compute_attn(mb_obs[:, self.args.other_start_dim:], mb_mask)
         mb_state = self.tf.concat((mb_obs[:, :self.args.other_start_dim], mb_obs_others),
                                   axis=1)
         return mb_state
@@ -119,6 +119,10 @@ class AMPCLearnerWithAttention(object):
         veh2person4real = self.tf.reduce_mean(veh2person4real_sum)
 
         policy_entropy = self.tf.reduce_mean(entropy_sum)
+
+        for tensors in [obj_v_loss, obj_loss, punish_term_for_training, punish_loss, pg_loss,\
+               real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, veh2person4real, pf, policy_entropy]:
+            self.tf.print(tensors)
 
         return obj_v_loss, obj_loss, punish_term_for_training, punish_loss, pg_loss,\
                real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, veh2person4real, pf, policy_entropy

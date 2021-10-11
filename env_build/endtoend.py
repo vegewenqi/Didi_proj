@@ -738,7 +738,8 @@ class CrossroadEnd2endMix(gym.Env):
             reward_dict[k] = v.numpy()[0]
         return reward.numpy()[0], reward_dict
 
-    def render(self, mode='human'):
+    def render(self, mode='human', weights=None):
+        assert weights.shape == (self.other_number,), print(weights.shape)
         if mode == 'human':
             # plot basic map
             extension = 40
