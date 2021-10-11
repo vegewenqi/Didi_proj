@@ -413,7 +413,7 @@ class EnvironmentModel(object):  # all tensors
         x2, y2 = b
         x3, y3 = c
         featured = (x1 - x3) * (y2 - y3) - (y1 - y3) * (x2 - x3)
-        return featured <= 0.
+        return featured > 0.
 
     def _judge_is_ahead(self, a, b, c):
         x1, y1 = a
@@ -921,7 +921,7 @@ class ReferencePath(object):
         a, b, c = (x0, y0), (x0 + cos(phi0_rad), y0 + sin(phi0_rad)), (ego_x, ego_y)
         dist_a2c = np.sqrt(np.square(ego_x - x0) + np.square(ego_y - y0))
         dist_c2line = abs(sin(phi0_rad) * ego_x - cos(phi0_rad) * ego_y - sin(phi0_rad) * x0 + cos(phi0_rad) * y0)
-        signed_dist_lateral = self._judge_sign_left_or_right(a, b, c) * dist_c2line         # TODO:检测结果左边为负，右边为正
+        signed_dist_lateral = self._judge_sign_left_or_right(a, b, c) * dist_c2line
         signed_dist_longi = self._judge_sign_ahead_or_behind(a, b, c) * np.sqrt(np.abs(dist_a2c ** 2 - dist_c2line ** 2))
         return np.array([signed_dist_longi, signed_dist_lateral, deal_with_phi_diff(ego_phi - phi0), ego_v - v0])
 
@@ -938,7 +938,7 @@ class ReferencePath(object):
         if abs(featured) < 1e-8:
             return 0.
         else:
-            return -featured / abs(featured)
+            return featured / abs(featured)
 
     def _judge_sign_ahead_or_behind(self, a, b, c):
         # return +1 if head else -1
@@ -1226,21 +1226,22 @@ def test_model():
     while 1:
         obs, info = env.reset()
         for i in range(35):
+            obs, info = env.reset()
             obs_list, future_point_list = [], []
             obs_list.append(obs)
             future_point_list.append(info['future_n_point'])
             action = np.array([0, -1], dtype=np.float32)
-            obs, reward, done, info = env.step(action)
+            # obs, reward, done, info = env.step(action)
             env.render()
             obses = np.stack(obs_list, 0)
             future_points = np.array(future_point_list)
             model.reset(obses)
             print(obses.shape, future_points.shape)
-            # for rollout_step in range(25):
-            #     actions = tf.tile(tf.constant([[0.5, 0]], dtype=tf.float32), tf.constant([len(obses), 1]))
-            #     obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
-            #     veh2bike4real, veh2person4real = model.rollout_out(actions, future_points[:, :, i])
-            #     model.render()
+            for rollout_step in range(10):
+                actions = tf.tile(tf.constant([[0.5, 0]], dtype=tf.float32), tf.constant([len(obses), 1]))
+                obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
+                veh2bike4real, veh2person4real = model.rollout_out(actions, future_points[:, :, i])
+                model.render()
 
 
 def test_ref():
