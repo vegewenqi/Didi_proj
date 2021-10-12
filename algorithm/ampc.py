@@ -90,6 +90,11 @@ class AMPCLearnerWithAttention(object):
             processed_mb_obs = self.preprocessor.tf_process_obses(mb_obs)
             mb_state = self.get_states(processed_mb_obs, mb_mask)
             actions, logps = self.policy_with_value.compute_action(mb_state)
+
+            self.tf.print('mb_obs', mb_obs[:10, :6])
+            self.tf.print('actions', actions[:10, :])
+            self.tf.print('ref_points', mb_future_n_point[:10, :, i])
+
             mb_obs, rewards, punish_terms_for_training, real_punish_term, \
                 veh2veh4real, veh2road4real, veh2bike4real, veh2person4real = \
                 self.model.rollout_out(actions, mb_future_n_point[:, :, i])  # mb_future_n_point [#batch, 4, T]
@@ -120,9 +125,8 @@ class AMPCLearnerWithAttention(object):
 
         policy_entropy = self.tf.reduce_mean(entropy_sum)
 
-        for tensors in [obj_v_loss, obj_loss, punish_term_for_training, punish_loss, pg_loss,\
-               real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, veh2person4real, pf, policy_entropy]:
-            self.tf.print(tensors)
+        self.tf.print([obj_v_loss, obj_loss, punish_term_for_training, punish_loss, pg_loss,\
+               real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, veh2person4real, pf, policy_entropy])
 
         return obj_v_loss, obj_loss, punish_term_for_training, punish_loss, pg_loss,\
                real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, veh2person4real, pf, policy_entropy

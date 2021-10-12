@@ -432,7 +432,7 @@ class EnvironmentModel(object):  # all tensors
         obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_other = self._split_all(obses)
         obses_other_reshape = self._reshape_other(obses_other)
         ego_x, ego_y = obses_ego[:, 3], obses_ego[:, 4]
-        ego = tf.concat([tf.stack([ego_x, ego_y], axis=-1), tf.zeros(shape=(len(ego_x), self.per_other_info_dim - 2))],
+        ego = tf.concat([tf.stack([ego_x, ego_y], axis=-1), tf.zeros(shape=(ego_x.shape[0], self.per_other_info_dim - 2))],
                         axis=-1)
         ego = tf.expand_dims(ego, 1)
         rela = obses_other_reshape - ego
@@ -443,7 +443,7 @@ class EnvironmentModel(object):  # all tensors
         obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_other = self._split_all(rela_obses)
         obses_other_reshape = self._reshape_other(obses_other)
         ego_x, ego_y = obses_ego[:, 3], obses_ego[:, 4]
-        ego = tf.concat([tf.stack([ego_x, ego_y], axis=-1), tf.zeros(shape=(len(ego_x), self.per_other_info_dim - 2))],
+        ego = tf.concat([tf.stack([ego_x, ego_y], axis=-1), tf.zeros(shape=(ego_x.shape[0], self.per_other_info_dim - 2))],
                         axis=-1)
         ego = tf.expand_dims(ego, 1)
         abso = obses_other_reshape + ego
