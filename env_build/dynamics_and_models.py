@@ -391,7 +391,7 @@ class EnvironmentModel(object):  # all tensors
         obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_other = self._split_all(obses)
         obses_other = tf.stop_gradient(obses_other)
         next_obses_ego = self._ego_predict(obses_ego, actions)
-        next_obses_track = self._compute_next_track_info(next_obses_ego, ref_points)
+        next_obses_track = self._compute_next_track_info_vectorized(next_obses_ego, ref_points)
         next_obses_other = self._other_predict(obses_other)
         next_obses = tf.concat([next_obses_ego, next_obses_track, obses_light, obses_task, obses_ref, next_obses_other],
                                axis=-1)
@@ -409,6 +409,22 @@ class EnvironmentModel(object):  # all tensors
         dist_longdi = tf.sqrt(tf.abs(tf.square(dist_a2c) - tf.square(dist_c2line)))
         signed_dist_lateral = tf.where(self._judge_is_left(a, b, c), dist_c2line, -dist_c2line)
         signed_dist_longi = tf.where(self._judge_is_ahead(a, b, c), dist_longdi, -dist_longdi) #  TODO: use vector inner product to cal signed dist
+        delta_phi = deal_with_phi_diff(ego_phis - ref_phis)
+        delta_vs = ego_vxs - ref_vs
+        return tf.stack([signed_dist_longi, signed_dist_lateral, delta_phi, delta_vs], axis=-1)
+    
+    def _compute_next_track_info_vectorized(self, next_ego_infos, ref_points):
+        ego_vxs, ego_vys, ego_rs, ego_xs, ego_ys, ego_phis = [next_ego_infos[:, i] for i in range(self.ego_info_dim)]
+        ref_xs, ref_ys, ref_phis, ref_vs = [ref_points[:, i] for i in range(4)]
+        ref_phis_rad = ref_phis * np.pi / 180
+
+        vector_ref_phi = tf.stack([tf.cos(ref_phis_rad), tf.sin(ref_phis_rad)], axis=-1)
+        vector_ref_phi_ccw_90 = tf.stack([-tf.sin(ref_phis_rad), tf.cos(ref_phis_rad)], axis=-1) # ccw for counterclockwise
+        vector_ego2ref = tf.stack([ref_xs - ego_xs, ref_ys - ego_ys], axis=-1)
+
+        signed_dist_longi = tf.negative(tf.reduce_sum(vector_ego2ref * vector_ref_phi, axis=-1))
+        signed_dist_lateral = tf.negative(tf.reduce_sum(vector_ego2ref * vector_ref_phi_ccw_90, axis=-1))
+
         delta_phi = deal_with_phi_diff(ego_phis - ref_phis)
         delta_vs = ego_vxs - ref_vs
         return tf.stack([signed_dist_longi, signed_dist_lateral, delta_phi, delta_vs], axis=-1)
@@ -930,6 +946,20 @@ class ReferencePath(object):
         signed_dist_longi = self._judge_sign_ahead_or_behind(a, b, c) * np.sqrt(np.abs(dist_a2c ** 2 - dist_c2line ** 2))
         return np.array([signed_dist_longi, signed_dist_lateral, deal_with_phi_diff(ego_phi - phi0), ego_v - v0])
 
+    def tracking_error_vector_vectorized(self, ego_x, ego_y, ego_phi, ego_v):
+        _, (x0, y0, phi0, v0) = self._find_closest_point(ego_x, ego_y)
+        phi0_rad = phi0 * np.pi / 180
+        # np.sin(phi0_rad) * x - np.cos(phi0_rad) * y - np.sin(phi0_rad) * x0 + np.cos(phi0_rad) * y0 = 0
+
+        vector_ref_phi = np.array([np.cos(phi0_rad), np.sin(phi0_rad)])
+        vector_ref_phi_ccw_90 = np.array([-np.sin(phi0_rad), np.cos(phi0_rad)]) # ccw for counterclockwise
+        vector_ego2ref = np.array([x0 - ego_x, y0 - ego_y])
+
+        signed_dist_longi = np.negative(np.dot(vector_ego2ref, vector_ref_phi))
+        signed_dist_lateral = np.negative(np.dot(vector_ego2ref, vector_ref_phi_ccw_90))
+
+        return np.array([signed_dist_longi, signed_dist_lateral, deal_with_phi_diff(ego_phi - phi0), ego_v - v0])
+
     def idx2point(self, idx):
         return self.path[0][idx], self.path[1][idx], self.path[2][idx], self.path[3][idx]
 
@@ -1168,27 +1198,27 @@ def test_compute_next_track_info():
     model = EnvironmentModel()
     next_ego_infos = np.array([[10., 0., 0, Para.OFFSET_D + Para.LANE_WIDTH_2 / 2, -Para.CROSSROAD_SIZE_LON/2 - 10, 90]])
     ref_points = np.array([[Para.OFFSET_D + Para.LANE_WIDTH_2 / 2, -Para.CROSSROAD_SIZE_LON/2 - 10, 90, 10]])
-    next_obses_track = model._compute_next_track_info(next_ego_infos, ref_points)
+    next_obses_track = model._compute_next_track_info_vectorized(next_ego_infos, ref_points)
     print(next_obses_track.numpy())
 
     next_ego_infos = np.array([[10., 0., 0, Para.OFFSET_D + Para.LANE_WIDTH_2 / 2, -Para.CROSSROAD_SIZE_LON/2 - 10, 90]])
     ref_points = np.array([[Para.OFFSET_D + Para.LANE_WIDTH_2 / 2 + 5, -Para.CROSSROAD_SIZE_LON/2 - 10, 90, 10]])
-    next_obses_track = model._compute_next_track_info(next_ego_infos, ref_points)
+    next_obses_track = model._compute_next_track_info_vectorized(next_ego_infos, ref_points)
     print(next_obses_track.numpy())
 
     next_ego_infos = np.array([[10., 0., 0, Para.OFFSET_D + Para.LANE_WIDTH_2 / 2, -Para.CROSSROAD_SIZE_LON/2 - 10, 90]])
     ref_points = np.array([[Para.OFFSET_D + Para.LANE_WIDTH_2 / 2 - 5, -Para.CROSSROAD_SIZE_LON/2 - 10, 90, 10]])
-    next_obses_track = model._compute_next_track_info(next_ego_infos, ref_points)
+    next_obses_track = model._compute_next_track_info_vectorized(next_ego_infos, ref_points)
     print(next_obses_track.numpy())
 
     next_ego_infos = np.array([[10., 0., 0, Para.OFFSET_D + Para.LANE_WIDTH_2 / 2, -Para.CROSSROAD_SIZE_LON/2 - 8, 90]])
     ref_points = np.array([[Para.OFFSET_D + Para.LANE_WIDTH_2 / 2, -Para.CROSSROAD_SIZE_LON/2 - 10, 90, 10]])
-    next_obses_track = model._compute_next_track_info(next_ego_infos, ref_points)
+    next_obses_track = model._compute_next_track_info_vectorized(next_ego_infos, ref_points)
     print(next_obses_track.numpy())
 
     next_ego_infos = np.array([[10., 0., 0, Para.OFFSET_D + Para.LANE_WIDTH_2 / 2, -Para.CROSSROAD_SIZE_LON/2 - 15, 90]])
     ref_points = np.array([[Para.OFFSET_D + Para.LANE_WIDTH_2 / 2, -Para.CROSSROAD_SIZE_LON/2 - 10, 90, 10]])
-    next_obses_track = model._compute_next_track_info(next_ego_infos, ref_points)
+    next_obses_track = model._compute_next_track_info_vectorized(next_ego_infos, ref_points)
     print(next_obses_track.numpy())
 
 def test_tracking_error_vector():
@@ -1207,21 +1237,29 @@ def test_tracking_error_vector():
 
     path = ReferencePath('left', green_or_red='green')
     x, y, phi, v = -Para.CROSSROAD_SIZE_LAT/2 - 10, Para.OFFSET_L + Para.GREEN_BELT_LAT + Para.LANE_WIDTH_1 / 2, 180, 10
+    tracking_error_vector_vec = path.tracking_error_vector_vectorized(x, y, phi, v)
     tracking_error_vector = path.tracking_error_vector(x, y, phi, v)
-    print(tracking_error_vector, [-0.075, -7.5,  0, 1.67])
+    print(tracking_error_vector_vec, tracking_error_vector, [-0.075, -7.5,  0, 1.67])
+    print(np.sum(tracking_error_vector_vec - tracking_error_vector) < 1e-8)
 
     x, y, phi, v = -Para.CROSSROAD_SIZE_LAT/2 - 10, Para.OFFSET_L + Para.GREEN_BELT_LAT + Para.LANE_WIDTH_1 * 3, 180, 10
+    tracking_error_vector_vec = path.tracking_error_vector_vectorized(x, y, phi, v)
     tracking_error_vector = path.tracking_error_vector(x, y, phi, v)
-    print(tracking_error_vector, [-0.075, 9.375,  0, 1.67])
+    print(tracking_error_vector_vec, tracking_error_vector, [-0.075, 9.375,  0, 1.67])
+    print(np.sum(tracking_error_vector_vec - tracking_error_vector) < 1e-8)
 
     path = ReferencePath('right', green_or_red='green')
     x, y, phi, v = Para.CROSSROAD_SIZE_LAT/2, Para.OFFSET_R - Para.LANE_WIDTH_1 / 2, 180, 10
+    tracking_error_vector_vec = path.tracking_error_vector_vectorized(x, y, phi, v)
     tracking_error_vector = path.tracking_error_vector(x, y, phi, v)
-    print(tracking_error_vector, [-0.0, -7.5,  0, 1.67])
+    print(tracking_error_vector_vec, tracking_error_vector, [-0.0, -7.5,  0, 1.67])
+    print(np.sum(tracking_error_vector_vec - tracking_error_vector) < 1e-8)
 
     x, y, phi, v = Para.CROSSROAD_SIZE_LAT/2, Para.OFFSET_R - Para.LANE_WIDTH_1 *3, 0, 10
+    tracking_error_vector_vec = path.tracking_error_vector_vectorized(x, y, phi, v)
     tracking_error_vector = path.tracking_error_vector(x, y, phi, v)
-    print(tracking_error_vector, [-0.075, 9.375,  0, 1.67])
+    print(tracking_error_vector_vec, tracking_error_vector, [-0.075, 9.375,  0, 1.67])
+    print(np.sum(tracking_error_vector_vec - tracking_error_vector) < 1e-8)
 
 
 def test_model():
@@ -1305,5 +1343,5 @@ def test_ref():
 
 if __name__ == '__main__':
     # test_model()
-    # test_tracking_error_vector()
-    test_compute_next_track_info()
+    test_tracking_error_vector()
+    # test_compute_next_track_info()
