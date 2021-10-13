@@ -85,15 +85,12 @@ class AMPCLearnerWithAttention(object):
         pf = self.punish_factor_schedule(ite)
         processed_mb_obs = self.preprocessor.tf_process_obses(mb_obs)
         mb_state = self.get_states(processed_mb_obs, mb_mask)
-        obj_v_pred = self.policy_with_value.compute_obj_v(mb_state)
+        obj_v_pred = self.policy_with_value.compute_obj_v(self.tf.stop_gradient(mb_state))
+        
         for i in range(self.num_rollout_list_for_policy_update[0]):
             processed_mb_obs = self.preprocessor.tf_process_obses(mb_obs)
             mb_state = self.get_states(processed_mb_obs, mb_mask)
             actions, logps = self.policy_with_value.compute_action(mb_state)
-
-            self.tf.print('mb_obs', mb_obs[:10, :6])
-            self.tf.print('actions', actions[:10, :])
-            self.tf.print('ref_points', mb_future_n_point[:10, :, i])
 
             mb_obs, rewards, punish_terms_for_training, real_punish_term, \
                 veh2veh4real, veh2road4real, veh2bike4real, veh2person4real = \
@@ -153,6 +150,7 @@ class AMPCLearnerWithAttention(object):
         self.get_batch_data(samples)
         mb_obs = self.tf.constant(self.batch_data['batch_obs'])
         mb_future_n_point = self.tf.constant(self.batch_data['batch_future_n_point'])
+        iteration = self.tf.convert_to_tensor(iteration, self.tf.int32)
         mb_mask = self.tf.constant(self.batch_data['batch_mask'])
 
         with self.grad_timer:

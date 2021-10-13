@@ -122,7 +122,6 @@ class EnvironmentModel(object):  # all tensors
 
     def rollout_out(self, actions, ref_points):  # ref_points [#batch, 4]
         with tf.name_scope('model_step') as scope:
-            # tf.print(ref_points[:10, :])
             self.actions = self._action_transformation_for_end2end(actions)
             self.steer_store.append(self.actions[:, 0])
             self.obses = self.compute_next_obses(self.obses, self.actions, ref_points)
@@ -130,10 +129,10 @@ class EnvironmentModel(object):  # all tensors
             rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, \
             veh2person4real, reward_dict = self.compute_rewards(self.obses, self.actions)
 
-            tf.print('-------')
-            tf.print(rewards)
-            tf.print(reward_dict)
-            tf.print('-------')
+            # tf.print('-------')
+            # tf.print(rewards)
+            # tf.print(reward_dict)
+            # tf.print('-------')
 
         return self.obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
                veh2bike4real, veh2person4real
@@ -409,7 +408,7 @@ class EnvironmentModel(object):  # all tensors
                              - tf.sin(ref_phis_rad) * ref_xs + tf.cos(ref_phis_rad) * ref_ys)
         dist_longdi = tf.sqrt(tf.abs(tf.square(dist_a2c) - tf.square(dist_c2line)))
         signed_dist_lateral = tf.where(self._judge_is_left(a, b, c), dist_c2line, -dist_c2line)
-        signed_dist_longi = tf.where(self._judge_is_ahead(a, b, c), dist_longdi, -dist_longdi)
+        signed_dist_longi = tf.where(self._judge_is_ahead(a, b, c), dist_longdi, -dist_longdi) #  TODO: use vector inner product to cal signed dist
         delta_phi = deal_with_phi_diff(ego_phis - ref_phis)
         delta_vs = ego_vxs - ref_vs
         return tf.stack([signed_dist_longi, signed_dist_lateral, delta_phi, delta_vs], axis=-1)
