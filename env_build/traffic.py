@@ -25,7 +25,7 @@ import sumolib
 from sumolib import checkBinary
 import traci
 from traci.exceptions import FatalTraCIError
-from env_build.endtoend_env_utils import shift_and_rotate_coordination, _convert_car_coord_to_sumo_coord, \
+from endtoend_env_utils import shift_and_rotate_coordination, _convert_car_coord_to_sumo_coord, \
     _convert_sumo_coord_to_car_coord, xy2_edgeID_lane, SUMOCFG_DIR, TASK2ROUTEID
 
 SUMO_BINARY = checkBinary('sumo')

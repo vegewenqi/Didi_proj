@@ -19,9 +19,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from gym.utils import seeding
 
-from env_build.dynamics_and_models import VehicleDynamics, ReferencePath, EnvironmentModel
-from env_build.endtoend_env_utils import *
-from env_build.traffic import Traffic
+from dynamics_and_models import VehicleDynamics, ReferencePath, EnvironmentModel
+from endtoend_env_utils import *
+from traffic import Traffic
 
 warnings.filterwarnings("ignore")
 
@@ -742,7 +742,8 @@ class CrossroadEnd2endMix(gym.Env):
     def render(self, mode='human', weights=None):
         if weights is not None:
             assert weights.shape == (self.other_number,), print(weights.shape)
-        index4weights = list(map(weights.index, heapq.nlargest(3,weights)))
+        index4weights = list(map(weights.index, heapq.nlargest(3, weights)))
+        print(index4weights)
         if mode == 'human':
             # plot basic map
             extension = 40
@@ -1085,7 +1086,7 @@ class CrossroadEnd2endMix(gym.Env):
                     draw_rotate_rec(item_type, item_x, item_y, item_phi, item_l, item_w, color='m', linestyle=':', patch=True)
                     plt.text(item_x, item_y, str(item_mask)[0])
                 if i in index4weights:
-                    plt.text(item_x, item_y, str(weights[i]), color='red')
+                    plt.text(item_x, item_y, str(weights[i]), color='red', fontsize=15)
 
             # plot own car
             abso_obs = self._convert_to_abso(self.obs)
@@ -1191,13 +1192,13 @@ def test_end2end():
             action = np.array([0, 0.3], dtype=np.float32)
             obs, reward, done, info = env.step(action)
             # obses, actions = obs[np.newaxis, :], action[np.newaxis, :]
-            obses = np.tile(obses, (2, 1))
+            obses = np.tile(obs, (2, 1))
             ref_points = np.tile(info['future_n_point'], (2, 1, 1))
             env_model.reset(obses)
             for i in range(5):
                 obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
                 veh2bike4real, veh2person4real = env_model.rollout_out(np.tile(action, (2, 1)), ref_points[:, :, i])
-                env_model.render()
+                # env_model.render()
             env.render()
             # if done:
             #     break
