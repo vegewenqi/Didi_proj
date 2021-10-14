@@ -921,6 +921,8 @@ class ReferencePath(object):
             ds = v * dt
             s = 0
             while s < ds:
+                if idx + 1 >= len(self.path[0]):
+                    break
                 next_x, next_y, _, _ = self.idx2point(idx + 1)
                 s += np.sqrt(np.square(next_x - x) + np.square(next_y - y))
                 x, y = next_x, next_y

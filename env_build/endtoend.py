@@ -741,6 +741,8 @@ class CrossroadEnd2endMix(gym.Env):
     def render(self, mode='human', weights=None):
         if weights is not None:
             assert weights.shape == (self.other_number,), print(weights.shape)
+        index_top_k_in_weights = weights.argsort()[-4:][::-1]
+
         if mode == 'human':
             # plot basic map
             extension = 40
@@ -1082,6 +1084,8 @@ class CrossroadEnd2endMix(gym.Env):
                     plot_phi_line(item_type, item_x, item_y, item_phi, 'black')
                     draw_rotate_rec(item_type, item_x, item_y, item_phi, item_l, item_w, color='m', linestyle=':', patch=True)
                     plt.text(item_x, item_y, str(item_mask)[0])
+                if i in index_top_k_in_weights:
+                    plt.text(item_x, item_y, str(weights[i]), color='red', fontsize=15)
 
             # plot own car
             abso_obs = self._convert_to_abso(self.obs)

@@ -71,7 +71,7 @@ class EvaluatorWithAttention(object):
         reward_info_dict_list = []
         done = 0
         obs, info = self.env.reset()
-        if render: self.env.render()
+        if render: self.env.render(weights=np.zeros((16,)))
         if steps is not None:
             for _ in range(steps):
                 processed_obs = self.preprocessor.process_obs(obs)
