@@ -739,10 +739,6 @@ class CrossroadEnd2endMix(gym.Env):
         return reward.numpy()[0], reward_dict
 
     def render(self, mode='human', weights=None):
-        if weights is not None:
-            assert weights.shape == (self.other_number,), print(weights.shape)
-        index_top_k_in_weights = weights.argsort()[-4:][::-1]
-
         if mode == 'human':
             # plot basic map
             extension = 40
@@ -978,42 +974,42 @@ class CrossroadEnd2endMix(gym.Env):
                      color='green', linewidth=light_line_width)
 
             # zebra crossing
-            j1, j2 = 20.5, 6.75
-            for ii in range(19):
-                if ii <= 3:
-                    continue
-                ax.add_patch(
-                    plt.Rectangle((-Para.CROSSROAD_SIZE_LON / 2 + j1 + ii * 1.6, -Para.CROSSROAD_SIZE_LON / 2 + 0.5),
-                                  0.8, 4,
-                                  color='lightgray', alpha=0.5))
-                ii += 1
-            for ii in range(19):
-                if ii <= 3:
-                    continue
-                ax.add_patch(
-                    plt.Rectangle((-Para.CROSSROAD_SIZE_LON / 2 + j1 + ii * 1.6, Para.CROSSROAD_SIZE_LON / 2 - 0.5 - 4),
-                                  0.8, 4,
-                                  color='lightgray', alpha=0.5))
-                ii += 1
-            for ii in range(28):
-                if ii <= 3:
-                    continue
-                ax.add_patch(
-                    plt.Rectangle(
-                        (-Para.CROSSROAD_SIZE_LAT / 2 + 0.5, Para.CROSSROAD_SIZE_LAT / 2 - j2 - 0.8 - ii * 1.6), 4, 0.8,
-                        color='lightgray',
-                        alpha=0.5))
-                ii += 1
-            for ii in range(28):
-                if ii <= 3:
-                    continue
-                ax.add_patch(
-                    plt.Rectangle(
-                        (Para.CROSSROAD_SIZE_LAT / 2 - 0.5 - 4, Para.CROSSROAD_SIZE_LAT / 2 - j2 - 0.8 - ii * 1.6), 4,
-                        0.8,
-                        color='lightgray',
-                        alpha=0.5))
-                ii += 1
+            # j1, j2 = 20.5, 6.75
+            # for ii in range(19):
+            #     if ii <= 3:
+            #         continue
+            #     ax.add_patch(
+            #         plt.Rectangle((-Para.CROSSROAD_SIZE_LON / 2 + j1 + ii * 1.6, -Para.CROSSROAD_SIZE_LON / 2 + 0.5),
+            #                       0.8, 4,
+            #                       color='lightgray', alpha=0.5))
+            #     ii += 1
+            # for ii in range(19):
+            #     if ii <= 3:
+            #         continue
+            #     ax.add_patch(
+            #         plt.Rectangle((-Para.CROSSROAD_SIZE_LON / 2 + j1 + ii * 1.6, Para.CROSSROAD_SIZE_LON / 2 - 0.5 - 4),
+            #                       0.8, 4,
+            #                       color='lightgray', alpha=0.5))
+            #     ii += 1
+            # for ii in range(28):
+            #     if ii <= 3:
+            #         continue
+            #     ax.add_patch(
+            #         plt.Rectangle(
+            #             (-Para.CROSSROAD_SIZE_LAT / 2 + 0.5, Para.CROSSROAD_SIZE_LAT / 2 - j2 - 0.8 - ii * 1.6), 4, 0.8,
+            #             color='lightgray',
+            #             alpha=0.5))
+            #     ii += 1
+            # for ii in range(28):
+            #     if ii <= 3:
+            #         continue
+            #     ax.add_patch(
+            #         plt.Rectangle(
+            #             (Para.CROSSROAD_SIZE_LAT / 2 - 0.5 - 4, Para.CROSSROAD_SIZE_LAT / 2 - j2 - 0.8 - ii * 1.6), 4,
+            #             0.8,
+            #             color='lightgray',
+            #             alpha=0.5))
+            #     ii += 1
 
             def is_in_plot_area(x, y, tolerance=5):
                 if -Para.CROSSROAD_SIZE_LAT / 2 - extension + tolerance < x < Para.CROSSROAD_SIZE_LAT / 2 + extension - tolerance and \
@@ -1041,6 +1037,17 @@ class CrossroadEnd2endMix(gym.Env):
                     ax.plot([LD_x + x, RD_x + x], [LD_y + y, RD_y + y], color=color, linestyle=linestyle)
                     ax.plot([LD_x + x, LU_x + x], [LD_y + y, LU_y + y], color=color, linestyle=linestyle)
 
+            def draw_rotate_batch_rec(x, y, a, l, w):
+                RU_x, RU_y, _ = rotate_coordination_vec(l / 2, w / 2, np.zeros_like(l), -a)
+                RD_x, RD_y, _ = rotate_coordination_vec(l / 2, -w / 2, np.zeros_like(l), -a)
+                LU_x, LU_y, _ = rotate_coordination_vec(-l / 2, w / 2, np.zeros_like(l), -a)
+                LD_x, LD_y, _ = rotate_coordination_vec(-l / 2, -w / 2, np.zeros_like(l), -a)
+                ax.plot([RU_x + x, RD_x + x], [RU_y + y, RD_y + y], color='k')
+                ax.plot([RU_x + x, LU_x + x], [RU_y + y, LU_y + y], color='k')
+                ax.plot([LD_x + x, RD_x + x], [LD_y + y, RD_y + y], color='k')
+                ax.plot([LD_x + x, LU_x + x], [LD_y + y, LU_y + y], color='k')
+
+
             def plot_phi_line(type, x, y, phi, color):
                 if type in ['bicycle_1', 'bicycle_2', 'bicycle_3']:
                     line_length = 2
@@ -1053,24 +1060,19 @@ class CrossroadEnd2endMix(gym.Env):
                 plt.plot([x, x_forw], [y, y_forw], color=color, linewidth=0.5)
 
             # plot others
-            for item in self.all_other:
-                item_x = item['x']
-                item_y = item['y']
-                item_phi = item['phi']
-                item_l = item['l']
-                item_w = item['w']
-                item_type = item['type']
-                if item_type in ['bicycle_1', 'bicycle_2', 'bicycle_3']:
-                    item_color = 'navy'
-                elif item_type == 'DEFAULT_PEDTYPE':
-                    item_color = 'purple'
-                else:
-                    item_color = 'black'
-                if is_in_plot_area(item_x, item_y):
-                    plot_phi_line(item_type, item_x, item_y, item_phi, item_color)
-                    draw_rotate_rec(item_type, item_x, item_y, item_phi, item_l, item_w, color='black')
+            filted_all_other = [item for item in self.all_other if is_in_plot_area(item['x'], item['y'])]
+            other_xs = np.array([item['x'] for item in filted_all_other], np.float32)
+            other_ys = np.array([item['y'] for item in filted_all_other], np.float32)
+            other_as = np.array([item['phi'] for item in filted_all_other], np.float32)
+            other_ls = np.array([item['l'] for item in filted_all_other], np.float32)
+            other_ws = np.array([item['w'] for item in filted_all_other], np.float32)
+
+            draw_rotate_batch_rec(other_xs, other_ys, other_as, other_ls, other_ws)
 
             # plot interested others
+            if weights is not None:
+                assert weights.shape == (self.other_number,), print(weights.shape)
+            index_top_k_in_weights = weights.argsort()[-4:][::-1]
             for i in range(len(self.interested_other)):
                 item = self.interested_other[i]
                 item_mask = item['exist']
@@ -1085,7 +1087,7 @@ class CrossroadEnd2endMix(gym.Env):
                     draw_rotate_rec(item_type, item_x, item_y, item_phi, item_l, item_w, color='m', linestyle=':', patch=True)
                     plt.text(item_x, item_y, str(item_mask)[0])
                 if i in index_top_k_in_weights:
-                    plt.text(item_x, item_y, str(weights[i]), color='red', fontsize=15)
+                    plt.text(item_x, item_y, "{:.2f}".format(weights[i]), color='red', fontsize=15)
 
             # plot own car
             abso_obs = self._convert_to_abso(self.obs)

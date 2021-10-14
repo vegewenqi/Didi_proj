@@ -9,6 +9,7 @@
 
 import math
 import os
+import numpy as np
 from collections import OrderedDict
 
 
@@ -182,6 +183,15 @@ def rotate_coordination(orig_x, orig_y, orig_d, coordi_rotate_d):
             transformed_d = transformed_d + 360
     else:
         transformed_d = transformed_d
+    return transformed_x, transformed_y, transformed_d
+
+def rotate_coordination_vec(orig_x, orig_y, orig_d, coordi_rotate_d):
+    coordi_rotate_d_in_rad = coordi_rotate_d * np.pi / 180
+    transformed_x = orig_x * np.cos(coordi_rotate_d_in_rad) + orig_y * np.sin(coordi_rotate_d_in_rad)
+    transformed_y = -orig_x * np.sin(coordi_rotate_d_in_rad) + orig_y * np.cos(coordi_rotate_d_in_rad)
+    transformed_d = orig_d - coordi_rotate_d
+    transformed_d = np.where(transformed_d>180, transformed_d - 360, transformed_d)
+    transformed_d = np.where(transformed_d<=-180, transformed_d + 360, transformed_d)
     return transformed_x, transformed_y, transformed_d
 
 

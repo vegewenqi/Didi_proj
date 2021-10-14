@@ -68,6 +68,6 @@ class Trainer(object):
     def train(self):
         logger.info('training beginning')
         while self.optimizer.num_sampled_steps < self.args.max_sampled_steps \
-                or self.optimizer.iteration < self.args.max_iter:
+                or self.optimizer.iteration <= self.args.max_iter:
             self.optimizer.step()
         self.optimizer.stop()
