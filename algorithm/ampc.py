@@ -122,8 +122,8 @@ class AMPCLearnerWithAttention(object):
 
         policy_entropy = self.tf.reduce_mean(entropy_sum)
 
-        self.tf.print([obj_v_loss, obj_loss, punish_term_for_training, punish_loss, pg_loss,\
-               real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, veh2person4real, pf, policy_entropy])
+        # self.tf.print([obj_v_loss, obj_loss, punish_term_for_training, punish_loss, pg_loss,\
+        #        real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, veh2person4real, pf, policy_entropy])
 
         return obj_v_loss, obj_loss, punish_term_for_training, punish_loss, pg_loss,\
                real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, veh2person4real, pf, policy_entropy
