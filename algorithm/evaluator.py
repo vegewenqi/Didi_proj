@@ -134,6 +134,8 @@ class EvaluatorWithAttention(object):
             logger.info('Evaluator_info: {}, {}'.format(self.get_stats(),n_info_dict))
         self.eval_times += 1
 
+    def get_eval_times(self):
+        return self.eval_times
 
 if __name__ == '__main__':
     pass

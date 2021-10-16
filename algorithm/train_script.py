@@ -138,7 +138,7 @@ def built_AMPC_parser():
     parser.add_argument('--max_iter', type=int, default=200000)
     parser.add_argument('--num_workers', type=int, default=12)  # use a small value for debug
     parser.add_argument('--num_learners', type=int, default=12)
-    parser.add_argument('--num_buffers', type=int, default=6)
+    parser.add_argument('--num_buffers', type=int, default=12)
     parser.add_argument('--max_weight_sync_delay', type=int, default=300)
     parser.add_argument('--grads_queue_size', type=int, default=20)
     parser.add_argument('--eval_interval', type=int, default=5000)
