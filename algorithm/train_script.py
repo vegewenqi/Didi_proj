@@ -119,7 +119,7 @@ def built_AMPC_parser():
     parser.add_argument('--hidden_activation', type=str, default='gelu')
     parser.add_argument('--deterministic_policy', default=True, action='store_true')
     parser.add_argument('--policy_out_activation', type=str, default='tanh')
-    parser.add_argument('--action_range', type=float, default=None)
+    parser.add_argument('--action_range', type=float, default=1.)
 
     # model for attn_net
     parser.add_argument('--attn_model_cls', type=str, default='Attention')
