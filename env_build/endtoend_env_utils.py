@@ -13,6 +13,23 @@ import numpy as np
 from collections import OrderedDict
 
 
+class ActionStore(list):
+    def __init__(self, maxlen=2):
+        super(ActionStore, self).__init__()
+        self.maxlen = maxlen
+        for _ in range(maxlen):
+            self.append(np.zeros(2, dtype=np.float32))
+    
+    def put(self, action):
+        assert len(self) == self.maxlen
+        self.pop(0)
+        self.append(action)
+
+    def reset(self):
+        for i in range(self.maxlen):
+            self[i] = (np.zeros(2, dtype=np.float32))
+
+    
 class Para:
     # MAP
     L, W = 4.8, 2.0
@@ -45,6 +62,8 @@ class Para:
     TASK_ENCODING_DIM = 3
     REF_ENCODING_DIM = 3
     PER_OTHER_INFO_DIM = 10
+    AC_DIM = 2
+    AC_HIS_NUM = 2
 
     # MAX NUM
     MAX_VEH_NUM = 8  # to be align with VEHICLE_MODE_DICT
@@ -309,5 +328,23 @@ def deal_with_phi(phi):
     return phi
 
 
+def test_action_store():
+    action_store = ActionStore()
+    action_store.put(np.array([1., 0.], dtype=np.float32))
+
+    print(len(action_store))
+    print(action_store)
+    print(action_store[0])
+    print(type(action_store[1]))
+
+    action_store.reset()
+    print(action_store)
+    print(action_store[0])
+    print(action_store[1])
+    action_store.put(np.array([1., 0.], dtype=np.float32))
+    action_store.put(np.array([1., 0.], dtype=np.float32))
+    print(action_store)
+    
+
 if __name__ == '__main__':
-    pass
+    test_action_store()

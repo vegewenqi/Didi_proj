@@ -101,17 +101,19 @@ class EnvironmentModel(object):  # all tensors
         self.light_info_dim = Para.LIGHT_ENCODING_DIM
         self.task_info_dim = Para.TASK_ENCODING_DIM
         self.ref_info_dim = Para.REF_ENCODING_DIM
+        self.action_number = Para.AC_DIM
+        self.action_historical = Para.AC_HIS_NUM
         self.other_number = sum([self.veh_num, self.bike_num, self.person_num])
         self.other_start_dim = sum([self.ego_info_dim, self.track_info_dim, self.light_info_dim,
-                                    self.task_info_dim, self.ref_info_dim])
+                                    self.task_info_dim, self.ref_info_dim, self.action_number * self.action_historical])
         self.per_other_info_dim = Para.PER_OTHER_INFO_DIM
-        self.steer_store = []
+        self.action_store = None
 
     def reset(self, obses):  # input are all tensors
         self.obses = obses
         self.actions = None
         self.reward_info = None
-        self.steer_store = []
+        self.action_store = tf.zeros((obses.shape[0], self.action_number * self.action_historical), dtype=tf.float32)
 
     # def add_traj(self, obses_ego, obses_bike, obses_person, obses_veh, path_index):
     #     self.obses_ego = obses_ego
