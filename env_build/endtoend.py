@@ -95,6 +95,12 @@ class CrossroadEnd2endMix(gym.Env):
         self.future_n_point = None
         self.future_point_num = future_point_num
 
+        self.vector_noise = True
+        if self.vector_noise:
+            self.rng = np.random.default_rng(12345)
+
+        self.action_store = []
+
         if not multi_display:
             self.traffic = Traffic(self.step_length,
                                    mode=self.mode,
@@ -119,6 +125,7 @@ class CrossroadEnd2endMix(gym.Env):
         self.bicycle_mode_dict = BIKE_MODE_DICT[self.training_task]
         self.person_mode_dict = PERSON_MODE_DICT[self.training_task]
         self.env_model = EnvironmentModel()
+        self.action_store = []
         self.init_state = self._reset_init_state()
         self.traffic.init_traffic(self.init_state, self.training_task)
         self.traffic.sim_step()
@@ -300,18 +307,15 @@ class CrossroadEnd2endMix(gym.Env):
         return next_ego_state, next_ego_params
 
     def _get_obs(self, exit_='D'):
-        ego_x = self.ego_dynamics['x']
-        ego_y = self.ego_dynamics['y']
-        ego_phi = self.ego_dynamics['phi']
-        ego_v_x = self.ego_dynamics['v_x']
-
         # comment ego info, add noise to ego_vector
         # compute track error with noised ego_vector instead of label
-
         other_vector, other_mask_vector = self._construct_other_vector_short(exit_)
         ego_vector = self._construct_ego_vector_short()
-        track_vector = self.ref_path.tracking_error_vector_vectorized(ego_x, ego_y, ego_phi, ego_v_x)
-        future_n_point = self.ref_path.get_future_n_point(ego_x, ego_y, self.future_point_num)
+        if self.vector_noise:
+            ego_vector = self._add_noise_to_vector(ego_vector, 'ego')
+        
+        track_vector = self.ref_path.tracking_error_vector_vectorized(ego_vector[3], ego_vector[4], ego_vector[5], ego_vector[0]) # 3 for x; 4 foy y
+        future_n_point = self.ref_path.get_future_n_point(ego_vector[3], ego_vector[4], self.future_point_num)
         self.light_encoding = LIGHT_ENCODING[self.light_phase]
         vector = np.concatenate((ego_vector, track_vector, self.light_encoding, self.task_encoding,
                                  self.ref_path.ref_encoding, other_vector), axis=0)
@@ -319,6 +323,31 @@ class CrossroadEnd2endMix(gym.Env):
         vector = self._convert_to_rela(vector)
 
         return vector, other_mask_vector, future_n_point
+    
+    def _add_noise_to_vector(self, vector, vec_type=None):
+        '''
+        Enabled by the 'vector_noise' variable in this class
+        Add noise to the vector of objects, whose order is (x, y, v, phi, l, w) for other and (v_x, v_y, r, x, y, phi) for ego
+
+        Noise is i.i.d for each element in the vector, i.e. the covariance matrix is diagonal
+        Different types of objs lead to different mean and var, which are defined in the 'Para' class in e2e_utils.py
+
+        :params
+            vector: np.array(6,)
+            vec_type: str in ['ego', 'other']
+        :return
+            noise_vec: np.array(6,)
+        '''
+        assert self.vector_noise
+        assert vec_type in ['ego', 'veh', 'bike', 'person']
+        if vec_type == 'ego':
+            return vector + self.rng.multivariate_normal(Para.EGO_MEAN, Para.EGO_VAR)
+        elif vec_type == 'veh':
+            return vector + self.rng.multivariate_normal(Para.VEH_MEAN, Para.VEH_VAR)
+        elif vec_type == 'bike':
+            return vector + self.rng.multivariate_normal(Para.BIKE_MEAN, Para.BIKE_VAR)
+        elif vec_type == 'person':
+            return vector + self.rng.multivariate_normal(Para.PERSON_MEAN, Para.PERSON_VAR)
 
     def _convert_to_rela(self, obs_abso):
         obs_ego, obs_track, obs_light, obs_task, obs_ref, obs_other = self._split_all(obs_abso)
@@ -427,6 +456,7 @@ class CrossroadEnd2endMix(gym.Env):
                     else:
                         turn_rad = 0.
                 return turn_rad
+
             for v in vs:
                 if v['type'] in ['bicycle_1', 'bicycle_2', 'bicycle_3']:
                     v.update(partici_type=[1., 0., 0.], turn_rad=0.0, exist=True)
@@ -701,15 +731,41 @@ class CrossroadEnd2endMix(gym.Env):
             tmp = tmp_b + tmp_p + tmp_v
             return tmp
 
+        def get_partici_type_str(partici_type):
+            if partici_type[0] == 1.:
+                return 'bike'
+            elif partici_type[1] == 1.:
+                return 'person'
+            elif partici_type[2] == 1.:
+                return 'veh'
+    
         self.interested_other = filter_interested_other(self.all_other, self.training_task)
+
+        # test part start #
+        vec_locomotion = []
+        noised_vec_locomotion = []
+        # test part end #
 
         for other in self.interested_other:
             other_x, other_y, other_v, other_phi, other_l, other_w, other_type, other_turn_rad, other_mask = \
                 other['x'], other['y'], other['v'], other['phi'], other['l'], other['w'], other['partici_type'], other[
                     'turn_rad'], other['exist']
+            other_locomotion = [other_x, other_y, other_v, other_phi, other_l, other_w]
             other_vector.extend(
-                [other_x, other_y, other_v, other_phi, other_l, other_w] + other_type + [other_turn_rad])
+                (list(self._add_noise_to_vector(np.array(other_locomotion, dtype=np.float32), get_partici_type_str(other_type))) \
+                    if self.vector_noise else other_locomotion) \
+                + other_type + [other_turn_rad] \
+            )
             other_mask_vector.append(other_mask)
+
+            # test part start #
+            vec_locomotion.append(other_locomotion)
+            noised_vec_locomotion.append(self._add_noise_to_vector(np.array(other_locomotion, dtype=np.float32), get_partici_type_str(other_type)))
+
+        print(np.array(vec_locomotion).flatten())
+        print(np.array(noised_vec_locomotion).flatten())
+        # test part end #
+
         return np.array(other_vector, dtype=np.float32), np.array(other_mask_vector, dtype=np.float32)
 
     def _reset_init_state(self):
@@ -1095,14 +1151,25 @@ class CrossroadEnd2endMix(gym.Env):
             # plot own car
             abso_obs = self._convert_to_abso(self.obs)
             obs_ego, obs_track, obs_light, obs_task, obs_ref, obs_other = self._split_all(abso_obs)
-            ego_v_x, ego_v_y, ego_r, ego_x, ego_y, ego_phi = obs_ego
+            noised_ego_v_x, noised_ego_v_y, noised_ego_r, \
+                noised_ego_x, noised_ego_y, noised_ego_phi = obs_ego
             devi_longi, devi_lateral, devi_phi, devi_v = obs_track
 
-            plot_phi_line('self_car', ego_x, ego_y, ego_phi, 'red')
-            draw_rotate_rec('self_car', ego_x, ego_y, ego_phi, self.ego_l, self.ego_w, 'red')
+            real_ego_x = self.ego_dynamics['x']
+            real_ego_y = self.ego_dynamics['y']
+            real_ego_phi = self.ego_dynamics['phi']
+            real_ego_v_x = self.ego_dynamics['v_x']
+            real_ego_v_y = self.ego_dynamics['v_y']
+            real_ego_r = self.ego_dynamics['r']
+
+            plot_phi_line('self_car', real_ego_x, real_ego_y, real_ego_phi, 'red')
+            draw_rotate_rec('self_car', real_ego_x, real_ego_y, real_ego_phi, self.ego_l, self.ego_w, 'red')
+
+            plot_phi_line('self_noised_car', noised_ego_x, noised_ego_y, noised_ego_phi, 'aquamarine')
+            draw_rotate_rec('self_noised_car', noised_ego_x, noised_ego_y, noised_ego_phi, self.ego_l, self.ego_w, 'aquamarine')
 
             ax.plot(self.ref_path.path[0], self.ref_path.path[1], color='g')
-            _, point = self.ref_path._find_closest_point(ego_x, ego_y)
+            _, point = self.ref_path._find_closest_point(noised_ego_x, noised_ego_y)
             path_x, path_y, path_phi, path_v = point[0], point[1], point[2], point[3]
             plt.plot(path_x, path_y, 'g.')
             plt.plot(self.future_n_point[0], self.future_n_point[1], 'g.')
@@ -1134,21 +1201,21 @@ class CrossroadEnd2endMix(gym.Env):
             # text
             text_x, text_y_start = -110, 60
             ge = iter(range(0, 1000, 4))
-            plt.text(text_x, text_y_start - next(ge), 'ego_x: {:.2f}m'.format(ego_x))
-            plt.text(text_x, text_y_start - next(ge), 'ego_y: {:.2f}m'.format(ego_y))
+            plt.text(text_x, text_y_start - next(ge), 'ego_x: {:.2f}m'.format(real_ego_x))
+            plt.text(text_x, text_y_start - next(ge), 'ego_y: {:.2f}m'.format(real_ego_y))
             plt.text(text_x, text_y_start - next(ge), 'path_x: {:.2f}m'.format(path_x))
             plt.text(text_x, text_y_start - next(ge), 'path_y: {:.2f}m'.format(path_y))
             plt.text(text_x, text_y_start - next(ge), 'devi_longi: {:.2f}m'.format(devi_longi))
             plt.text(text_x, text_y_start - next(ge), 'devi_lateral: {:.2f}m'.format(devi_lateral))
             plt.text(text_x, text_y_start - next(ge), 'devi_v: {:.2f}m/s'.format(devi_v))
-            plt.text(text_x, text_y_start - next(ge), r'ego_phi: ${:.2f}\degree$'.format(ego_phi))
+            plt.text(text_x, text_y_start - next(ge), r'ego_phi: ${:.2f}\degree$'.format(real_ego_phi))
             plt.text(text_x, text_y_start - next(ge), r'path_phi: ${:.2f}\degree$'.format(path_phi))
             plt.text(text_x, text_y_start - next(ge), r'devi_phi: ${:.2f}\degree$'.format(devi_phi))
 
-            plt.text(text_x, text_y_start - next(ge), 'v_x: {:.2f}m/s'.format(ego_v_x))
+            plt.text(text_x, text_y_start - next(ge), 'v_x: {:.2f}m/s'.format(real_ego_v_x))
             plt.text(text_x, text_y_start - next(ge), 'exp_v: {:.2f}m/s'.format(path_v))
-            plt.text(text_x, text_y_start - next(ge), 'v_y: {:.2f}m/s'.format(ego_v_y))
-            plt.text(text_x, text_y_start - next(ge), 'yaw_rate: {:.2f}rad/s'.format(ego_r))
+            plt.text(text_x, text_y_start - next(ge), 'v_y: {:.2f}m/s'.format(real_ego_v_y))
+            plt.text(text_x, text_y_start - next(ge), 'yaw_rate: {:.2f}rad/s'.format(real_ego_r))
 
             if self.action is not None:
                 steer, a_x = self.action[0], self.action[1]
@@ -1196,18 +1263,18 @@ def test_end2end():
             action = np.array([0, 0.3], dtype=np.float32)
             obs, reward, done, info = env.step(action)
             # obses, actions = obs[np.newaxis, :], action[np.newaxis, :]
-            obses = np.tile(obses, (2, 1))
+            obses = np.tile(obs, (2, 1))
             ref_points = np.tile(info['future_n_point'], (2, 1, 1))
             env_model.reset(obses)
             for i in range(5):
                 obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
-                veh2bike4real, veh2person4real = env_model.rollout_out(np.tile(action, (2, 1)), ref_points[:, :, i])
-                env_model.render()
-            env.render()
-            # if done:
-            #     break
+                    veh2bike4real, veh2person4real = env_model.rollout_out(np.tile(action, (2, 1)), ref_points[:, :, i])
+                # env_model.render()
+            env.render(weights=np.zeros(env.other_number,))
+            if done:
+                break
         obs, _ = env.reset()
-        env.render()
+        env.render(weights=np.zeros(env.other_number,))
 
 
 if __name__ == '__main__':

@@ -117,7 +117,7 @@ def built_AMPC_parser():
     parser.add_argument('--num_hidden_layers', type=int, default=2)
     parser.add_argument('--num_hidden_units', type=int, default=256)
     parser.add_argument('--hidden_activation', type=str, default='gelu')
-    parser.add_argument('--deterministic_policy', default=True, action='store_true')
+    parser.add_argument('--deterministic_policy', default=False, action='store_true')
     parser.add_argument('--policy_out_activation', type=str, default='tanh')
     parser.add_argument('--action_range', type=float, default=1.)
 
