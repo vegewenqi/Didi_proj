@@ -71,19 +71,22 @@ class Para:
     MAX_PERSON_NUM = 4  # to be align with PERSON_MODE_DICT
 
     # NOISE
-    # (x, y, v, phi, l, w) for other
     # (v_x, v_y, r, x, y, phi) for ego
+    # (x, y, v, phi, l, w; type encoding (d=3), turn rad) for other
     EGO_MEAN = np.array([0., 0., 0., 0., 0., 0.], dtype=np.float32)
-    EGO_VAR = np.diag([0.0418, 0.0418, 0., 0.0245, 0.0227, 0.0029]).astype(np.float32)
+    EGO_VAR = np.diag([0.0418, 0.0418, 0., 0.0245, 0.0227, 0.0029*(180./np.pi)**2]).astype(np.float32)
 
-    VEH_MEAN = np.array([0., 0., 0., 0., 0., 0.], dtype=np.float32)
-    VEH_VAR = np.diag([0.0245, 0.0227, 0.0418, 0.0029, 0.0902, 0.0202]).astype(np.float32)
+    VEH_MEAN = np.tile(np.zeros((PER_OTHER_INFO_DIM,), dtype=np.float32), MAX_VEH_NUM)
+    VEH_VAR = np.tile(np.array([0.0245, 0.0227, 0.0418, 0.0029*(180./np.pi)**2, 0.0902, 0.0202, 0., 0., 0., 0.,], dtype=np.float32), MAX_VEH_NUM)
 
-    BIKE_MEAN = np.array([0., 0., 0., 0., 0., 0.], dtype=np.float32)
-    BIKE_VAR = np.diag([0.172**2, 0.1583**2, 0.1763**2, 0.1707**2, 0.1649**2, 0.1091**2]).astype(np.float32)
+    BIKE_MEAN = np.tile(np.zeros((PER_OTHER_INFO_DIM,), dtype=np.float32), MAX_BIKE_NUM)
+    BIKE_VAR = np.tile(np.array([0.172**2, 0.1583**2, 0.1763**2, (0.1707*180./np.pi)**2, 0.1649**2, 0.1091**2, 0., 0., 0., 0.,], dtype=np.float32), MAX_BIKE_NUM)
 
-    PERSON_MEAN = np.array([0., 0., 0., 0., 0., 0.], dtype=np.float32)
-    PERSON_VAR = np.diag([0.1102**2, 0.1108**2, 0.1189**2, 0.2289**2, 0.1468**2, 0.1405**2]).astype(np.float32)
+    PERSON_MEAN = np.tile(np.zeros((PER_OTHER_INFO_DIM,), dtype=np.float32), MAX_PERSON_NUM)
+    PERSON_VAR = np.tile(np.array([0.1102**2, 0.1108**2, 0.1189**2, (0.2289*180./np.pi)**2, 0.1468**2, 0.1405**2, 0., 0., 0., 0.,], dtype=np.float32), MAX_PERSON_NUM)
+
+    OTHERS_MEAN = np.concatenate([BIKE_MEAN, PERSON_MEAN, VEH_MEAN], axis=-1) # order determined in line 735 in e2e.py
+    OTHERS_VAR = np.diag(np.concatenate([BIKE_VAR, PERSON_VAR, VEH_VAR], axis=-1)).astype(np.float32)
 
 
 LIGHT_PHASE_TO_GREEN_OR_RED = {0: 'green', 1: 'greed', 2: 'red', 3: 'red',

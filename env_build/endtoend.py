@@ -68,7 +68,6 @@ class CrossroadEnd2endMix(gym.Env):
         self.step_length = 100  # ms
 
         self.step_time = self.step_length / 1000.0
-        self.init_state = None
         self.obs = None
         self.action = None
 
@@ -314,6 +313,7 @@ class CrossroadEnd2endMix(gym.Env):
         other_vector, other_mask_vector = self._construct_other_vector_short(exit_)
         ego_vector = self._construct_ego_vector_short()
         if self.vector_noise:
+            other_vector = self._add_noise_to_vector(other_vector, 'other')
             ego_vector = self._add_noise_to_vector(ego_vector, 'ego')
         
         track_vector = self.ref_path.tracking_error_vector_vectorized(ego_vector[3], ego_vector[4], ego_vector[5], ego_vector[0]) # 3 for x; 4 foy y
@@ -341,15 +341,11 @@ class CrossroadEnd2endMix(gym.Env):
             noise_vec: np.array(6,)
         '''
         assert self.vector_noise
-        assert vec_type in ['ego', 'veh', 'bike', 'person']
+        assert vec_type in ['ego', 'other']
         if vec_type == 'ego':
             return vector + self.rng.multivariate_normal(Para.EGO_MEAN, Para.EGO_VAR)
-        elif vec_type == 'veh':
-            return vector + self.rng.multivariate_normal(Para.VEH_MEAN, Para.VEH_VAR)
-        elif vec_type == 'bike':
-            return vector + self.rng.multivariate_normal(Para.BIKE_MEAN, Para.BIKE_VAR)
-        elif vec_type == 'person':
-            return vector + self.rng.multivariate_normal(Para.PERSON_MEAN, Para.PERSON_VAR)
+        elif vec_type == 'other':
+            return vector + self.rng.multivariate_normal(Para.OTHERS_MEAN, Para.OTHERS_VAR)
 
     def _convert_to_rela(self, obs_abso):
         obs_ego, obs_track, obs_light, obs_task, obs_ref, obs_his_ac, obs_other = self._split_all(obs_abso)
@@ -734,41 +730,16 @@ class CrossroadEnd2endMix(gym.Env):
                     tmp_v = tmp_v[:self.veh_num]
             tmp = tmp_b + tmp_p + tmp_v
             return tmp
-
-        def get_partici_type_str(partici_type):
-            if partici_type[0] == 1.:
-                return 'bike'
-            elif partici_type[1] == 1.:
-                return 'person'
-            elif partici_type[2] == 1.:
-                return 'veh'
     
         self.interested_other = filter_interested_other(self.all_other, self.training_task)
-
-        # test part start #
-        vec_locomotion = []
-        noised_vec_locomotion = []
-        # test part end #
 
         for other in self.interested_other:
             other_x, other_y, other_v, other_phi, other_l, other_w, other_type, other_turn_rad, other_mask = \
                 other['x'], other['y'], other['v'], other['phi'], other['l'], other['w'], other['partici_type'], other[
                     'turn_rad'], other['exist']
-            other_locomotion = [other_x, other_y, other_v, other_phi, other_l, other_w]
             other_vector.extend(
-                (list(self._add_noise_to_vector(np.array(other_locomotion, dtype=np.float32), get_partici_type_str(other_type))) \
-                    if self.vector_noise else other_locomotion) \
-                + other_type + [other_turn_rad] \
-            )
+                [other_x, other_y, other_v, other_phi, other_l, other_w] + other_type + [other_turn_rad])
             other_mask_vector.append(other_mask)
-
-            # test part start #
-            vec_locomotion.append(other_locomotion)
-            noised_vec_locomotion.append(self._add_noise_to_vector(np.array(other_locomotion, dtype=np.float32), get_partici_type_str(other_type)))
-
-        print(np.array(vec_locomotion).flatten())
-        print(np.array(noised_vec_locomotion).flatten())
-        # test part end #
 
         return np.array(other_vector, dtype=np.float32), np.array(other_mask_vector, dtype=np.float32)
 
@@ -1121,6 +1092,14 @@ class CrossroadEnd2endMix(gym.Env):
                 x_forw, y_forw = x + line_length * cos(phi * pi / 180.), \
                                  y + line_length * sin(phi * pi / 180.)
                 plt.plot([x, x_forw], [y, y_forw], color=color, linewidth=0.5)
+            
+            def get_partici_type_str(partici_type):
+                if partici_type[0] == 1.:
+                    return 'bike'
+                elif partici_type[1] == 1.:
+                    return 'person'
+                elif partici_type[2] == 1.:
+                    return 'veh'
 
             # plot others
             filted_all_other = [item for item in self.all_other if is_in_plot_area(item['x'], item['y'])]
@@ -1136,6 +1115,8 @@ class CrossroadEnd2endMix(gym.Env):
             if weights is not None:
                 assert weights.shape == (self.other_number,), print(weights.shape)
             index_top_k_in_weights = weights.argsort()[-4:][::-1]
+
+            # real locomotion of interested vehicles
             for i in range(len(self.interested_other)):
                 item = self.interested_other[i]
                 item_mask = item['exist']
@@ -1166,11 +1147,27 @@ class CrossroadEnd2endMix(gym.Env):
             real_ego_v_y = self.ego_dynamics['v_y']
             real_ego_r = self.ego_dynamics['r']
 
+            # render noised objects in enabled
+            if self.vector_noise:
+                # noised locomotion of interested vehicles
+                for i in range(len(self.interested_other)):
+                    item = obs_other[self.per_other_info_dim * i : self.per_other_info_dim * (i+1)]
+                    item_x = item[0]
+                    item_y = item[1]
+                    item_phi = item[3]
+                    item_l = item[4]
+                    item_w = item[5]
+                    item_type = get_partici_type_str(item[-3:])
+                    if is_in_plot_area(item_x, item_y):
+                        plot_phi_line(item_type, item_x, item_y, item_phi, 'orangered')
+                        draw_rotate_rec(item_type, item_x, item_y, item_phi, item_l, item_w, color='orangered')
+                
+                # noised ego car
+                plot_phi_line('self_noised_car', noised_ego_x, noised_ego_y, noised_ego_phi, 'aquamarine')
+                draw_rotate_rec('self_noised_car', noised_ego_x, noised_ego_y, noised_ego_phi, self.ego_l, self.ego_w, 'aquamarine')
+
             plot_phi_line('self_car', real_ego_x, real_ego_y, real_ego_phi, 'red')
             draw_rotate_rec('self_car', real_ego_x, real_ego_y, real_ego_phi, self.ego_l, self.ego_w, 'red')
-
-            plot_phi_line('self_noised_car', noised_ego_x, noised_ego_y, noised_ego_phi, 'aquamarine')
-            draw_rotate_rec('self_noised_car', noised_ego_x, noised_ego_y, noised_ego_phi, self.ego_l, self.ego_w, 'aquamarine')
 
             ax.plot(self.ref_path.path[0], self.ref_path.path[1], color='g')
             _, point = self.ref_path._find_closest_point(noised_ego_x, noised_ego_y)
