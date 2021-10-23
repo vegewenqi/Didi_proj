@@ -18,7 +18,7 @@ class ActionStore(list):
         super(ActionStore, self).__init__()
         self.maxlen = maxlen
         for _ in range(maxlen):
-            self.append(np.zeros(2, dtype=np.float32))
+            self.append(np.zeros(Para.AC_DIM, dtype=np.float32))
     
     def put(self, action):
         assert len(self) == self.maxlen
@@ -27,7 +27,7 @@ class ActionStore(list):
 
     def reset(self):
         for i in range(self.maxlen):
-            self[i] = (np.zeros(2, dtype=np.float32))
+            self[i] = np.zeros(Para.AC_DIM, dtype=np.float32)
 
     
 class Para:

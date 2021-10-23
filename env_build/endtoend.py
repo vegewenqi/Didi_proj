@@ -57,7 +57,7 @@ class CrossroadEnd2endMix(gym.Env):
         self.state_mode = state_mode
         self.init_state = {}
         self.action_number = Para.AC_DIM
-        self.action_historical = Para.AC_HIS_NUM
+        self.action_historical_num = Para.AC_HIS_NUM
         self.ego_l, self.ego_w = Para.L, Para.W
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(self.action_number,), dtype=np.float32)
 
@@ -80,7 +80,7 @@ class CrossroadEnd2endMix(gym.Env):
         self.ref_info_dim = Para.REF_ENCODING_DIM
         self.per_other_info_dim = Para.PER_OTHER_INFO_DIM
         self.other_start_dim = sum([self.ego_info_dim, self.track_info_dim, self.light_info_dim,
-                                    self.task_info_dim, self.ref_info_dim, self.action_number * self.action_historical])
+                                    self.task_info_dim, self.ref_info_dim, self.action_number * self.action_historical_num])
         self.veh_num = Para.MAX_VEH_NUM
         self.bike_num = Para.MAX_BIKE_NUM
         self.person_num = Para.MAX_PERSON_NUM
@@ -99,7 +99,7 @@ class CrossroadEnd2endMix(gym.Env):
         if self.vector_noise:
             self.rng = np.random.default_rng(12345)
 
-        self.action_store = ActionStore(maxlen=self.action_historical)
+        self.action_store = ActionStore(maxlen=self.action_historical_num)
 
         if not multi_display:
             self.traffic = Traffic(self.step_length,
@@ -152,8 +152,9 @@ class CrossroadEnd2endMix(gym.Env):
         del self.traffic
 
     def step(self, action):
+        self.action_store.put(action)
         self.action = self._action_transformation_for_end2end(action)
-        reward, self.reward_info = self._compute_reward(self.obs, self.action)
+        reward, self.reward_info = self._compute_reward(self.obs, self.action, action)
         next_ego_state, next_ego_params = self._get_next_ego_state(self.action)
         ego_dynamics = self._get_ego_dynamics(next_ego_state, next_ego_params)
         self.traffic.set_own_car(dict(ego=ego_dynamics))
@@ -161,7 +162,6 @@ class CrossroadEnd2endMix(gym.Env):
         all_info = self._get_all_info(ego_dynamics)
         self.obs, other_mask_vector, self.future_n_point = self._get_obs()
         self.done_type, done = self._judge_done()
-        self.action_store.put(self.action)
         self.reward_info.update({'final_rew': reward})
         all_info.update({'reward_info': self.reward_info, 'future_n_point': self.future_n_point, 'mask': other_mask_vector})
         return self.obs, reward, done, all_info
@@ -765,9 +765,9 @@ class CrossroadEnd2endMix(gym.Env):
                              routeID=routeID,
                              ))
 
-    def _compute_reward(self, obs, action):
-        obses, actions = obs[np.newaxis, :], action[np.newaxis, :]
-        reward, _, _, _, _, _, _, reward_dict = self.env_model.compute_rewards(obses, actions)
+    def _compute_reward(self, obs, action, untransformed_action):
+        obses, actions, untransformed_actions = obs[np.newaxis, :], action[np.newaxis, :], untransformed_action[np.newaxis, :]
+        reward, _, _, _, _, _, _, reward_dict = self.env_model.compute_rewards(obses, actions, untransformed_actions)
         for k, v in reward_dict.items():
             reward_dict[k] = v.numpy()[0]
         return reward.numpy()[0], reward_dict
@@ -1254,28 +1254,31 @@ class CrossroadEnd2endMix(gym.Env):
 
 
 def test_end2end():
+    import tensorflow as tf
     env = CrossroadEnd2endMix()
-    env_model = EnvironmentModel()
+    # env_model = EnvironmentModel()
     obs, all_info = env.reset()
     i = 0
     while i < 100000:
         for j in range(100):
+            print("step:", j)
             i += 1
-            action = np.array([0, 0.3], dtype=np.float32)
+            action = np.array([0, 0.3 + np.random.rand(1)*0.1], dtype=np.float32) # np.random.rand(1)*0.1 - 0.05
             obs, reward, done, info = env.step(action)
             # obses, actions = obs[np.newaxis, :], action[np.newaxis, :]
-            obses = np.tile(obs, (2, 1))
-            ref_points = np.tile(info['future_n_point'], (2, 1, 1))
-            env_model.reset(obses)
-            for i in range(5):
-                obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
-                    veh2bike4real, veh2person4real = env_model.rollout_out(np.tile(action, (2, 1)), ref_points[:, :, i])
-                # env_model.render()
-            env.render(weights=np.zeros(env.other_number,))
+            # obses = tf.convert_to_tensor(np.tile(obs, (2, 1)), dtype=tf.float32)
+            # ref_points = tf.convert_to_tensor(np.tile(info['future_n_point'], (2, 1, 1)), dtype=tf.float32)
+            # actions = tf.convert_to_tensor(np.tile(actions, (2, 1)), dtype=tf.float32)
+            # env_model.reset(obses)
+            # for i in range(25):
+            #     obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
+            #         veh2bike4real, veh2person4real = env_model.rollout_out(actions + tf.experimental.numpy.random.rand(2)*0.05, ref_points[:, :, i])
+            #     env_model.render()
+            # env.render(weights=np.zeros(env.other_number,))
             if done:
                 break
         obs, _ = env.reset()
-        env.render(weights=np.zeros(env.other_number,))
+        # env.render(weights=np.zeros(env.other_number,))
 
 
 if __name__ == '__main__':
