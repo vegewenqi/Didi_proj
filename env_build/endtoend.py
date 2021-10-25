@@ -305,6 +305,9 @@ class CrossroadEnd2endMix(gym.Env):
         ego_phi = self.ego_dynamics['phi']
         ego_v_x = self.ego_dynamics['v_x']
 
+        # comment ego info, add noise to ego_vector
+        # compute track error with noised ego_vector instead of label
+
         other_vector, other_mask_vector = self._construct_other_vector_short(exit_)
         ego_vector = self._construct_ego_vector_short()
         track_vector = self.ref_path.tracking_error_vector_vectorized(ego_x, ego_y, ego_phi, ego_v_x)
