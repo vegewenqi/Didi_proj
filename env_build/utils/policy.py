@@ -10,12 +10,12 @@
 import tensorflow as tf
 from tensorflow.keras.optimizers.schedules import PolynomialDecay
 
-from env_build.utils.model import MLPNet
+from env_build.utils.model import MLPNet, AttentionNet
 
-NAME2MODELCLS = dict([('MLP', MLPNet),])
+NAME2MODELCLS = dict([('MLP', MLPNet), ('Attention', AttentionNet)])
 
 
-class Policy4Toyota(tf.Module):
+class AttentionPolicy4Toyota(tf.Module):
     import tensorflow as tf
     import tensorflow_probability as tfp
     tfd = tfp.distributions
@@ -27,11 +27,11 @@ class Policy4Toyota(tf.Module):
     def __init__(self, args):
         super().__init__()
         self.args = args
-        obs_dim, act_dim = self.args.obs_dim, self.args.act_dim
+        obs_dim, act_dim = self.args.state_dim, self.args.act_dim
         n_hiddens, n_units, hidden_activation = self.args.num_hidden_layers, self.args.num_hidden_units, self.args.hidden_activation
-        value_model_cls, policy_model_cls, PI_model_cls = NAME2MODELCLS[self.args.value_model_cls], \
-                                                          NAME2MODELCLS[self.args.policy_model_cls], \
-                                                          NAME2MODELCLS[self.args.PI_model_cls]
+        value_model_cls, policy_model_cls, attn_model_cls = NAME2MODELCLS[self.args.value_model_cls], \
+                                                            NAME2MODELCLS[self.args.policy_model_cls], \
+                                                            NAME2MODELCLS[self.args.attn_model_cls]
         self.policy = policy_model_cls(obs_dim, n_hiddens, n_units, hidden_activation, act_dim * 2, name='policy',
                                        output_activation=self.args.policy_out_activation)
         policy_lr_schedule = PolynomialDecay(*self.args.policy_lr_schedule)
@@ -39,26 +39,19 @@ class Policy4Toyota(tf.Module):
 
         self.obj_v = value_model_cls(obs_dim, n_hiddens, n_units, hidden_activation, 1, name='obj_v',
                                      output_activation='softplus')
-        # self.con_v = value_model_cls(obs_dim, n_hiddens, n_units, hidden_activation, 1, name='con_v')
-
         obj_value_lr_schedule = PolynomialDecay(*self.args.value_lr_schedule)
         self.obj_value_optimizer = self.tf.keras.optimizers.Adam(obj_value_lr_schedule, name='objv_adam_opt')
 
-        # con_value_lr_schedule = PolynomialDecay(*self.args.value_lr_schedule)
-        # self.con_value_optimizer = self.tf.keras.optimizers.Adam(con_value_lr_schedule, name='conv_adam_opt')
+        # add AttentionNet
+        attn_in_total_dim, attn_in_per_dim, attn_out_dim = self.args.attn_in_total_dim, \
+                                                           self.args.attn_in_per_dim, \
+                                                           self.args.attn_out_dim
+        self.attn_net = attn_model_cls(attn_in_total_dim, attn_in_per_dim, attn_out_dim, name='attn_net')
+        attn_lr_schedule = PolynomialDecay(*self.args.attn_lr_schedule)
+        self.attn_optimizer = self.tf.keras.optimizers.Adam(attn_lr_schedule, name='adam_opt_attn')
 
-        # add PI_net
-        PI_in_dim, PI_out_dim = self.args.PI_in_dim, self.args.PI_out_dim
-        n_hiddens, n_units, hidden_activation = self.args.PI_num_hidden_layers, self.args.PI_num_hidden_units, \
-                                                self.args.PI_hidden_activation
-
-        self.PI_net = PI_model_cls(PI_in_dim, n_hiddens, n_units, hidden_activation, PI_out_dim, name='PI_net',
-                                       output_activation=self.args.PI_out_activation)
-        PI_lr_schedule = PolynomialDecay(*self.args.PI_lr_schedule)
-        self.PI_optimizer = self.tf.keras.optimizers.Adam(PI_lr_schedule, name='adam_opt_PI')
-
-        self.models = (self.obj_v, self.policy, self.PI_net)
-        self.optimizers = (self.obj_value_optimizer, self.policy_optimizer, self.PI_optimizer)
+        self.models = (self.obj_v, self.policy, self.attn_net)
+        self.optimizers = (self.obj_value_optimizer, self.policy_optimizer, self.attn_optimizer)
 
     def save_weights(self, save_dir, iteration):
         model_pairs = [(model.name, model) for model in self.models]
@@ -117,9 +110,10 @@ class Policy4Toyota(tf.Module):
             return tf.squeeze(self.obj_v(obs), axis=1)
 
     @tf.function
-    def compute_PI(self, obs):
-        with self.tf.name_scope('compute_PI') as scope:
-            return self.PI_net(obs)
+    def compute_attn(self, obs_others, mask):
+        with self.tf.name_scope('compute_attn') as scope:
+            return self.attn_net([obs_others, mask]) # return (logits, weights) tuple
+
 
 if __name__ == '__main__':
     pass

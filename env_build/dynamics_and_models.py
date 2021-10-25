@@ -113,13 +113,6 @@ class EnvironmentModel(object):  # all tensors
         self.reward_info = None
         self.steer_store = []
 
-    # def add_traj(self, obses_ego, obses_bike, obses_person, obses_veh, path_index):
-    #     self.obses_ego = obses_ego
-    #     self.obses_bike = tf.reshape(obses_bike, [-1, self.per_other_info_dim * self.bike_num])
-    #     self.obses_person = tf.reshape(obses_person, [-1, self.per_other_info_dim * self.person_num])
-    #     self.obses_veh = tf.reshape(obses_veh, [-1, self.per_other_info_dim * self.veh_num])
-    #     self.ref_path.set_path(path_index)
-
     def rollout_out(self, actions, ref_points):  # ref_points [#batch, 4]
         with tf.name_scope('model_step') as scope:
             self.actions = self._action_transformation_for_end2end(actions)
@@ -908,7 +901,7 @@ class ReferencePath(object):
         self.set_path(green_or_red)
 
     def set_path(self, green_or_red='green', path_index=None):
-        if not path_index:
+        if path_index is None:
             path_index = np.random.choice(len(self.path_list[self.green_or_red]))
         self.ref_encoding = REF_ENCODING[path_index]
         self.path = self.path_list[green_or_red][path_index]

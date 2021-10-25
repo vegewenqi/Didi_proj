@@ -129,7 +129,7 @@ class Recorder(object):
                     ax = f.add_axes([0.15, 0.15, 0.85, 0.85])
                     sns.lineplot('time', 'data_smo', linewidth=2,
                                  data=df, palette="bright", color='indigo')
-                    plt.ylim([0, 10])
+                    plt.ylim([0, 80])
                 elif key == 'a_x':
                     df = pd.DataFrame(dict(time=real_time, data=data_dict[key]))
                     df['data_smo'] = df['data'].rolling(WINDOWSIZE, min_periods=1).mean()
@@ -160,10 +160,11 @@ class Recorder(object):
                     plt.ylim([-0.8, 0.8])
                 elif key == 'path_values':
                     path_values = data_dict[key]
-                    df1 = pd.DataFrame(dict(time=real_time, data=path_values[:, 0], path_index='Path 1'))
-                    df2 = pd.DataFrame(dict(time=real_time, data=path_values[:, 1], path_index='Path 2'))
-                    df3 = pd.DataFrame(dict(time=real_time, data=path_values[:, 2], path_index='Path 3'))
-                    total_dataframe = df1.append([df2, df3], ignore_index=True)
+                    df_list = []
+                    for i in range(path_values.shape[1]):
+                        df = pd.DataFrame(dict(time=real_time, data=path_values[:, i], path_index='Path' + str(i)))
+                        df_list.append(df)
+                    total_dataframe = pd.concat(df_list, ignore_index=True)
                     ax = f.add_axes([0.16, 0.15, 0.82, 0.85])
                     sns.lineplot('time', 'data', linewidth=2, hue='path_index',
                                  data=total_dataframe, palette="bright", color='indigo')
