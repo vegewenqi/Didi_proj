@@ -14,7 +14,10 @@ import random
 from random import choice
 
 import gym
+import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.transforms import Affine2D
+from matplotlib.collections import PatchCollection
 import numpy as np
 from gym.utils import seeding
 
@@ -1072,14 +1075,20 @@ class CrossroadEnd2endMix(gym.Env):
                     ax.plot([LD_x + x, LU_x + x], [LD_y + y, LU_y + y], color=color, linestyle=linestyle)
 
             def draw_rotate_batch_rec(x, y, a, l, w):
-                RU_x, RU_y, _ = rotate_coordination_vec(l / 2, w / 2, np.zeros_like(l), -a)
-                RD_x, RD_y, _ = rotate_coordination_vec(l / 2, -w / 2, np.zeros_like(l), -a)
-                LU_x, LU_y, _ = rotate_coordination_vec(-l / 2, w / 2, np.zeros_like(l), -a)
-                LD_x, LD_y, _ = rotate_coordination_vec(-l / 2, -w / 2, np.zeros_like(l), -a)
-                ax.plot([RU_x + x, RD_x + x], [RU_y + y, RD_y + y], color='k')
-                ax.plot([RU_x + x, LU_x + x], [RU_y + y, LU_y + y], color='k')
-                ax.plot([LD_x + x, RD_x + x], [LD_y + y, RD_y + y], color='k')
-                ax.plot([LD_x + x, LU_x + x], [LD_y + y, LU_y + y], color='k')
+                patches = []
+
+                for i in range(len(x)):
+
+                    patches.append(matplotlib.patches.Rectangle(np.array([-l[i]/2+x[i], -w[i]/2+y[i]]),
+                                                                width=l[i], height=w[i],
+                                                                fill=False,
+                                                                facecolor=None,
+                                                                edgecolor='k',
+                                                                linewidth=1.0,
+                                                                transform=Affine2D().rotate_deg_around(*(x[i], y[i]),
+                                                                                                       a[i])))
+
+                ax.add_collection(PatchCollection(patches, match_original=True))
 
 
             def plot_phi_line(type, x, y, phi, color):
