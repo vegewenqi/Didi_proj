@@ -1165,7 +1165,7 @@ class CrossroadEnd2endMix(gym.Env):
             # reward info
             if self.reward_info is not None:
                 for key, val in self.reward_info.items():
-                    plt.text(text_x, text_y_start - next(ge), '{}: {:.4f}'.format(key, val))
+                    plt.text(text_x, text_y_start - next(ge), 'rew_{}: {:.4f}'.format(key, val))
 
             # indicator for trajectory selection
             # text_x, text_y_start = -25, -65
