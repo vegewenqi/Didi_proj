@@ -101,31 +101,27 @@ class EnvironmentModel(object):  # all tensors
         self.light_info_dim = Para.LIGHT_ENCODING_DIM
         self.task_info_dim = Para.TASK_ENCODING_DIM
         self.ref_info_dim = Para.REF_ENCODING_DIM
+        self.action_number = Para.AC_DIM
+        self.action_historical = Para.AC_HIS_NUM
         self.other_number = sum([self.veh_num, self.bike_num, self.person_num])
         self.other_start_dim = sum([self.ego_info_dim, self.track_info_dim, self.light_info_dim,
-                                    self.task_info_dim, self.ref_info_dim])
+                                    self.task_info_dim, self.ref_info_dim, self.action_number * self.action_historical])
         self.per_other_info_dim = Para.PER_OTHER_INFO_DIM
-        self.steer_store = []
+        self.action_store_num = tf.Variable(0, dtype=tf.int8, trainable=False)
 
     def reset(self, obses):  # input are all tensors
         self.obses = obses
         self.actions = None
         self.reward_info = None
-        self.steer_store = []
+        self.action_store_num.assign(0)
 
     def rollout_out(self, actions, ref_points):  # ref_points [#batch, 4]
         with tf.name_scope('model_step') as scope:
             self.actions = self._action_transformation_for_end2end(actions)
-            self.steer_store.append(self.actions[:, 0])
-            self.obses = self.compute_next_obses(self.obses, self.actions, ref_points)
-
             rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, \
-            veh2person4real, reward_dict = self.compute_rewards(self.obses, self.actions)
+                veh2person4real, reward_dict = self.compute_rewards(self.obses, self.actions, actions)
 
-            # tf.print('-------')
-            # tf.print(rewards)
-            # tf.print(reward_dict)
-            # tf.print('-------')
+            self.obses = self.compute_next_obses(self.obses, self.actions, actions, ref_points)
 
         return self.obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
                veh2bike4real, veh2person4real
@@ -182,9 +178,9 @@ class EnvironmentModel(object):  # all tensors
     #                                          tf.zeros_like(veh_infos[:, 0]))
     #     return veh2veh4real
 
-    def compute_rewards(self, obses, actions):
+    def compute_rewards(self, obses, actions, untransformed_action):
         obses = self._convert_to_abso(obses)
-        obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_other = self._split_all(obses)
+        obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_his_ac, obses_other = self._split_all(obses)
         obses_bike, obses_person, obses_veh = self._split_other(obses_other)
 
         with tf.name_scope('compute_reward') as scope:
@@ -193,20 +189,33 @@ class EnvironmentModel(object):  # all tensors
             veh_infos = tf.stop_gradient(obses_veh)
 
             steers, a_xs = actions[:, 0], actions[:, 1]
-            # rewards related to action
-            if len(self.steer_store) > 2:
-                steers_1st_order = (self.steer_store[-1] - self.steer_store[-2]) * self.base_frequency
-                steers_2st_order = (self.steer_store[-1] - 2 * self.steer_store[-2] + self.steer_store[-3]) * (
-                            self.base_frequency ** 2)
-            elif len(self.steer_store) == 2:
-                steers_1st_order = (self.steer_store[-1] - self.steer_store[-2]) * self.base_frequency
-                steers_2st_order = tf.zeros_like(steers)
-            else:
-                steers_1st_order = tf.zeros_like(steers)
-                steers_2st_order = tf.zeros_like(steers)
-            punish_steer = -tf.square(steers) - tf.square(steers_1st_order) - tf.square(steers_2st_order)
-            punish_a_x = -tf.square(a_xs)
+            steers_t_minus_2, a_x_t_minus_2 = obses_his_ac[:, 0], obses_his_ac[:, 1]
+            steers_t_minus_1, a_x_t_minus_1 = obses_his_ac[:, 2], obses_his_ac[:, 3]
+            steers_t, a_x_t = untransformed_action[:, 0], untransformed_action[:, 1]
 
+            # rewards related to action and its derivatives
+            if self.action_store_num > 1:
+                steers_1st_order = (steers_t - steers_t_minus_1) * self.base_frequency
+                steers_2nd_order = (steers_t - 2 * steers_t_minus_1 + steers_t_minus_2) * (
+                            self.base_frequency ** 2)
+                a_xs_1st_order = (a_x_t - a_x_t_minus_1) * self.base_frequency
+                a_xs_2nd_order = (a_x_t - 2 * a_x_t_minus_1 + a_x_t_minus_2) * (
+                            self.base_frequency ** 2)
+            elif self.action_store_num == 1:
+                steers_1st_order = (steers_t - steers_t_minus_1) * self.base_frequency
+                steers_2nd_order = tf.zeros_like(steers, dtype=tf.float32)
+                a_xs_1st_order = (a_x_t - a_x_t_minus_1) * self.base_frequency
+                a_xs_2nd_order = tf.zeros_like(a_xs, dtype=tf.float32)
+            elif self.action_store_num == 0:
+                steers_1st_order = tf.zeros_like(steers, dtype=tf.float32)
+                steers_2nd_order = tf.zeros_like(steers, dtype=tf.float32)
+                a_xs_1st_order = tf.zeros_like(a_xs, dtype=tf.float32)
+                a_xs_2nd_order = tf.zeros_like(a_xs, dtype=tf.float32)
+
+            punish_steer = - tf.square(steers) - tf.square(steers_1st_order) - tf.square(steers_2nd_order)
+            punish_a_x = - tf.square(a_xs) - tf.square(a_xs_1st_order) - tf.square(a_xs_2nd_order)
+            self.action_store_num.assign_add(1)
+            print('-----')
             # rewards related to ego stability
             punish_yaw_rate = -tf.square(obses_ego[:, 2])
 
@@ -379,14 +388,15 @@ class EnvironmentModel(object):  # all tensors
             return rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, \
                    veh2person4real, reward_dict
 
-    def compute_next_obses(self, obses, actions, ref_points):
+    def compute_next_obses(self, obses, actions, untransformed_actions, ref_points):
         obses = self._convert_to_abso(obses)
-        obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_other = self._split_all(obses)
+        obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_his_ac, obses_other = self._split_all(obses)
         obses_other = tf.stop_gradient(obses_other)
         next_obses_ego = self._ego_predict(obses_ego, actions)
         next_obses_track = self._compute_next_track_info_vectorized(next_obses_ego, ref_points)
+        next_obses_his_ac = tf.concat([obses_his_ac[:, -2:], untransformed_actions], axis=-1)
         next_obses_other = self._other_predict(obses_other)
-        next_obses = tf.concat([next_obses_ego, next_obses_track, obses_light, obses_task, obses_ref, next_obses_other],
+        next_obses = tf.concat([next_obses_ego, next_obses_track, obses_light, obses_task, obses_ref, next_obses_his_ac, next_obses_other],
                                axis=-1)
         next_obses = self._convert_to_rela(next_obses)
         return next_obses
@@ -437,7 +447,7 @@ class EnvironmentModel(object):  # all tensors
         return featured >= 0.
 
     def _convert_to_rela(self, obses):
-        obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_other = self._split_all(obses)
+        obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_his_ac, obses_other = self._split_all(obses)
         obses_other_reshape = self._reshape_other(obses_other)
         ego_x, ego_y = obses_ego[:, 3], obses_ego[:, 4]
         ego = tf.concat([tf.stack([ego_x, ego_y], axis=-1), tf.zeros(shape=(ego_x.shape[0], self.per_other_info_dim - 2))],
@@ -445,10 +455,10 @@ class EnvironmentModel(object):  # all tensors
         ego = tf.expand_dims(ego, 1)
         rela = obses_other_reshape - ego
         rela_obses_other = self._reshape_other(rela, reverse=True)
-        return tf.concat([obses_ego, obses_track, obses_light, obses_task, obses_ref, rela_obses_other], axis=-1)
+        return tf.concat([obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_his_ac, rela_obses_other], axis=-1)
 
     def _convert_to_abso(self, rela_obses):
-        obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_other = self._split_all(rela_obses)
+        obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_his_ac, obses_other = self._split_all(rela_obses)
         obses_other_reshape = self._reshape_other(obses_other)
         ego_x, ego_y = obses_ego[:, 3], obses_ego[:, 4]
         ego = tf.concat([tf.stack([ego_x, ego_y], axis=-1), tf.zeros(shape=(ego_x.shape[0], self.per_other_info_dim - 2))],
@@ -457,7 +467,7 @@ class EnvironmentModel(object):  # all tensors
         abso = obses_other_reshape + ego
         abso_obses_other = self._reshape_other(abso, reverse=True)
 
-        return tf.concat([obses_ego, obses_track, obses_light, obses_task, obses_ref, abso_obses_other], axis=-1)
+        return tf.concat([obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_his_ac, abso_obses_other], axis=-1)
 
     def _ego_predict(self, ego_infos, actions):
         ego_next_infos, _ = self.vehicle_dynamics.prediction(ego_infos[:, :6], actions, self.base_frequency)
@@ -496,9 +506,12 @@ class EnvironmentModel(object):  # all tensors
         obses_task = obses[:, self.ego_info_dim + self.track_info_dim + self.light_info_dim:
                               self.ego_info_dim + self.track_info_dim + self.light_info_dim + self.task_info_dim]
         obses_ref = obses[:, self.ego_info_dim + self.track_info_dim + self.light_info_dim + self.task_info_dim:
-                             self.other_start_dim]
+                             self.ego_info_dim + self.track_info_dim + self.light_info_dim + self.task_info_dim + self.ref_info_dim]
+        obses_his_ac = obses[:, self.ego_info_dim + self.track_info_dim + self.light_info_dim + self.task_info_dim + self.ref_info_dim:
+                                self.other_start_dim]
         obses_other = obses[:, self.other_start_dim:]
-        return obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_other
+
+        return obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_his_ac, obses_other
 
     def _split_other(self, obses_other):
         obses_bike = obses_other[:, :self.bike_num * self.per_other_info_dim]
@@ -826,7 +839,7 @@ class EnvironmentModel(object):  # all tensors
 
             obses = self._convert_to_abso(self.obses)
             obses = obses.numpy()
-            obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_other = self._split_all(obses)
+            obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_his_ac, obses_other = self._split_all(obses)
 
             # plot others
             for index in range(self.veh_num + self.bike_num + self.person_num):
@@ -1264,7 +1277,6 @@ def test_model():
     while 1:
         obs, info = env.reset()
         for i in range(35):
-            obs, info = env.reset()
             obs_list, future_point_list = [], []
             obs_list.append(obs)
             future_point_list.append(info['future_n_point'])
@@ -1278,7 +1290,7 @@ def test_model():
             for rollout_step in range(10):
                 actions = tf.tile(tf.constant([[0.5, 0]], dtype=tf.float32), tf.constant([len(obses), 1]))
                 obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
-                veh2bike4real, veh2person4real = model.rollout_out(actions, future_points[:, :, i])
+                    veh2bike4real, veh2person4real = model.rollout_out(actions, future_points[:, :, i])
                 model.render()
 
 
