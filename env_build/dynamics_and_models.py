@@ -101,19 +101,16 @@ class EnvironmentModel(object):  # all tensors
         self.light_info_dim = Para.LIGHT_ENCODING_DIM
         self.task_info_dim = Para.TASK_ENCODING_DIM
         self.ref_info_dim = Para.REF_ENCODING_DIM
-        self.action_number = Para.AC_DIM
-        self.action_historical = Para.AC_HIS_NUM
+        self.his_act_info_dim = Para.HIS_ACT_ENCODING_DIM
         self.other_number = sum([self.veh_num, self.bike_num, self.person_num])
         self.other_start_dim = sum([self.ego_info_dim, self.track_info_dim, self.light_info_dim,
-                                    self.task_info_dim, self.ref_info_dim, self.action_number * self.action_historical])
+                                    self.task_info_dim, self.ref_info_dim, self.his_act_info_dim])
         self.per_other_info_dim = Para.PER_OTHER_INFO_DIM
-        self.action_store_num = tf.Variable(0, dtype=tf.int8, trainable=False)
 
     def reset(self, obses):  # input are all tensors
         self.obses = obses
         self.actions = None
         self.reward_info = None
-        self.action_store_num.assign(0)
 
     def rollout_out(self, actions, ref_points):  # ref_points [#batch, 4]
         with tf.name_scope('model_step') as scope:
@@ -125,58 +122,6 @@ class EnvironmentModel(object):  # all tensors
 
         return self.obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
                veh2bike4real, veh2person4real
-
-    # def ss(self, obses, actions, lam=0.1):
-    #     actions = self._action_transformation_for_end2end(actions)
-    #     next_obses = self.compute_next_obses(obses, actions)
-    #     ego_infos, veh_infos = obses[:, :self.ego_info_dim], \
-    #                            obses[:, self.ego_info_dim + self.per_tracking_info_dim * (
-    #                                    self.num_future_data + 1):]
-    #     next_ego_infos, next_veh_infos = next_obses[:, :self.ego_info_dim], \
-    #                                      next_obses[:, self.ego_info_dim + self.per_tracking_info_dim * (
-    #                                                self.num_future_data + 1):]
-    #     ego_lws = (L - W) / 2.
-    #     ego_front_points = tf.cast(ego_infos[:, 3] + ego_lws * tf.cos(ego_infos[:, 5] * np.pi / 180.),
-    #                                dtype=tf.float32), \
-    #                        tf.cast(ego_infos[:, 4] + ego_lws * tf.sin(ego_infos[:, 5] * np.pi / 180.), dtype=tf.float32)
-    #     ego_rear_points = tf.cast(ego_infos[:, 3] - ego_lws * tf.cos(ego_infos[:, 5] * np.pi / 180.), dtype=tf.float32), \
-    #                       tf.cast(ego_infos[:, 4] - ego_lws * tf.sin(ego_infos[:, 5] * np.pi / 180.), dtype=tf.float32)
-    #
-    #     next_ego_front_points = tf.cast(next_ego_infos[:, 3] + ego_lws * tf.cos(next_ego_infos[:, 5] * np.pi / 180.),
-    #                                dtype=tf.float32), \
-    #                        tf.cast(next_ego_infos[:, 4] + ego_lws * tf.sin(next_ego_infos[:, 5] * np.pi / 180.), dtype=tf.float32)
-    #     next_ego_rear_points = tf.cast(next_ego_infos[:, 3] - ego_lws * tf.cos(next_ego_infos[:, 5] * np.pi / 180.), dtype=tf.float32), \
-    #                       tf.cast(next_ego_infos[:, 4] - ego_lws * tf.sin(next_ego_infos[:, 5] * np.pi / 180.), dtype=tf.float32)
-    #
-    #     veh2veh4real = tf.zeros_like(veh_infos[:, 0])
-    #     for veh_index in range(self.veh_num):
-    #         vehs = veh_infos[:, veh_index * self.per_veh_info_dim:(veh_index + 1) * self.per_veh_info_dim]
-    #         ego2veh_dist = tf.sqrt(tf.square(ego_infos[:, 3] - vehs[:, 0]) + tf.square(ego_infos[:, 4] - vehs[:, 1]))
-    #
-    #         next_vehs = next_veh_infos[:, veh_index * self.per_veh_info_dim:(veh_index + 1) * self.per_veh_info_dim]
-    #
-    #         veh_lws = (L - W) / 2.
-    #         veh_front_points = tf.cast(vehs[:, 0] + veh_lws * tf.cos(vehs[:, 3] * np.pi / 180.), dtype=tf.float32), \
-    #                            tf.cast(vehs[:, 1] + veh_lws * tf.sin(vehs[:, 3] * np.pi / 180.), dtype=tf.float32)
-    #         veh_rear_points = tf.cast(vehs[:, 0] - veh_lws * tf.cos(vehs[:, 3] * np.pi / 180.), dtype=tf.float32), \
-    #                           tf.cast(vehs[:, 1] - veh_lws * tf.sin(vehs[:, 3] * np.pi / 180.), dtype=tf.float32)
-    #
-    #         next_veh_front_points = tf.cast(next_vehs[:, 0] + veh_lws * tf.cos(next_vehs[:, 3] * np.pi / 180.), dtype=tf.float32), \
-    #                            tf.cast(next_vehs[:, 1] + veh_lws * tf.sin(next_vehs[:, 3] * np.pi / 180.), dtype=tf.float32)
-    #         next_veh_rear_points = tf.cast(next_vehs[:, 0] - veh_lws * tf.cos(next_vehs[:, 3] * np.pi / 180.), dtype=tf.float32), \
-    #                           tf.cast(next_vehs[:, 1] - veh_lws * tf.sin(next_vehs[:, 3] * np.pi / 180.), dtype=tf.float32)
-    #
-    #         for ego_point in [(ego_front_points, next_ego_front_points), (ego_rear_points, next_ego_rear_points)]:
-    #             for veh_point in [(veh_front_points, next_veh_front_points), (veh_rear_points, next_veh_rear_points)]:
-    #                 veh2veh_dist = tf.sqrt(
-    #                     tf.square(ego_point[0][0] - veh_point[0][0]) + tf.square(ego_point[0][1] - veh_point[0][1]))
-    #                 next_veh2veh_dist = tf.sqrt(
-    #                     tf.square(ego_point[1][0] - veh_point[1][0]) + tf.square(ego_point[1][1] - veh_point[1][1]))
-    #                 next_g = next_veh2veh_dist - 2.5
-    #                 g = veh2veh_dist - 2.5
-    #                 veh2veh4real += tf.where(logical_and(next_g - (1-lam)*g < 0, ego2veh_dist < 10), tf.square(next_g - (1-lam)*g),
-    #                                          tf.zeros_like(veh_infos[:, 0]))
-    #     return veh2veh4real
 
     def compute_rewards(self, obses, actions, untransformed_action):
         obses = self._convert_to_abso(obses)
@@ -194,27 +139,15 @@ class EnvironmentModel(object):  # all tensors
             steers_t, a_x_t = untransformed_action[:, 0], untransformed_action[:, 1]
 
             # rewards related to action and its derivatives
-            if self.action_store_num > 1:
-                steers_1st_order = (steers_t - steers_t_minus_1) * self.base_frequency
-                steers_2nd_order = (steers_t - 2 * steers_t_minus_1 + steers_t_minus_2) * (
-                            self.base_frequency ** 2)
-                a_xs_1st_order = (a_x_t - a_x_t_minus_1) * self.base_frequency
-                a_xs_2nd_order = (a_x_t - 2 * a_x_t_minus_1 + a_x_t_minus_2) * (
-                            self.base_frequency ** 2)
-            elif self.action_store_num == 1:
-                steers_1st_order = (steers_t - steers_t_minus_1) * self.base_frequency
-                steers_2nd_order = tf.zeros_like(steers, dtype=tf.float32)
-                a_xs_1st_order = (a_x_t - a_x_t_minus_1) * self.base_frequency
-                a_xs_2nd_order = tf.zeros_like(a_xs, dtype=tf.float32)
-            elif self.action_store_num == 0:
-                steers_1st_order = tf.zeros_like(steers, dtype=tf.float32)
-                steers_2nd_order = tf.zeros_like(steers, dtype=tf.float32)
-                a_xs_1st_order = tf.zeros_like(a_xs, dtype=tf.float32)
-                a_xs_2nd_order = tf.zeros_like(a_xs, dtype=tf.float32)
+            steers_1st_order = (steers_t - steers_t_minus_1) * self.base_frequency
+            steers_2nd_order = (steers_t - 2 * steers_t_minus_1 + steers_t_minus_2) * (
+                    self.base_frequency ** 2)
+            a_xs_1st_order = (a_x_t - a_x_t_minus_1) * self.base_frequency
+            a_xs_2nd_order = (a_x_t - 2 * a_x_t_minus_1 + a_x_t_minus_2) * (
+                    self.base_frequency ** 2)
 
-            punish_steer = - tf.square(steers) - tf.square(steers_1st_order) - tf.square(steers_2nd_order)
-            punish_a_x = - tf.square(a_xs) - tf.square(a_xs_1st_order) - tf.square(a_xs_2nd_order)
-            self.action_store_num.assign_add(1)
+            punish_steer0, punish_steer1, punish_steer2 = - tf.square(steers), - tf.square(steers_1st_order), - tf.square(steers_2nd_order)
+            punish_a_x0, punish_a_x1, punish_a_x2 = - tf.square(a_xs), - tf.square(a_xs_1st_order), - tf.square(a_xs_2nd_order)
 
             # rewards related to ego stability
             punish_yaw_rate = -tf.square(obses_ego[:, 2])
@@ -357,19 +290,29 @@ class EnvironmentModel(object):  # all tensors
             #             tf.square(ego_point[1] - (-LANE_WIDTH * LANE_NUMBER) - 1), tf.zeros_like(veh_infos[:, 0]))
 
             rewards = 0.01 * devi_v + 0.8 * devi_longitudinal + 0.8 * devi_lateral + 30 * devi_phi + 0.02 * punish_yaw_rate + \
-                      5 * punish_steer + 0.05 * punish_a_x
+                      5 * punish_steer0 + \
+                      0.05 * punish_a_x0 #+ 0.05 * punish_a_x1 + 0.05 * punish_a_x2
+
             punish_term_for_training = veh2veh4training + veh2road4training + veh2bike4training + veh2person4training
             real_punish_term = veh2veh4real + veh2road4real + veh2bike4real + veh2person4real
 
-            reward_dict = dict(punish_steer=punish_steer,
-                               punish_a_x=punish_a_x,
+            reward_dict = dict(punish_steer0=punish_steer0,
+                               punish_steer1=punish_steer1,
+                               punish_steer2=punish_steer2,
+                               punish_a_x0=punish_a_x0,
+                               punish_a_x1=punish_a_x1,
+                               punish_a_x2=punish_a_x2,
                                punish_yaw_rate=punish_yaw_rate,
                                devi_v=devi_v,
                                devi_longitudinal=devi_longitudinal,
                                devi_lateral=devi_lateral,
                                devi_phi=devi_phi,
-                               scaled_punish_steer=5 * punish_steer,
-                               scaled_punish_a_x=0.05 * punish_a_x,
+                               scaled_punish_steer0=5 * punish_steer0,
+                               scaled_punish_steer1=5 * punish_steer1,
+                               scaled_punish_steer2=5 * punish_steer2,
+                               scaled_punish_a_x0=0.05 * punish_a_x0,
+                               scaled_punish_a_x1=0.05 * punish_a_x1,
+                               scaled_punish_a_x2=0.05 * punish_a_x2,
                                scaled_punish_yaw_rate=0.02 * punish_yaw_rate,
                                scaled_devi_v=0.01 * devi_v,
                                scaled_devi_longitudinal=0.8 * devi_longitudinal,
@@ -401,21 +344,6 @@ class EnvironmentModel(object):  # all tensors
         next_obses = self._convert_to_rela(next_obses)
         return next_obses
 
-    def _compute_next_track_info(self, next_ego_infos, ref_points):
-        ego_vxs, ego_vys, ego_rs, ego_xs, ego_ys, ego_phis = [next_ego_infos[:, i] for i in range(self.ego_info_dim)]
-        ref_xs, ref_ys, ref_phis, ref_vs = [ref_points[:, i] for i in range(4)]
-        ref_phis_rad = ref_phis * np.pi / 180
-        a, b, c = (ref_xs, ref_ys), (ref_xs + tf.cos(ref_phis_rad), ref_ys + tf.sin(ref_phis_rad)), (ego_xs, ego_ys)
-        dist_a2c = tf.sqrt(tf.square(ego_xs - ref_xs) + tf.square(ego_ys - ref_ys))
-        dist_c2line = tf.abs(tf.sin(ref_phis_rad) * ego_xs - tf.cos(ref_phis_rad) * ego_ys
-                             - tf.sin(ref_phis_rad) * ref_xs + tf.cos(ref_phis_rad) * ref_ys)
-        dist_longdi = tf.sqrt(tf.abs(tf.square(dist_a2c) - tf.square(dist_c2line)))
-        signed_dist_lateral = tf.where(self._judge_is_left(a, b, c), dist_c2line, -dist_c2line)
-        signed_dist_longi = tf.where(self._judge_is_ahead(a, b, c), dist_longdi, -dist_longdi) #  TODO: use vector inner product to cal signed dist
-        delta_phi = deal_with_phi_diff(ego_phis - ref_phis)
-        delta_vs = ego_vxs - ref_vs
-        return tf.stack([signed_dist_longi, signed_dist_lateral, delta_phi, delta_vs], axis=-1)
-    
     def _compute_next_track_info_vectorized(self, next_ego_infos, ref_points):
         ego_vxs, ego_vys, ego_rs, ego_xs, ego_ys, ego_phis = [next_ego_infos[:, i] for i in range(self.ego_info_dim)]
         ref_xs, ref_ys, ref_phis, ref_vs = [ref_points[:, i] for i in range(4)]
@@ -431,20 +359,6 @@ class EnvironmentModel(object):  # all tensors
         delta_phi = deal_with_phi_diff(ego_phis - ref_phis)
         delta_vs = ego_vxs - ref_vs
         return tf.stack([signed_dist_longi, signed_dist_lateral, delta_phi, delta_vs], axis=-1)
-
-    def _judge_is_left(self, a, b, c):
-        x1, y1 = a
-        x2, y2 = b
-        x3, y3 = c
-        featured = (x1 - x3) * (y2 - y3) - (y1 - y3) * (x2 - x3)
-        return featured > 0.
-
-    def _judge_is_ahead(self, a, b, c):
-        x1, y1 = a
-        x2, y2 = b
-        x3, y3 = c
-        featured = (x2 - x1) * (x3 - x1) + (y2 - y1) * (y3 - y1)
-        return featured >= 0.
 
     def _convert_to_rela(self, obses):
         obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_his_ac, obses_other = self._split_all(obses)

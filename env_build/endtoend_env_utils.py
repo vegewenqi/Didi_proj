@@ -18,7 +18,7 @@ class ActionStore(list):
         super(ActionStore, self).__init__()
         self.maxlen = maxlen
         for _ in range(maxlen):
-            self.append(np.zeros(Para.AC_DIM, dtype=np.float32))
+            self.append(np.zeros(2, dtype=np.float32))
     
     def put(self, action):
         assert len(self) == self.maxlen
@@ -27,7 +27,7 @@ class ActionStore(list):
 
     def reset(self):
         for i in range(self.maxlen):
-            self[i] = np.zeros(Para.AC_DIM, dtype=np.float32)
+            self[i] = np.zeros(2, dtype=np.float32)
 
     
 class Para:
@@ -61,9 +61,8 @@ class Para:
     LIGHT_ENCODING_DIM = 2
     TASK_ENCODING_DIM = 3
     REF_ENCODING_DIM = 3
+    HIS_ACT_ENCODING_DIM = 4
     PER_OTHER_INFO_DIM = 10
-    AC_DIM = 2
-    AC_HIS_NUM = 2
 
     # MAX NUM
     MAX_VEH_NUM = 8  # to be align with VEHICLE_MODE_DICT
