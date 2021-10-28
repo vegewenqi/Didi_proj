@@ -315,7 +315,7 @@ class CrossroadEnd2endMix(gym.Env):
         if self.vector_noise:
             other_vector = self._add_noise_to_vector(other_vector, 'other')
             ego_vector = self._add_noise_to_vector(ego_vector, 'ego')
-        
+
         track_vector = self.ref_path.tracking_error_vector_vectorized(ego_vector[3], ego_vector[4], ego_vector[5], ego_vector[0]) # 3 for x; 4 foy y
         future_n_point = self.ref_path.get_future_n_point(ego_vector[3], ego_vector[4], self.future_point_num)
         self.light_encoding = LIGHT_ENCODING[self.light_phase]
@@ -325,7 +325,7 @@ class CrossroadEnd2endMix(gym.Env):
         vector = self._convert_to_rela(vector)
 
         return vector, other_mask_vector, future_n_point
-    
+
     def _add_noise_to_vector(self, vector, vec_type=None):
         '''
         Enabled by the 'vector_noise' variable in this class
@@ -730,7 +730,7 @@ class CrossroadEnd2endMix(gym.Env):
                     tmp_v = tmp_v[:self.veh_num]
             tmp = tmp_b + tmp_p + tmp_v
             return tmp
-    
+
         self.interested_other = filter_interested_other(self.all_other, self.training_task)
 
         for other in self.interested_other:
@@ -1092,7 +1092,7 @@ class CrossroadEnd2endMix(gym.Env):
                 x_forw, y_forw = x + line_length * cos(phi * pi / 180.), \
                                  y + line_length * sin(phi * pi / 180.)
                 plt.plot([x, x_forw], [y, y_forw], color=color, linewidth=0.5)
-            
+
             def get_partici_type_str(partici_type):
                 if partici_type[0] == 1.:
                     return 'bike'
@@ -1161,7 +1161,7 @@ class CrossroadEnd2endMix(gym.Env):
                     if is_in_plot_area(item_x, item_y):
                         plot_phi_line(item_type, item_x, item_y, item_phi, 'orangered')
                         draw_rotate_rec(item_type, item_x, item_y, item_phi, item_l, item_w, color='orangered')
-                
+
                 # noised ego car
                 plot_phi_line('self_noised_car', noised_ego_x, noised_ego_y, noised_ego_phi, 'aquamarine')
                 draw_rotate_rec('self_noised_car', noised_ego_x, noised_ego_y, noised_ego_phi, self.ego_l, self.ego_w, 'aquamarine')
@@ -1233,7 +1233,7 @@ class CrossroadEnd2endMix(gym.Env):
             # reward info
             if self.reward_info is not None:
                 for key, val in self.reward_info.items():
-                    plt.text(text_x, text_y_start - next(ge), '{}: {:.4f}'.format(key, val))
+                    plt.text(text_x, text_y_start - next(ge), 'rew_{}: {:.4f}'.format(key, val))
 
             # indicator for trajectory selection
             # text_x, text_y_start = -25, -65
