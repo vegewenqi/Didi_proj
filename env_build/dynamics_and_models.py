@@ -215,7 +215,7 @@ class EnvironmentModel(object):  # all tensors
             punish_steer = - tf.square(steers) - tf.square(steers_1st_order) - tf.square(steers_2nd_order)
             punish_a_x = - tf.square(a_xs) - tf.square(a_xs_1st_order) - tf.square(a_xs_2nd_order)
             self.action_store_num.assign_add(1)
-            print('-----')
+
             # rewards related to ego stability
             punish_yaw_rate = -tf.square(obses_ego[:, 2])
 
