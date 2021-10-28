@@ -181,7 +181,7 @@ class AMPCLearnerWithAttention(object):
             punish_factor=pf.numpy(),
             pg_grads_norm=pg_grad_norm.numpy(),
             obj_v_grad_norm=obj_v_grad_norm.numpy(),
-            PI_net_grad_norm=attn_net_grad_norm.numpy(),
+            attn_net_grad_norm=attn_net_grad_norm.numpy(),
             policy_entropy=policy_entropy.numpy(),
             # con_v_grad_norm=con_v_grad_norm.numpy()
         ))

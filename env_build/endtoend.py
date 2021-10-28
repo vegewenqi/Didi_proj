@@ -59,10 +59,8 @@ class CrossroadEnd2endMix(gym.Env):
         self.ego_dynamics = None
         self.state_mode = state_mode
         self.init_state = {}
-        self.action_number = Para.AC_DIM
-        self.action_historical_num = Para.AC_HIS_NUM
         self.ego_l, self.ego_w = Para.L, Para.W
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(self.action_number,), dtype=np.float32)
+        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
 
         self.seed()
         self.light_phase = None
@@ -81,9 +79,10 @@ class CrossroadEnd2endMix(gym.Env):
         self.light_info_dim = Para.LIGHT_ENCODING_DIM
         self.task_info_dim = Para.TASK_ENCODING_DIM
         self.ref_info_dim = Para.REF_ENCODING_DIM
+        self.his_act_info_dim = Para.HIS_ACT_ENCODING_DIM
         self.per_other_info_dim = Para.PER_OTHER_INFO_DIM
         self.other_start_dim = sum([self.ego_info_dim, self.track_info_dim, self.light_info_dim,
-                                    self.task_info_dim, self.ref_info_dim, self.action_number * self.action_historical_num])
+                                    self.task_info_dim, self.ref_info_dim, self.his_act_info_dim])
         self.veh_num = Para.MAX_VEH_NUM
         self.bike_num = Para.MAX_BIKE_NUM
         self.person_num = Para.MAX_PERSON_NUM
@@ -102,7 +101,7 @@ class CrossroadEnd2endMix(gym.Env):
         if self.vector_noise:
             self.rng = np.random.default_rng(12345)
 
-        self.action_store = ActionStore(maxlen=self.action_historical_num)
+        self.action_store = ActionStore(maxlen=2)
 
         if not multi_display:
             self.traffic = Traffic(self.step_length,
