@@ -784,6 +784,7 @@ class CrossroadEnd2endMix(gym.Env):
             plt.cla()
             ax = plt.axes([-0.05, -0.05, 1.1, 1.1])
             ax.axis("equal")
+            patches = []
             # ax.add_patch(plt.Rectangle((-square_length / 2 - extension, -square_length / 2 - extension),
             #                            square_length + 2 * extension, square_length + 2 * extension, edgecolor='black',
             #                            facecolor='none', linewidth=2))
@@ -795,16 +796,19 @@ class CrossroadEnd2endMix(gym.Env):
             # plt.arrow(lane_width * 2.5, -square_length / 2 - 10, 0, 3, color='darkviolet')
             # plt.arrow(lane_width * 2.5, -square_length / 2 - 10 + 3, 0.5, 1.0, color='darkviolet', head_width=0.7)
             # ----------green belt--------------
-            ax.add_patch(plt.Rectangle((-Para.CROSSROAD_SIZE_LAT / 2 - extension, Para.OFFSET_L),
+            patches.append(plt.Rectangle((-Para.CROSSROAD_SIZE_LAT / 2 - extension, Para.OFFSET_L),
                                        extension, Para.GREEN_BELT_LAT, edgecolor='black', facecolor='green',
                                        linewidth=1))
-            ax.add_patch(plt.Rectangle((Para.CROSSROAD_SIZE_LAT / 2, Para.OFFSET_R),
+            patches.append(plt.Rectangle((-Para.CROSSROAD_SIZE_LAT / 2 - extension, Para.OFFSET_L),
                                        extension, Para.GREEN_BELT_LAT, edgecolor='black', facecolor='green',
                                        linewidth=1))
-            ax.add_patch(plt.Rectangle((Para.OFFSET_U, Para.CROSSROAD_SIZE_LON / 2),
+            patches.append(plt.Rectangle((Para.CROSSROAD_SIZE_LAT / 2, Para.OFFSET_R),
+                                       extension, Para.GREEN_BELT_LAT, edgecolor='black', facecolor='green',
+                                       linewidth=1))
+            patches.append(plt.Rectangle((Para.OFFSET_U, Para.CROSSROAD_SIZE_LON / 2),
                                        Para.GREEN_BELT_LON, extension, edgecolor='black', facecolor='green',
                                        linewidth=1))
-            ax.add_patch(plt.Rectangle((Para.OFFSET_D - Para.GREEN_BELT_LON, -Para.CROSSROAD_SIZE_LON / 2 - extension),
+            patches.append(plt.Rectangle((Para.OFFSET_D - Para.GREEN_BELT_LON, -Para.CROSSROAD_SIZE_LON / 2 - extension),
                                        Para.GREEN_BELT_LON, extension, edgecolor='black', facecolor='green',
                                        linewidth=1))
 
@@ -1066,18 +1070,21 @@ class CrossroadEnd2endMix(gym.Env):
                         item_color = 'lime'
                     else:
                         item_color = 'lightgray'
-                    ax.add_patch(plt.Rectangle((x + LU_x, y + LU_y), w, l, edgecolor=item_color,facecolor=item_color, angle=-(90 - a), zorder=30))
+                    patches.append(plt.Rectangle((x + LU_x, y + LU_y), w, l, edgecolor=item_color,facecolor=item_color,
+                                               angle=-(90 - a), zorder=30))
                 else:
-                    ax.plot([RU_x + x, RD_x + x], [RU_y + y, RD_y + y], color=color, linestyle=linestyle)
-                    ax.plot([RU_x + x, LU_x + x], [RU_y + y, LU_y + y], color=color, linestyle=linestyle)
-                    ax.plot([LD_x + x, RD_x + x], [LD_y + y, RD_y + y], color=color, linestyle=linestyle)
-                    ax.plot([LD_x + x, LU_x + x], [LD_y + y, LU_y + y], color=color, linestyle=linestyle)
+                    patches.append(matplotlib.patches.Rectangle(np.array([-l/2+x, -w/2+y]),
+                                                                width=l, height=w,
+                                                                fill=False,
+                                                                facecolor=None,
+                                                                edgecolor=color,
+                                                                linestyle=linestyle,
+                                                                linewidth=1.0,
+                                                                transform=Affine2D().rotate_deg_around(*(x, y),
+                                                                                                       a)))
 
             def draw_rotate_batch_rec(x, y, a, l, w):
-                patches = []
-
                 for i in range(len(x)):
-
                     patches.append(matplotlib.patches.Rectangle(np.array([-l[i]/2+x[i], -w[i]/2+y[i]]),
                                                                 width=l[i], height=w[i],
                                                                 fill=False,
@@ -1086,8 +1093,6 @@ class CrossroadEnd2endMix(gym.Env):
                                                                 linewidth=1.0,
                                                                 transform=Affine2D().rotate_deg_around(*(x[i], y[i]),
                                                                                                        a[i])))
-
-                ax.add_collection(PatchCollection(patches, match_original=True))
 
 
             def plot_phi_line(type, x, y, phi, color):
@@ -1252,7 +1257,7 @@ class CrossroadEnd2endMix(gym.Env):
             #             plt.text(text_x, text_y_start-next(ge), 'track_error={:.4f}, collision_risk={:.4f}'.format(value[0], value[1]), fontsize=14, color=color[i], fontstyle='italic')
             #         else:
             #             plt.text(text_x, text_y_start-next(ge), 'track_error={:.4f}, collision_risk={:.4f}'.format(value[0], value[1]), fontsize=12, color=color[i], fontstyle='italic')
-
+            ax.add_collection(PatchCollection(patches, match_original=True))
             plt.show()
             plt.pause(0.001)
 
