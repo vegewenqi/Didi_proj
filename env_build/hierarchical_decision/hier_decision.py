@@ -104,6 +104,7 @@ class HierarchicalDecision(object):
 
     def step(self):
         self.step_counter += 1
+        self.path_list = self.stg.generate_path(self.env.training_task, LIGHT_PHASE_TO_GREEN_OR_RED[self.env.light_phase])
         with self.step_timer:
             obs_list, mask_list, future_n_point_list = [], [], []
             # select optimal path
@@ -500,7 +501,7 @@ class HierarchicalDecision(object):
 
         # plot own car
         abso_obs = self.env._convert_to_abso(self.obs)
-        obs_ego, obs_track, obs_light, obs_task, obs_ref, obs_other = self.env._split_all(abso_obs)
+        obs_ego, obs_track, obs_light, obs_task, obs_ref, obs_his_ac,obs_other = self.env._split_all(abso_obs)
         ego_v_x, ego_v_y, ego_r, ego_x, ego_y, ego_phi = obs_ego
         devi_longi, devi_lateral, devi_phi, devi_v = obs_track
 
@@ -782,7 +783,7 @@ def select_and_rename_snapshots_of_an_episode(logdir, epinum, num):
     interval = file_num // (num-1)
     start = file_num % (num-1)
     print(start, file_num, interval)
-    selected = [start//2] + [start//2+interval*i for i in range(1, num)]
+    selected = [start//2] + [start//2+interval*i for i in range(1, num-1)]
     print(selected)
     if file_num > 0:
         for i, j in enumerate(selected):
