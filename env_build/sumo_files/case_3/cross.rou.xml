@@ -37,23 +37,25 @@
     <route id="ul" edges="3o 4i"/>
     <route id="ur" edges="3o 2i"/>
 
-    <vehicle id="00" type="car_1" depart="40" route="dl" departLane="best"
+    <vehicle id="05" type="bicycle_1" depart="3" route="ud" departLane="1"
           departPos="130" departSpeed="random" number="1"/>
-    <vehicle id="01" type="car_1" depart="40" route="ud" departLane="best"
+    <vehicle id="06" type="bicycle_1" depart="3" route="ud" departLane="1"
           departPos="130" departSpeed="random" number="1"/>
-    <vehicle id="02" type="car_1" depart="40" route="ud" departLane="best"
-          departPos="130" departSpeed="random" number="1"/>
-    <vehicle id="03" type="car_1" depart="40" route="ud" departLane="best"
+    <vehicle id="07" type="bicycle_1" depart="3" route="ud" departLane="1"
           departPos="130" departSpeed="random" number="1"/>
 
-    <vehicle id="05" type="bicycle_1" depart="40" route="ud" departLane="1"
-          departPos="130" departSpeed="random" number="1"/>
-    <vehicle id="06" type="bicycle_1" depart="40" route="ud" departLane="1"
-          departPos="130" departSpeed="random" number="1"/>
-    <vehicle id="07" type="bicycle_1" depart="40" route="ud" departLane="1"
+    <vehicle id="03" type="car_1" depart="3" route="ud" departLane="best"
           departPos="130" departSpeed="random" number="1"/>
 
-    <vehicle id="04" type="car_1" depart="83" route="ul" departLane="best"
+    <vehicle id="00" type="car_1" depart="6" route="dl" departLane="best"
+          departPos="130" departSpeed="random" number="1"/>
+
+    <vehicle id="01" type="car_1" depart="8" route="ud" departLane="best"
+          departPos="130" departSpeed="random" number="1"/>
+    <vehicle id="02" type="car_1" depart="8" route="ud" departLane="best"
+          departPos="130" departSpeed="random" number="1"/>
+
+    <vehicle id="04" type="car_1" depart="22" route="ul" departLane="best"
           departPos="130" departSpeed="random" number="1"/>
 
 </routes>
