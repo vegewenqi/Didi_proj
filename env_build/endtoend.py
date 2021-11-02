@@ -12,7 +12,6 @@ from collections import OrderedDict
 from math import cos, sin, pi, sqrt
 import random
 from random import choice
-import heapq
 
 import gym
 import matplotlib.pyplot as plt
@@ -112,7 +111,8 @@ class CrossroadEnd2endMix(gym.Env):
 
     def reset(self, **kwargs):  # kwargs include three keys
         self.light_phase = self.traffic.init_light()
-        self.training_task = choice(['left', 'straight', 'right'])
+        # self.training_task = choice(['left', 'straight', 'right'])
+        self.training_task = 'left'
         self.task_encoding = TASK_ENCODING[self.training_task]
         self.light_encoding = LIGHT_ENCODING[self.light_phase]
         self.ref_path = ReferencePath(self.training_task, LIGHT_PHASE_TO_GREEN_OR_RED[self.light_phase])
@@ -140,6 +140,7 @@ class CrossroadEnd2endMix(gym.Env):
         self.reward_info = None
         self.done_type = 'not_done_yet'
         all_info = dict(future_n_point=self.future_n_point, mask=other_mask_vector)
+        # self.traffic.close()
         return self.obs, all_info
 
     def close(self):
@@ -308,7 +309,7 @@ class CrossroadEnd2endMix(gym.Env):
 
         other_vector, other_mask_vector = self._construct_other_vector_short(exit_)
         ego_vector = self._construct_ego_vector_short()
-        track_vector = self.ref_path.tracking_error_vector(ego_x, ego_y, ego_phi, ego_v_x)
+        track_vector = self.ref_path.tracking_error_vector_vectorized(ego_x, ego_y, ego_phi, ego_v_x)
         future_n_point = self.ref_path.get_future_n_point(ego_x, ego_y, self.future_point_num)
         self.light_encoding = LIGHT_ENCODING[self.light_phase]
         vector = np.concatenate((ego_vector, track_vector, self.light_encoding, self.task_encoding,
@@ -711,12 +712,14 @@ class CrossroadEnd2endMix(gym.Env):
         return np.array(other_vector, dtype=np.float32), np.array(other_mask_vector, dtype=np.float32)
 
     def _reset_init_state(self):
-        if self.training_task == 'left':
-            random_index = int(np.random.random() * (900 + 500)) + 700
-        elif self.training_task == 'straight':
-            random_index = int(np.random.random() * (1200 + 500)) + 700
-        else:
-            random_index = int(np.random.random() * (420 + 500)) + 700
+        random_index = self.traffic.random_index_task(self.training_task, self.traffic.case)
+
+        # if self.training_task == 'left':
+        #     random_index = int(np.random.random() * (900 + 500)) + 700
+        # elif self.training_task == 'straight':
+        #     random_index = int(np.random.random() * (1200 + 500)) + 700
+        # else:
+        #     random_index = int(np.random.random() * (420 + 500)) + 700
 
         x, y, phi, exp_v = self.ref_path.idx2point(random_index)
         v = exp_v * np.random.random()
@@ -742,8 +745,6 @@ class CrossroadEnd2endMix(gym.Env):
     def render(self, mode='human', weights=None):
         if weights is not None:
             assert weights.shape == (self.other_number,), print(weights.shape)
-        index4weights = list(map(weights.index, heapq.nlargest(3, weights)))
-        print(index4weights)
         if mode == 'human':
             # plot basic map
             extension = 40
@@ -1072,21 +1073,19 @@ class CrossroadEnd2endMix(gym.Env):
                     draw_rotate_rec(item_type, item_x, item_y, item_phi, item_l, item_w, color='black')
 
             # plot interested others
-            for i in range(len(self.interested_other)):
-                item = self.interested_other[i]
-                item_mask = item['exist']
-                item_x = item['x']
-                item_y = item['y']
-                item_phi = item['phi']
-                item_l = item['l']
-                item_w = item['w']
-                item_type = item['type']
-                if is_in_plot_area(item_x, item_y):
-                    plot_phi_line(item_type, item_x, item_y, item_phi, 'black')
-                    draw_rotate_rec(item_type, item_x, item_y, item_phi, item_l, item_w, color='m', linestyle=':', patch=True)
-                    plt.text(item_x, item_y, str(item_mask)[0])
-                if i in index4weights:
-                    plt.text(item_x, item_y, str(weights[i]), color='red', fontsize=15)
+            # for i in range(len(self.interested_other)):
+            #     item = self.interested_other[i]
+            #     item_mask = item['exist']
+            #     item_x = item['x']
+            #     item_y = item['y']
+            #     item_phi = item['phi']
+            #     item_l = item['l']
+            #     item_w = item['w']
+            #     item_type = item['type']
+            #     if is_in_plot_area(item_x, item_y):
+            #         plot_phi_line(item_type, item_x, item_y, item_phi, 'black')
+            #         draw_rotate_rec(item_type, item_x, item_y, item_phi, item_l, item_w, color='m', linestyle=':', patch=True)
+            #         plt.text(item_x, item_y, str(item_mask)[0])
 
             # plot own car
             abso_obs = self._convert_to_abso(self.obs)
@@ -1183,25 +1182,16 @@ class CrossroadEnd2endMix(gym.Env):
 
 def test_end2end():
     env = CrossroadEnd2endMix()
-    env_model = EnvironmentModel()
-    obs, all_info = env.reset()
+    obs, _ = env.reset()
     i = 0
     while i < 100000:
         for j in range(100):
             i += 1
-            action = np.array([0, 0.3], dtype=np.float32)
+            action = np.array([0, 0.3])
             obs, reward, done, info = env.step(action)
-            # obses, actions = obs[np.newaxis, :], action[np.newaxis, :]
-            obses = np.tile(obs, (2, 1))
-            ref_points = np.tile(info['future_n_point'], (2, 1, 1))
-            env_model.reset(obses)
-            for i in range(5):
-                obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
-                veh2bike4real, veh2person4real = env_model.rollout_out(np.tile(action, (2, 1)), ref_points[:, :, i])
-                # env_model.render()
             env.render()
-            # if done:
-            #     break
+            if done:
+                break
         obs, _ = env.reset()
         env.render()
 

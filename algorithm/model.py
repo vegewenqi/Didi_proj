@@ -88,7 +88,7 @@ class AttentionNet(Model):
             self.Ua), axis=-1) # [B, N]
         logits = logits + ((1-x_mask) * -1e9)
         attention_weights = tf.nn.softmax(logits, axis=-1) # (B, N)
-        output = tf.squeeze(tf.matmul(tf.expand_dims(attention_weights, axis=1), x_real), axis=-2)
+        output = tf.squeeze(tf.matmul(tf.expand_dims(attention_weights, axis=1), x_others), axis=-2)
 
         return output, attention_weights
 

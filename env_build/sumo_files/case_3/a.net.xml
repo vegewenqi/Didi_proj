@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 10/25/21 15:42:56 by Eclipse SUMO netedit Version 1.6.0
+<!-- generated on 10/28/21 11:21:36 by Eclipse SUMO netedit Version 1.6.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
-        <sumo-net-file value="D:\codecode\AAAmine\Didi\Didi_proj\env_build\sumo_files\a.net.xml"/>
+        <sumo-net-file value="D:\codecode\AAAmine\Didi\Didi_proj\env_build\sumo_files\case_3\a.net.xml"/>
     </input>
 
     <output>
-        <output-file value="D:\codecode\AAAmine\Didi\Didi_proj\env_build\sumo_files\a.net.xml"/>
+        <output-file value="D:\codecode\AAAmine\Didi\Didi_proj\env_build\sumo_files\case_3\a.net.xml"/>
     </output>
 
     <processing>
@@ -48,10 +48,10 @@
         <lane id=":0_1_0" index="0" allow="bicycle" speed="13.89" length="76.00" width="1.00" shape="-10.68,38.00 -10.81,-38.00"/>
     </edge>
     <edge id=":0_2" function="internal">
-        <lane id=":0_2_0" index="0" speed="12.62" length="9.54" width="3.75" shape="-8.18,38.00 -9.67,28.57"/>
+        <lane id=":0_2_0" index="0" disallow="bicycle" speed="12.62" length="9.54" width="3.75" shape="-8.18,38.00 -9.67,28.57"/>
     </edge>
     <edge id=":0_3" function="internal">
-        <lane id=":0_3_0" index="0" speed="13.89" length="76.00" width="4.00" shape="-4.18,38.00 -4.31,-38.00"/>
+        <lane id=":0_3_0" index="0" disallow="bicycle" speed="13.89" length="76.00" width="4.00" shape="-4.18,38.00 -4.31,-38.00"/>
     </edge>
     <edge id=":0_4" function="internal">
         <lane id=":0_4_0" index="0" speed="13.89" length="60.32" width="3.75" shape="-0.56,38.00 1.49,17.52 7.59,2.89 17.76,-5.89 28.00,-7.99"/>
@@ -60,7 +60,7 @@
         <lane id=":0_22_0" index="0" allow="bicycle" speed="11.78" length="4.03" width="1.00" shape="-28.00,19.33 -32.00,18.82"/>
     </edge>
     <edge id=":0_23" function="internal">
-        <lane id=":0_23_0" index="0" speed="12.62" length="27.06" width="3.75" shape="-9.67,28.57 -14.13,21.84 -21.58,17.79 -32.00,16.44"/>
+        <lane id=":0_23_0" index="0" disallow="bicycle" speed="12.62" length="27.06" width="3.75" shape="-9.67,28.57 -14.13,21.84 -21.58,17.79 -32.00,16.44"/>
     </edge>
     <edge id=":0_24" function="internal">
         <lane id=":0_24_0" index="0" speed="13.89" length="4.08" width="3.75" shape="28.00,-7.99 32.00,-8.82"/>
@@ -72,7 +72,7 @@
         <lane id=":0_6_0" index="0" allow="bicycle" speed="13.89" length="64.00" width="1.00" shape="32.00,18.59 -32.00,18.82"/>
     </edge>
     <edge id=":0_7" function="internal">
-        <lane id=":0_7_0" index="0" speed="12.52" length="10.10" width="4.00" shape="32.00,16.21 21.99,17.58"/>
+        <lane id=":0_7_0" index="0" speed="12.52" length="31.97" width="4.00" shape="32.00,16.21 21.99,17.58 14.84,21.66 10.55,28.47 9.72,34.00"/>
     </edge>
     <edge id=":0_8" function="internal">
         <lane id=":0_8_0" index="0" speed="13.89" length="64.00" width="3.75" shape="32.00,12.46 -32.00,12.69"/>
@@ -85,7 +85,7 @@
         <lane id=":0_25_0" index="0" allow="bicycle" speed="11.68" length="4.04" width="1.00" shape="12.22,34.00 11.62,38.00"/>
     </edge>
     <edge id=":0_26" function="internal">
-        <lane id=":0_26_0" index="0" speed="12.52" length="25.92" width="4.00" shape="21.99,17.58 14.84,21.66 10.55,28.47 9.12,38.00"/>
+        <lane id=":0_26_0" index="0" speed="12.52" length="4.04" width="4.00" shape="9.72,34.00 9.12,38.00"/>
     </edge>
     <edge id=":0_27" function="internal">
         <lane id=":0_27_0" index="0" speed="13.89" length="4.03" width="4.00" shape="-3.83,-34.00 -4.31,-38.00"/>
@@ -121,7 +121,7 @@
         <lane id=":0_17_0" index="0" allow="bicycle" speed="13.89" length="64.00" width="1.00" shape="-32.00,-18.48 32.00,-18.69"/>
     </edge>
     <edge id=":0_18" function="internal">
-        <lane id=":0_18_0" index="0" speed="12.63" length="10.46" width="4.00" shape="-32.00,-16.11 -21.63,-17.47"/>
+        <lane id=":0_18_0" index="0" speed="12.63" length="32.73" width="4.00" shape="-32.00,-16.11 -21.63,-17.47 -14.23,-21.58 -9.79,-28.42 -8.93,-34.00"/>
     </edge>
     <edge id=":0_19" function="internal">
         <lane id=":0_19_0" index="0" speed="13.89" length="64.00" width="3.75" shape="-32.00,-12.36 32.00,-12.57"/>
@@ -134,7 +134,7 @@
         <lane id=":0_31_0" index="0" allow="bicycle" speed="11.80" length="4.05" width="1.00" shape="-11.43,-34.00 -10.81,-38.00"/>
     </edge>
     <edge id=":0_32" function="internal">
-        <lane id=":0_32_0" index="0" speed="12.63" length="26.32" width="4.00" shape="-21.63,-17.47 -14.23,-21.58 -9.79,-28.42 -8.31,-38.00"/>
+        <lane id=":0_32_0" index="0" speed="12.63" length="4.05" width="4.00" shape="-8.93,-34.00 -8.31,-38.00"/>
     </edge>
     <edge id=":0_33" function="internal">
         <lane id=":0_33_0" index="0" speed="13.89" length="4.03" width="4.00" shape="4.62,34.00 5.12,38.00"/>
@@ -240,8 +240,8 @@
     <edge id="3o" from="3" to="0" priority="-1" shape="1.00,200.00 1.07,35.80 0.00,0.00">
         <lane id="3o_0" index="0" allow="pedestrian" speed="13.89" length="162.00" width="2.00" shape="-12.25,199.99 -12.18,38.00"/>
         <lane id="3o_1" index="1" allow="bicycle" speed="13.89" length="162.00" width="1.00" shape="-10.75,199.99 -10.68,38.00"/>
-        <lane id="3o_2" index="2" speed="13.89" length="162.00" width="4.00" shape="-8.25,200.00 -8.18,38.00"/>
-        <lane id="3o_3" index="3" speed="13.89" length="162.00" width="4.00" shape="-4.25,200.00 -4.18,38.00"/>
+        <lane id="3o_2" index="2" disallow="bicycle" speed="13.89" length="162.00" width="4.00" shape="-8.25,200.00 -8.18,38.00"/>
+        <lane id="3o_3" index="3" disallow="bicycle" speed="13.89" length="162.00" width="4.00" shape="-4.25,200.00 -4.18,38.00"/>
         <lane id="3o_4" index="4" speed="13.89" length="162.00" width="3.25" shape="-0.62,200.00 -0.56,38.00"/>
     </edge>
     <edge id="4i" from="0" to="4" priority="-1" shape="0.00,0.00 -16.93,-2.04 -23.91,-2.93 -200.00,-3.00">
@@ -262,16 +262,10 @@
     </edge>
 
     <tlLogic id="0" type="static" programID="0" offset="0">
-        <phase duration="25" state="gGgGGgrgrrrgGgGGgrgrrrrGrGrr"/>
-        <phase duration="15" state="grgGGgrgrrrgrgGGgrgrrrrrrrrr"/>
-        <phase duration="5"  state="grgyygrgrrrgrgyygrgrrrrrrrrr"/>
-        <phase duration="20" state="grgrrgrgrrrgrgrrgrgrrrrrrrrr"/>
-        <phase duration="25" state="grgrrgGgGGrgrgrrgGgGGrGrGrrr"/>
-        <phase duration="5"  state="grgrrgrgyyrgrgrrgrgyyrrrrrrr"/>
-        <phase duration="10" state="grgrrgrgrrrgrgrrgrgrrrrrrrrr"/>
-        <phase duration="15" state="grgrrgrgrrGgrgrrgrgrrGrrrrrr"/>
-        <phase duration="5"  state="grgrrgrgrrygrgrrgrgrryrrrrrr"/>
-        <phase duration="10" state="grgrrgrgrrrgrgrrgrgrrrrrrrrr"/>
+        <phase duration="25" state="gGgGGgrgrrrgGgGGgrgrrrrGrGrrrr"/>
+        <phase duration="15" state="grgGGgrgrrrgrgGGgrgrrrrrrrrrrr"/>
+        <phase duration="5"  state="grgyygrgrrrgrgyygrgrrrrrrrrrrr"/>
+        <phase duration="15" state="grgrrgrgrrrgrgrrgrgrrrrrrrrrrr"/>
     </tlLogic>
 
     <junction id="0" type="traffic_light" x="0.00" y="0.00" incLanes="3o_0 3o_1 3o_2 3o_3 3o_4 2o_0 2o_1 2o_2 2o_3 2o_4 2o_5 2o_6 1o_0 1o_1 1o_2 1o_3 1o_4 4o_0 4o_1 4o_2 4o_3 4o_4 4o_5 :0_w2_0 :0_w4_0 :0_w6_0 :0_w0_0" intLanes=":0_22_0 :0_1_0 :0_23_0 :0_3_0 :0_24_0 :0_25_0 :0_6_0 :0_26_0 :0_8_0 :0_8_1 :0_27_0 :0_28_0 :0_12_0 :0_29_0 :0_14_0 :0_30_0 :0_31_0 :0_17_0 :0_32_0 :0_19_0 :0_19_1 :0_33_0 :0_c0_0 :0_c1_0 :0_c2_0 :0_c3_0" shape="-13.38,-38.00 -32.00,-21.00 -32.00,21.25 -13.30,38.00 14.10,38.00 32.00,21.05 32.00,-21.25 14.00,-38.00" customShape="1">
@@ -311,13 +305,13 @@
     <junction id=":0_23_0" type="internal" x="-9.67" y="28.57" incLanes=":0_2_0 3o_1" intLanes=":0_1_0 :0_6_0 :0_8_0 :0_8_1 :0_15_0 :0_c0_0 :0_c3_0"/>
     <junction id=":0_24_0" type="internal" x="28.00" y="-7.99" incLanes=":0_4_0" intLanes=":0_6_0 :0_8_0 :0_8_1 :0_10_0 :0_11_0 :0_12_0 :0_13_0 :0_14_0 :0_17_0 :0_19_0 :0_19_1 :0_21_0 :0_c0_0 :0_c1_0"/>
     <junction id=":0_25_0" type="internal" x="12.22" y="34.00" incLanes=":0_5_0" intLanes=":0_12_0 :0_14_0 :0_21_0 :0_c0_0 :0_c1_0"/>
-    <junction id=":0_26_0" type="internal" x="21.99" y="17.58" incLanes=":0_7_0 2o_1" intLanes=":0_6_0 :0_12_0 :0_14_0 :0_21_0 :0_c0_0 :0_c1_0"/>
+    <junction id=":0_26_0" type="internal" x="9.72" y="34.00" incLanes=":0_7_0" intLanes=":0_6_0 :0_12_0 :0_14_0 :0_21_0 :0_c0_0 :0_c1_0"/>
     <junction id=":0_27_0" type="internal" x="-3.83" y="-34.00" incLanes=":0_10_0" intLanes=":0_1_0 :0_3_0 :0_4_0 :0_12_0 :0_14_0 :0_15_0 :0_16_0 :0_17_0 :0_18_0 :0_19_0 :0_19_1 :0_c1_0 :0_c2_0"/>
     <junction id=":0_28_0" type="internal" x="28.00" y="-19.23" incLanes=":0_11_0" intLanes=":0_4_0 :0_17_0 :0_19_0 :0_19_1 :0_c1_0 :0_c2_0"/>
     <junction id=":0_29_0" type="internal" x="10.46" y="-28.39" incLanes=":0_13_0 1o_1" intLanes=":0_4_0 :0_12_0 :0_17_0 :0_19_0 :0_19_1 :0_c1_0 :0_c2_0"/>
     <junction id=":0_30_0" type="internal" x="-28.00" y="8.14" incLanes=":0_15_0" intLanes=":0_0_0 :0_1_0 :0_2_0 :0_3_0 :0_6_0 :0_8_0 :0_8_1 :0_10_0 :0_17_0 :0_19_0 :0_19_1 :0_21_0 :0_c2_0 :0_c3_0"/>
     <junction id=":0_31_0" type="internal" x="-11.43" y="-34.00" incLanes=":0_16_0" intLanes=":0_1_0 :0_3_0 :0_10_0 :0_c2_0 :0_c3_0"/>
-    <junction id=":0_32_0" type="internal" x="-21.63" y="-17.47" incLanes=":0_18_0 4o_1" intLanes=":0_1_0 :0_3_0 :0_10_0 :0_17_0 :0_c2_0 :0_c3_0"/>
+    <junction id=":0_32_0" type="internal" x="-8.93" y="-34.00" incLanes=":0_18_0" intLanes=":0_1_0 :0_3_0 :0_10_0 :0_17_0 :0_c2_0 :0_c3_0"/>
     <junction id=":0_33_0" type="internal" x="4.62" y="34.00" incLanes=":0_21_0" intLanes=":0_1_0 :0_3_0 :0_4_0 :0_5_0 :0_6_0 :0_7_0 :0_8_0 :0_8_1 :0_12_0 :0_14_0 :0_15_0 :0_c0_0 :0_c3_0"/>
 
     <connection from="1o" to="2i" fromLane="1" toLane="1" via=":0_11_0" tl="0" linkIndex="11" dir="r" state="o"/>

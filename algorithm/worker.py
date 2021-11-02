@@ -93,7 +93,7 @@ class OffPolicyWorkerWithAttention(object):
                 judge_is_nan([action])
             except ValueError:
                 print('processed_obs', processed_obs)
-                print('preprocessor_params', self.preprocessor.get_params())
+                # print('preprocessor_params', self.preprocessor.get_params())
                 print('policy_weights', self.policy_with_value.policy.trainable_weights)
                 action, logp = self.policy_with_value.compute_action(processed_obs[np.newaxis, :])
                 judge_is_nan([action])
