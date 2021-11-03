@@ -39,7 +39,7 @@ class LoadPolicy(object):
     def run_batch(self, obses, masks):
         processed_obses = self.preprocessor.process_obs(obses)
         states = self._get_states(processed_obses, masks)
-        actions, _ = self.policy.compute_action(states)
+        actions = self.policy.compute_mode(states)
         return actions
 
     @tf.function

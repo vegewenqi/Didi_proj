@@ -50,8 +50,10 @@ class CrossroadEnd2endMix(gym.Env):
                  multi_display=False,
                  state_mode='fix',  # 'dyna'
                  future_point_num=25,
+                 traffic_mode='case1',  # 'auto', 'case1', 'case2', 'case3；
                  **kwargs):
         self.mode = mode
+        self.traffic_mode = traffic_mode
         self.dynamics = VehicleDynamics()
         self.interested_other = None
         self.detected_vehicles = None
@@ -106,7 +108,8 @@ class CrossroadEnd2endMix(gym.Env):
         if not multi_display:
             self.traffic = Traffic(self.step_length,
                                    mode=self.mode,
-                                   init_n_ego_dict=self.init_state)
+                                   init_n_ego_dict=self.init_state,
+                                   traffic_mode=traffic_mode)
             self.reset()
             action = self.action_space.sample()
             observation, _reward, done, _info = self.step(action)
@@ -746,13 +749,20 @@ class CrossroadEnd2endMix(gym.Env):
         return np.array(other_vector, dtype=np.float32), np.array(other_mask_vector, dtype=np.float32)
 
     def _reset_init_state(self):
-        if self.training_task == 'left':
-            random_index = int(np.random.random() * (900 + 500)) + 700
-        elif self.training_task == 'straight':
-            random_index = int(np.random.random() * (1200 + 500)) + 700
+        if self.traffic_mode == 'auto':
+            if self.training_task == 'left':
+                random_index = int(np.random.random() * (900 + 500)) + 700
+            elif self.training_task == 'straight':
+                random_index = int(np.random.random() * (1200 + 500)) + 700
+            else:
+                random_index = int(np.random.random() * (420 + 500)) + 700
         else:
-            random_index = int(np.random.random() * (420 + 500)) + 700
-
+            if self.traffic_mode == 'case1':
+                random_index = 300 + int(np.random.random() * 100)
+            elif self.traffic_mode == 'case2':
+                random_index = 950 + int(np.random.random() * 100)
+            elif self.traffic_mode == 'case3':
+                random_index = 700 + int(np.random.random() * 100)
         x, y, phi, exp_v = self.ref_path.idx2point(random_index)
         v = exp_v * np.random.random()
         routeID = TASK2ROUTEID[self.training_task]
