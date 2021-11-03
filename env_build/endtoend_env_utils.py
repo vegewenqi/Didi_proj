@@ -88,7 +88,7 @@ class Para:
     OTHERS_VAR = np.diag(np.concatenate([BIKE_VAR, PERSON_VAR, VEH_VAR], axis=-1)).astype(np.float32)
 
 
-LIGHT_PHASE_TO_GREEN_OR_RED = {0: 'green', 1: 'greed', 2: 'red', 3: 'red',
+LIGHT_PHASE_TO_GREEN_OR_RED = {0: 'green', 1: 'green', 2: 'red', 3: 'red',
                                  4: 'red', 5: 'red', 6: 'red'}  # 0: green, 1: red
 TASK_ENCODING = dict(left=[1.0, 0.0, 0.0], straight=[0.0, 1.0, 0.0], right=[0.0, 0.0, 1.0])
 LIGHT_ENCODING = {0: [1.0, 0.0], 1: [1.0, 0.0], 2: [1.0, 1.0], 3: [0.0, 1.0], 4: [0.0, 1.0], 5: [0.0, 1.0], 6: [0.0, 1.0]}

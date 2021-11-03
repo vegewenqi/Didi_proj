@@ -15,7 +15,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import logical_and
 
-from env_build.endtoend_env_utils import *
+from endtoend_env_utils import *
 
 tf.config.threading.set_inter_op_parallelism_threads(1)
 tf.config.threading.set_intra_op_parallelism_threads(1)

@@ -12,6 +12,7 @@ import math
 import os
 import random
 import sys
+import numpy as np
 from collections import defaultdict
 from math import fabs, cos, sin, pi
 
@@ -47,10 +48,11 @@ class Traffic(object):
         self.n_ego_dict = init_n_ego_dict
         self.training_light_phase = None
         self.mode = mode
-
+        self.case = 1   # user define
+        # traci.close()
         try:
             traci.start(
-                [SUMO_BINARY, "-c", SUMOCFG_DIR,
+                [SUMO_BINARY, "-c", os.path.dirname(__file__) + "/sumo_files/case_" + str(self.case) + "/cross.sumocfg",
                  "--step-length", self.step_time_str,
                  # "--lateral-resolution", "3.5",
                  "--random",
@@ -64,7 +66,7 @@ class Traffic(object):
             print('Retry by other port')
             port = sumolib.miscutils.getFreeSocketPort()
             traci.start(
-                [SUMO_BINARY, "-c", SUMOCFG_DIR,
+                [SUMO_BINARY, "-c", os.path.dirname(__file__) + "/sumo_files/case_" + str(self.case) + "/cross.sumocfg",
                  "--step-length", self.step_time_str,
                  "--lateral-resolution", "3.5",
                  "--random",
@@ -110,7 +112,7 @@ class Traffic(object):
                                                 # traci.constants.VAR_ROUTE_ID,
                                                 # traci.constants.VAR_ROUTE_INDEX
                                                 ],begin=0.0, end=2147483647.0)
-
+        self.init_step()
         while traci.simulation.getTime() < 250:          # turn right
             if traci.simulation.getTime() < 249:
                 traci.trafficlight.setPhase('0', 2)
@@ -119,8 +121,36 @@ class Traffic(object):
 
             traci.simulationStep()
 
+
+    def random_index_task(self, task, case):
+        if case < 5 and task != 'left':
+            print('The case and task don\'t match')
+            # return None
+        # print("random", 800 + int(np.random.random() * 100))
+        if case == 1:
+            random_index = 300 + int(np.random.random() * 100)
+        elif case == 2:
+            random_index = 950 + int(np.random.random() * 100)
+        elif case == 3:
+            random_index = 700 + int(np.random.random() * 100)
+        return random_index
+
+    def close_sumo(self):
+        traci.close()
+
     def __del__(self):
         traci.close()
+
+    def init_step(self):
+        if self.case == 1:
+            while traci.simulation.getTime() < 42.5:
+                traci.simulationStep()
+        elif self.case == 2:
+            while traci.simulation.getTime() < 39:
+                traci.simulationStep()
+        elif self.case == 3:
+            while traci.simulation.getTime() < 10:
+                traci.simulationStep()
 
     def add_self_car(self, n_ego_dict, with_delete=True):
         for egoID, ego_dict in n_ego_dict.items():
@@ -246,8 +276,8 @@ class Traffic(object):
 
     def sim_step(self):
         self.sim_time += SIM_PERIOD
-        if self.mode == 'training':
-            traci.trafficlight.setPhase('0', self.training_light_phase)
+        # if self.mode == 'training':
+        #     traci.trafficlight.setPhase('0', self.training_light_phase)
         traci.simulationStep()
         self._get_vehicles()
         self._get_traffic_light()
