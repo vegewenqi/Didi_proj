@@ -50,7 +50,7 @@ class CrossroadEnd2endMix(gym.Env):
                  multi_display=False,
                  state_mode='fix',  # 'dyna'
                  future_point_num=25,
-                 traffic_mode='case1',  # 'auto', 'case1', 'case2', 'case3；
+                 traffic_mode='auto',  # 'auto', 'case1', 'case2', 'case3；
                  **kwargs):
         self.mode = mode
         self.traffic_mode = traffic_mode
@@ -1285,20 +1285,20 @@ def test_end2end():
     while i < 100000:
         for j in range(100):
             i += 1
-            action = np.array([0, 0.3 + np.random.rand(1)*0.1], dtype=np.float32) # np.random.rand(1)*0.1 - 0.05
+            action = np.array([-0.05, 0.3 + np.random.rand(1)*0.8], dtype=np.float32) # np.random.rand(1)*0.1 - 0.05
             obs, reward, done, info = env.step(action)
             obses, actions = obs[np.newaxis, :], action[np.newaxis, :]
             obses = tf.convert_to_tensor(np.tile(obs, (2, 1)), dtype=tf.float32)
             ref_points = tf.convert_to_tensor(np.tile(info['future_n_point'], (2, 1, 1)), dtype=tf.float32)
             actions = tf.convert_to_tensor(np.tile(actions, (2, 1)), dtype=tf.float32)
-            env_model.reset(obses)
-            for i in range(25):
-                obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
-                    veh2bike4real, veh2person4real = env_model.rollout_out(actions + tf.experimental.numpy.random.rand(2)*0.05, ref_points[:, :, i])
-                # env_model.render()
+            # env_model.reset(obses)
+            # for i in range(25):
+            #     obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
+            #         veh2bike4real, veh2person4real = env_model.rollout_out(actions + tf.experimental.numpy.random.rand(2)*0.05, ref_points[:, :, i])
+            #     # env_model.render()
             env.render(weights=np.zeros(env.other_number,))
-            if done:
-                break
+            # if done:
+            #     break
         obs, _ = env.reset()
         # env.render(weights=np.zeros(env.other_number,))
 

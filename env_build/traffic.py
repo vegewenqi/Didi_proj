@@ -132,19 +132,6 @@ class Traffic(object):
                     traci.trafficlight.setPhase('0', 0)
                 traci.simulationStep()
 
-    def random_index_task(self, task, case):
-        if case < 5 and task != 'left':
-            print('The case and task don\'t match')
-            # return None
-        # print("random", 800 + int(np.random.random() * 100))
-        if case == 1:
-            random_index = 300 + int(np.random.random() * 100)
-        elif case == 2:
-            random_index = 950 + int(np.random.random() * 100)
-        elif case == 3:
-            random_index = 700 + int(np.random.random() * 100)
-        return random_index
-
     def _reset(self):
         self.__del__()
         try:
@@ -301,12 +288,13 @@ class Traffic(object):
                                                                                                            x_in_ego_coord,
                                                                                                            y_in_ego_coord,
                                                                                                            a_in_ego_coord)
-                if (self.traffic_mode == 'auto') or (-5 < x_in_ego_coord < 1 * (ego_v_x) + ego_l/2. + veh_l/2. + 2 and abs(y_in_ego_coord) < 3) or \
+                if (-5 < x_in_ego_coord < 1 * (ego_v_x) + ego_l/2. + veh_l/2. + 2 and abs(y_in_ego_coord) < 3) or \
                         (-5 < ego_x_in_veh_coord < 1 * (veh_v) + ego_l/2. + veh_l/2. + 2 and abs(ego_y_in_veh_coord) <3):
-                    if veh_type == 'DEFAULT_PEDTYPE':
-                        traci.person.removeStages(veh)
-                    else:
-                        traci.vehicle.remove(veh)
+                    if self.traffic_mode == 'auto':
+                        if veh_type == 'DEFAULT_PEDTYPE':
+                            traci.person.removeStages(veh)
+                        else:
+                            traci.vehicle.remove(veh)
 
                     # traci.vehicle.remove(vehID=veh)
                 # if 0<x_in_sumo<3.5 and -22<y_in_sumo<-15:# and veh_sig!=1 and veh_sig!=9:

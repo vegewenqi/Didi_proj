@@ -225,69 +225,13 @@ class EnvironmentModel(object):  # all tensors
 
             veh2road4real = tf.zeros_like(veh_infos[:, 0])
             veh2road4training = tf.zeros_like(veh_infos[:, 0])
-            # if self.task == 'left':
-            #     for ego_point in [ego_front_points, ego_rear_points]:
-            #         veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, ego_point[0] < 1),
-            #                              tf.square(ego_point[0]-1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, LANE_WIDTH-ego_point[0] < 1),
-            #                              tf.square(LANE_WIDTH-ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4training += tf.where(logical_and(ego_point[0] < 0, LANE_WIDTH*LANE_NUMBER - ego_point[1] < 1),
-            #                              tf.square(LANE_WIDTH*LANE_NUMBER - ego_point[1] - 1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4training += tf.where(logical_and(ego_point[0] < -CROSSROAD_SIZE/2, ego_point[1] - 0 < 1),
-            #                              tf.square(ego_point[1] - 0 - 1), tf.zeros_like(veh_infos[:, 0]))
-            #
-            #         veh2road4real += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, ego_point[0] < 1),
-            #                              tf.square(ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4real += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, LANE_WIDTH - ego_point[0] < 1),
-            #                              tf.square(LANE_WIDTH - ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4real += tf.where(logical_and(ego_point[0] < -CROSSROAD_SIZE/2, LANE_WIDTH*LANE_NUMBER - ego_point[1] < 1),
-            #                              tf.square(LANE_WIDTH*LANE_NUMBER - ego_point[1] - 1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4real += tf.where(logical_and(ego_point[0] < -CROSSROAD_SIZE/2, ego_point[1] - 0 < 1),
-            #                              tf.square(ego_point[1] - 0 - 1), tf.zeros_like(veh_infos[:, 0]))
-            # elif self.task == 'straight':
-            #     for ego_point in [ego_front_points, ego_rear_points]:
-            #         veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, ego_point[0] - LANE_WIDTH < 1),
-            #                              tf.square(ego_point[0] - LANE_WIDTH -1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, 2*LANE_WIDTH-ego_point[0] < 1),
-            #                              tf.square(2*LANE_WIDTH-ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4training += tf.where(logical_and(ego_point[1] > CROSSROAD_SIZE/2, LANE_WIDTH*LANE_NUMBER - ego_point[0] < 1),
-            #                              tf.square(LANE_WIDTH*LANE_NUMBER - ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4training += tf.where(logical_and(ego_point[1] > CROSSROAD_SIZE/2, ego_point[0] - 0 < 1),
-            #                              tf.square(ego_point[0] - 0 - 1), tf.zeros_like(veh_infos[:, 0]))
-            #
-            #         veh2road4real += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE / 2, ego_point[0]-LANE_WIDTH < 1),
-            #                                       tf.square(ego_point[0]-LANE_WIDTH - 1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4real += tf.where(
-            #             logical_and(ego_point[1] < -CROSSROAD_SIZE / 2, 2 * LANE_WIDTH - ego_point[0] < 1),
-            #             tf.square(2 * LANE_WIDTH - ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4real += tf.where(
-            #             logical_and(ego_point[1] > CROSSROAD_SIZE / 2, LANE_WIDTH * LANE_NUMBER - ego_point[0] < 1),
-            #             tf.square(LANE_WIDTH * LANE_NUMBER - ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4real += tf.where(logical_and(ego_point[1] > CROSSROAD_SIZE / 2, ego_point[0] - 0 < 1),
-            #                                       tf.square(ego_point[0] - 0 - 1), tf.zeros_like(veh_infos[:, 0]))
-            # else:
-            #     assert self.task == 'right'
-            #     for ego_point in [ego_front_points, ego_rear_points]:
-            #         veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, ego_point[0] - 2*LANE_WIDTH < 1),
-            #                              tf.square(ego_point[0] - 2*LANE_WIDTH-1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4training += tf.where(logical_and(ego_point[1] < -CROSSROAD_SIZE/2, LANE_NUMBER*LANE_WIDTH-ego_point[0] < 1),
-            #                              tf.square(LANE_NUMBER*LANE_WIDTH-ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4training += tf.where(logical_and(ego_point[0] > CROSSROAD_SIZE/2, 0 - ego_point[1] < 1),
-            #                              tf.square(0 - ego_point[1] - 1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4training += tf.where(logical_and(ego_point[0] > CROSSROAD_SIZE/2, ego_point[1] - (-LANE_WIDTH*LANE_NUMBER) < 1),
-            #                              tf.square(ego_point[1] - (-LANE_WIDTH*LANE_NUMBER) - 1), tf.zeros_like(veh_infos[:, 0]))
-            #
-            #         veh2road4real += tf.where(
-            #             logical_and(ego_point[1] < -CROSSROAD_SIZE / 2, ego_point[0] - 2 * LANE_WIDTH < 1),
-            #             tf.square(ego_point[0] - 2 * LANE_WIDTH - 1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4real += tf.where(
-            #             logical_and(ego_point[1] < -CROSSROAD_SIZE / 2, LANE_NUMBER * LANE_WIDTH - ego_point[0] < 1),
-            #             tf.square(LANE_NUMBER * LANE_WIDTH - ego_point[0] - 1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4real += tf.where(logical_and(ego_point[0] > CROSSROAD_SIZE / 2, 0 - ego_point[1] < 1),
-            #                                       tf.square(0 - ego_point[1] - 1), tf.zeros_like(veh_infos[:, 0]))
-            #         veh2road4real += tf.where(
-            #             logical_and(ego_point[0] > CROSSROAD_SIZE / 2, ego_point[1] - (-LANE_WIDTH * LANE_NUMBER) < 1),
-            #             tf.square(ego_point[1] - (-LANE_WIDTH * LANE_NUMBER) - 1), tf.zeros_like(veh_infos[:, 0]))
+            for ego_point in [ego_front_points, ego_rear_points]:
+                veh2road4training += tf.where(logical_and(ego_point[0] > Para.CROSSROAD_SIZE_LAT / 2, ego_point[1] > Para.OFFSET_R - 1.),
+                    tf.sqrt(tf.square(ego_point[0] - Para.CROSSROAD_SIZE_LAT / 2) + tf.square(ego_point[1] - Para.OFFSET_R)), tf.zeros_like(veh_infos[:, 0]))
+                veh2road4training += tf.where(logical_and(ego_point[0] < Para.OFFSET_U, ego_point[1] > Para.CROSSROAD_SIZE_LON / 2),
+                    tf.sqrt(tf.square(ego_point[0] - Para.OFFSET_U) + tf.square(ego_point[1] - Para.CROSSROAD_SIZE_LON / 2)), tf.zeros_like(veh_infos[:, 0]))
+                veh2road4training += tf.where(logical_and(ego_point[0] < -Para.CROSSROAD_SIZE_LAT / 2, ego_point[1] < Para.OFFSET_L + Para.GREEN_BELT_LAT),
+                    tf.sqrt(tf.square(ego_point[0] - -Para.CROSSROAD_SIZE_LAT / 2) + tf.square(ego_point[1] - (Para.OFFSET_L + Para.GREEN_BELT_LAT))), tf.zeros_like(veh_infos[:, 0]))
 
             rewards = 0.01 * devi_v + 0.8 * devi_longitudinal + 0.8 * devi_lateral + 30 * devi_phi + 0.02 * punish_yaw_rate + \
                       5 * punish_steer0 + \
