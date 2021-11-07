@@ -68,6 +68,7 @@ class Trainer(object):
     def train(self):
         logger.info('training beginning')
         while self.optimizer.num_sampled_steps < self.args.max_sampled_steps \
-                or self.optimizer.iteration < self.args.max_iter:
+                or self.optimizer.iteration < self.args.max_iter \
+                or ray.get(self.evaluator.get_eval_times.remote()) < (int(self.args.max_iter / self.args.eval_interval) + 1):
             self.optimizer.step()
         self.optimizer.stop()

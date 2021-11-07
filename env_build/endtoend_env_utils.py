@@ -9,9 +9,27 @@
 
 import math
 import os
+import numpy as np
 from collections import OrderedDict
 
 
+class ActionStore(list):
+    def __init__(self, maxlen=2):
+        super(ActionStore, self).__init__()
+        self.maxlen = maxlen
+        for _ in range(maxlen):
+            self.append(np.zeros(2, dtype=np.float32))
+    
+    def put(self, action):
+        assert len(self) == self.maxlen
+        self.pop(0)
+        self.append(action)
+
+    def reset(self):
+        for i in range(self.maxlen):
+            self[i] = np.zeros(2, dtype=np.float32)
+
+    
 class Para:
     # MAP
     L, W = 4.8, 2.0
@@ -43,12 +61,31 @@ class Para:
     LIGHT_ENCODING_DIM = 2
     TASK_ENCODING_DIM = 3
     REF_ENCODING_DIM = 3
+    HIS_ACT_ENCODING_DIM = 4
     PER_OTHER_INFO_DIM = 10
 
     # MAX NUM
     MAX_VEH_NUM = 8  # to be align with VEHICLE_MODE_DICT
     MAX_BIKE_NUM = 4  # to be align with BIKE_MODE_DICT
     MAX_PERSON_NUM = 4  # to be align with PERSON_MODE_DICT
+
+    # NOISE
+    # (v_x, v_y, r, x, y, phi) for ego
+    # (x, y, v, phi, l, w; type encoding (d=3), turn rad) for other
+    EGO_MEAN = np.array([0., 0., 0., 0., 0., 0.], dtype=np.float32)
+    EGO_VAR = np.diag([0.0418, 0.0418, 0., 0.0245, 0.0227, 0.0029*(180./np.pi)**2]).astype(np.float32)
+
+    VEH_MEAN = np.tile(np.zeros((PER_OTHER_INFO_DIM,), dtype=np.float32), MAX_VEH_NUM)
+    VEH_VAR = np.tile(np.array([0.0245, 0.0227, 0.0418, 0.0029*(180./np.pi)**2, 0.0902, 0.0202, 0., 0., 0., 0.,], dtype=np.float32), MAX_VEH_NUM)
+
+    BIKE_MEAN = np.tile(np.zeros((PER_OTHER_INFO_DIM,), dtype=np.float32), MAX_BIKE_NUM)
+    BIKE_VAR = np.tile(np.array([0.172**2, 0.1583**2, 0.1763**2, (0.1707*180./np.pi)**2, 0.1649**2, 0.1091**2, 0., 0., 0., 0.,], dtype=np.float32), MAX_BIKE_NUM)
+
+    PERSON_MEAN = np.tile(np.zeros((PER_OTHER_INFO_DIM,), dtype=np.float32), MAX_PERSON_NUM)
+    PERSON_VAR = np.tile(np.array([0.1102**2, 0.1108**2, 0.1189**2, (0.2289*180./np.pi)**2, 0.1468**2, 0.1405**2, 0., 0., 0., 0.,], dtype=np.float32), MAX_PERSON_NUM)
+
+    OTHERS_MEAN = np.concatenate([BIKE_MEAN, PERSON_MEAN, VEH_MEAN], axis=-1) # order determined in line 735 in e2e.py
+    OTHERS_VAR = np.diag(np.concatenate([BIKE_VAR, PERSON_VAR, VEH_VAR], axis=-1)).astype(np.float32)
 
 
 LIGHT_PHASE_TO_GREEN_OR_RED = {0: 'green', 1: 'green', 2: 'red', 3: 'red',
@@ -184,6 +221,15 @@ def rotate_coordination(orig_x, orig_y, orig_d, coordi_rotate_d):
         transformed_d = transformed_d
     return transformed_x, transformed_y, transformed_d
 
+def rotate_coordination_vec(orig_x, orig_y, orig_d, coordi_rotate_d):
+    coordi_rotate_d_in_rad = coordi_rotate_d * np.pi / 180
+    transformed_x = orig_x * np.cos(coordi_rotate_d_in_rad) + orig_y * np.sin(coordi_rotate_d_in_rad)
+    transformed_y = -orig_x * np.sin(coordi_rotate_d_in_rad) + orig_y * np.cos(coordi_rotate_d_in_rad)
+    transformed_d = orig_d - coordi_rotate_d
+    transformed_d = np.where(transformed_d>180, transformed_d - 360, transformed_d)
+    transformed_d = np.where(transformed_d<=-180, transformed_d + 360, transformed_d)
+    return transformed_x, transformed_y, transformed_d
+
 
 def shift_and_rotate_coordination(orig_x, orig_y, orig_d, coordi_shift_x, coordi_shift_y, coordi_rotate_d):
     shift_x, shift_y = shift_coordination(orig_x, orig_y, coordi_shift_x, coordi_shift_y)
@@ -284,5 +330,23 @@ def deal_with_phi(phi):
     return phi
 
 
+def test_action_store():
+    action_store = ActionStore()
+    action_store.put(np.array([1., 0.], dtype=np.float32))
+
+    print(len(action_store))
+    print(action_store)
+    print(action_store[0])
+    print(type(action_store[1]))
+
+    action_store.reset()
+    print(action_store)
+    print(action_store[0])
+    print(action_store[1])
+    action_store.put(np.array([1., 0.], dtype=np.float32))
+    action_store.put(np.array([1., 0.], dtype=np.float32))
+    print(action_store)
+    
+
 if __name__ == '__main__':
-    pass
+    test_action_store()

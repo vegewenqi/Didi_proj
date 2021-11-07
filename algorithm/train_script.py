@@ -47,16 +47,17 @@ def built_AMPC_parser():
     mode = parser.parse_args().mode
 
     if mode == 'testing':
-        test_dir = './results/integrate_3lane/experiment-2021-05-10-20-58-46'
+        test_dir = './results/CrossroadEnd2endMix-v0/experiment-2021-10-14-08-15-20'
         params = json.loads(open(test_dir + '/config.json').read())
         time_now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         test_log_dir = params['log_dir'] + '/tester/test-{}'.format(time_now)
         params.update(dict(test_dir=test_dir,
-                           test_iter_list=[180000],
+                           test_iter_list=[190000],
                            test_log_dir=test_log_dir,
-                           num_eval_episode=5,
+                           num_eval_episode=10,
                            eval_log_interval=1,
-                           fixed_steps=120))
+                           fixed_steps=150,
+                           eval_render=True))
         for key, val in params.items():
             parser.add_argument("-" + key, default=val)
         return parser.parse_args()
@@ -85,7 +86,7 @@ def built_AMPC_parser():
     parser.add_argument('--num_rollout_list_for_policy_update', type=list, default=[25])
     parser.add_argument('--gamma', type=float, default=1.)
     parser.add_argument('--gradient_clip_norm', type=float, default=10)
-    parser.add_argument('--init_punish_factor', type=float, default=10.)
+    parser.add_argument('--init_punish_factor', type=float, default=30.)
     parser.add_argument('--pf_enlarge_interval', type=int, default=20000)
     parser.add_argument('--pf_amplifier', type=float, default=1.)
 
@@ -116,9 +117,9 @@ def built_AMPC_parser():
     parser.add_argument('--num_hidden_layers', type=int, default=2)
     parser.add_argument('--num_hidden_units', type=int, default=256)
     parser.add_argument('--hidden_activation', type=str, default='gelu')
-    parser.add_argument('--deterministic_policy', default=True, action='store_true')
+    parser.add_argument('--deterministic_policy', default=False)
     parser.add_argument('--policy_out_activation', type=str, default='tanh')
-    parser.add_argument('--action_range', type=float, default=None)
+    parser.add_argument('--action_range', type=float, default=1.)
 
     # model for attn_net
     parser.add_argument('--attn_model_cls', type=str, default='Attention')
@@ -174,7 +175,9 @@ def built_attention_parser(alg_name):
                          [1., 1.] + \
                          [1., 1., 1.] + \
                          [1., 1., 1.] + \
+                         [1., 1., 1., 1.] + \
                          [1 / 30., 1 / 30., 0.2, 1 / 180., 0.2, 0.5, 1., 1., 1., 0.] * args.other_number
+        env.close()
         return args
 
 

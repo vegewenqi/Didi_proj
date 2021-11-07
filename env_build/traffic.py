@@ -26,16 +26,16 @@ import sumolib
 from sumolib import checkBinary
 import traci
 from traci.exceptions import FatalTraCIError
-from endtoend_env_utils import shift_and_rotate_coordination, _convert_car_coord_to_sumo_coord, \
+from env_build.endtoend_env_utils import shift_and_rotate_coordination, _convert_car_coord_to_sumo_coord, \
     _convert_sumo_coord_to_car_coord, xy2_edgeID_lane, SUMOCFG_DIR, TASK2ROUTEID
 
 SUMO_BINARY = checkBinary('sumo')
 SIM_PERIOD = 1.0 / 10
-# SUMOCFG_DIR_CASE = os.path.dirname(__file__) + "/sumo_files/case_"+ self.case +"/cross.sumocfg"
+
 
 class Traffic(object):
 
-    def __init__(self, step_length, mode, init_n_ego_dict):  # mode 'display' or 'training'
+    def __init__(self, step_length, mode, init_n_ego_dict, traffic_mode):  # mode 'display' or 'training'
         self.random_traffic = None
         self.sim_time = 0
         self.n_ego_vehicles = defaultdict(list)
@@ -48,11 +48,10 @@ class Traffic(object):
         self.n_ego_dict = init_n_ego_dict
         self.training_light_phase = None
         self.mode = mode
-        self.case = 1   # user define
-        # traci.close()
+        self.traffic_mode = traffic_mode
         try:
             traci.start(
-                [SUMO_BINARY, "-c", os.path.dirname(__file__) + "/sumo_files/case_" + str(self.case) + "/cross.sumocfg",
+                [SUMO_BINARY, "-c", os.path.dirname(__file__) + "/sumo_files/" + str(self.traffic_mode) + "/cross.sumocfg",
                  "--step-length", self.step_time_str,
                  # "--lateral-resolution", "3.5",
                  "--random",
@@ -66,7 +65,7 @@ class Traffic(object):
             print('Retry by other port')
             port = sumolib.miscutils.getFreeSocketPort()
             traci.start(
-                [SUMO_BINARY, "-c", os.path.dirname(__file__) + "/sumo_files/case_" + str(self.case) + "/cross.sumocfg",
+                [SUMO_BINARY, "-c", os.path.dirname(__file__) + "/sumo_files/" + str(self.traffic_mode) + "/cross.sumocfg",
                  "--step-length", self.step_time_str,
                  "--lateral-resolution", "3.5",
                  "--random",
@@ -112,42 +111,96 @@ class Traffic(object):
                                                 # traci.constants.VAR_ROUTE_ID,
                                                 # traci.constants.VAR_ROUTE_INDEX
                                                 ],begin=0.0, end=2147483647.0)
+
         self.init_step()
-        # while traci.simulation.getTime() < 40:          # turn right
-        #     # if traci.simulation.getTime() < 249:
-        #     #     traci.trafficlight.setPhase('0', 2)
-        #     # else:
-        #     #     traci.trafficlight.setPhase('0', 0)
-        #
-        #     traci.simulationStep()
 
     def init_step(self):
-        if self.case == 1:
+        if self.traffic_mode == 'case1':
             while traci.simulation.getTime() < 42.5:
                 traci.simulationStep()
-        elif self.case == 2:
+        elif self.traffic_mode == 'case2':
             while traci.simulation.getTime() < 39:
                 traci.simulationStep()
-        elif self.case == 3:
+        elif self.traffic_mode == 'case3':
             while traci.simulation.getTime() < 10:
                 traci.simulationStep()
+        else:
+            while traci.simulation.getTime() < 250:
+                if traci.simulation.getTime() < 249:
+                    traci.trafficlight.setPhase('0', 2)
+                else:
+                    traci.trafficlight.setPhase('0', 0)
+                traci.simulationStep()
 
+    def _reset(self):
+        self.__del__()
+        try:
+            traci.start(
+                [SUMO_BINARY, "-c",
+                 os.path.dirname(__file__) + "/sumo_files/" + str(self.traffic_mode) + "/cross.sumocfg",
+                 "--step-length", self.step_time_str,
+                 # "--lateral-resolution", "3.5",
+                 "--random",
+                 # "--start",
+                 # "--quit-on-end",
+                 "--no-warnings",
+                 "--no-step-log",
+                 # '--seed', str(int(seed))
+                 ], numRetries=5)  # '--seed', str(int(seed))
+        except FatalTraCIError:
+            print('Retry by other port')
+            port = sumolib.miscutils.getFreeSocketPort()
+            traci.start(
+                [SUMO_BINARY, "-c",
+                 os.path.dirname(__file__) + "/sumo_files/" + str(self.traffic_mode) + "/cross.sumocfg",
+                 "--step-length", self.step_time_str,
+                 "--lateral-resolution", "3.5",
+                 "--random",
+                 # "--start",
+                 # "--quit-on-end",
+                 "--no-warnings",
+                 "--no-step-log",
+                 # '--seed', str(int(seed))
+                 ], port=port, numRetries=5)  # '--seed', str(int(seed))
 
-    def random_index_task(self, task, case):
-        if case < 5 and task != 'left':
-            print('The case and task don\'t match')
-            # return None
-        # print("random", 800 + int(np.random.random() * 100))
-        if case == 1:
-            random_index = 300 + int(np.random.random() * 100)
-        elif case == 2:
-            random_index = 950 + int(np.random.random() * 100)
-        elif case == 3:
-            random_index = 700 + int(np.random.random() * 100)
-        return random_index
+        traci.junction.subscribeContext(objectID='0', domain=traci.constants.CMD_GET_VEHICLE_VARIABLE, dist=10000.0,
+                                        varIDs=[traci.constants.VAR_POSITION,
+                                                traci.constants.VAR_LENGTH,
+                                                traci.constants.VAR_WIDTH,
+                                                traci.constants.VAR_ANGLE,
+                                                traci.constants.VAR_SIGNALS,
+                                                traci.constants.VAR_SPEED,
+                                                traci.constants.VAR_SPEED_LAT,
+                                                traci.constants.VAR_TYPE,
+                                                # traci.constants.VAR_EMERGENCY_DECEL,
+                                                # traci.constants.VAR_LANE_INDEX,
+                                                # traci.constants.VAR_LANEPOSITION,
+                                                # traci.constants.VAR_EDGES,
+                                                # traci.constants.VAR_ROAD_ID,
+                                                traci.constants.VAR_EDGES,
+                                                # traci.constants.VAR_NEXT_EDGE,
+                                                # traci.constants.VAR_ROUTE_INDEX
+                                                ], begin=0.0, end=2147483647.0)
 
-    def close_sumo(self):
-        traci.close()
+        traci.junction.subscribeContext(objectID='0', domain=traci.constants.CMD_GET_PERSON_VARIABLE, dist=10000.0,
+                                        varIDs=[traci.constants.VAR_POSITION,
+                                                traci.constants.VAR_LENGTH,
+                                                traci.constants.VAR_WIDTH,
+                                                traci.constants.VAR_ANGLE,
+                                                # traci.constants.VAR_SIGNALS,
+                                                traci.constants.VAR_SPEED,
+                                                traci.constants.VAR_TYPE,
+                                                # traci.constants.VAR_EMERGENCY_DECEL,
+                                                # traci.constants.VAR_LANE_INDEX,
+                                                # traci.constants.VAR_LANEPOSITION,
+                                                # traci.constants.VAR_EDGES,
+                                                traci.constants.VAR_ROAD_ID,
+                                                # traci.constants.VAR_NEXT_EDGE,
+                                                # traci.constants.VAR_ROUTE_ID,
+                                                # traci.constants.VAR_ROUTE_INDEX
+                                                ], begin=0.0, end=2147483647.0)
+
+        self.init_step()
 
     def __del__(self):
         traci.close()
@@ -186,15 +239,18 @@ class Traffic(object):
         return random_traffic
 
     def init_light(self):
-        # if random.random() > 0.2:
-        #     self.training_light_phase = 4
-        # else:
-        #     self.training_light_phase = 0
-        # traci.trafficlight.setPhase('0', self.training_light_phase)
-        # # traci.trafficlight.setPhaseDuration('0', 10000)
-        # traci.simulationStep()
-        self._get_traffic_light()
-        traci.simulationStep()
+        if self.traffic_mode == 'auto':
+            if random.random() > 0.8:
+                self.training_light_phase = 4
+            else:
+                self.training_light_phase = 0
+            traci.trafficlight.setPhase('0', self.training_light_phase)
+            # traci.trafficlight.setPhaseDuration('0', 10000)
+            traci.simulationStep()
+            self._get_traffic_light()
+        else:
+            self._get_traffic_light()
+            traci.simulationStep()
         return self.v_light
 
     def init_traffic(self, init_n_ego_dict, training_task):
@@ -232,12 +288,13 @@ class Traffic(object):
                                                                                                            x_in_ego_coord,
                                                                                                            y_in_ego_coord,
                                                                                                            a_in_ego_coord)
-                # if (-5 < x_in_ego_coord < 1 * (ego_v_x) + ego_l/2. + veh_l/2. + 2 and abs(y_in_ego_coord) < 3) or \
-                #         (-5 < ego_x_in_veh_coord < 1 * (veh_v) + ego_l/2. + veh_l/2. + 2 and abs(ego_y_in_veh_coord) <3):
-                #     if veh_type == 'DEFAULT_PEDTYPE':
-                #         traci.person.removeStages(veh)
-                #     else:
-                #         traci.vehicle.remove(veh)
+                if (-5 < x_in_ego_coord < 1 * (ego_v_x) + ego_l/2. + veh_l/2. + 2 and abs(y_in_ego_coord) < 3) or \
+                        (-5 < ego_x_in_veh_coord < 1 * (veh_v) + ego_l/2. + veh_l/2. + 2 and abs(ego_y_in_veh_coord) <3):
+                    if self.traffic_mode == 'auto':
+                        if veh_type == 'DEFAULT_PEDTYPE':
+                            traci.person.removeStages(veh)
+                        else:
+                            traci.vehicle.remove(veh)
 
                     # traci.vehicle.remove(vehID=veh)
                 # if 0<x_in_sumo<3.5 and -22<y_in_sumo<-15:# and veh_sig!=1 and veh_sig!=9:
