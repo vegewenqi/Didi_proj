@@ -105,6 +105,8 @@ PERSON_MODE_DICT = dict(left=OrderedDict(c3=4),
                         straight=OrderedDict(c2=4),  # 0
                         right=OrderedDict(c1=4, c2=0))
 
+MODE2STEP = {'green_only_ego_left_1': 0, 'yellow_mix_left_1': 42.5}
+MODE2INDEX = {'green_only_ego_left_1': 500, 'yellow_mix_left_1': 300}
 
 def dict2flat(inp):
     out = []

@@ -50,7 +50,7 @@ class CrossroadEnd2endMix(gym.Env):
                  multi_display=False,
                  state_mode='fix',  # 'dyna'
                  future_point_num=25,
-                 traffic_mode='auto',  # 'auto', 'case1', 'case2', 'case3；
+                 traffic_mode='yellow_mix_left_1',  # 'auto', 'green_only_ego_left_1', 'yellow_mix_left_1'；
                  **kwargs):
         self.mode = mode
         self.traffic_mode = traffic_mode
@@ -122,7 +122,10 @@ class CrossroadEnd2endMix(gym.Env):
 
     def reset(self, **kwargs):  # kwargs include three keys
         self.light_phase = self.traffic.init_light()
-        self.training_task = choice(['left', 'straight', 'right'])
+        if self.traffic_mode == 'auto':
+            self.training_task = choice(['left', 'straight', 'right'])
+        else:
+            self.training_task = self.traffic.case_task()
         self.task_encoding = TASK_ENCODING[self.training_task]
         self.light_encoding = LIGHT_ENCODING[self.light_phase]
         self.ref_path = ReferencePath(self.training_task, LIGHT_PHASE_TO_GREEN_OR_RED[self.light_phase])
@@ -757,6 +760,11 @@ class CrossroadEnd2endMix(gym.Env):
             else:
                 random_index = int(np.random.random() * (420 + 500)) + 700
         else:
+            if self.traffic_mode == 'green_only_ego_left_1':
+                random_index = MODE2INDEX[self.traffic_mode] + int(np.random.random() * 100)
+            elif self.traffic_mode == 'yellow_mix_left_1':
+                random_index = MODE2INDEX[self.traffic_mode] + int(np.random.random() * 100)
+
             if self.traffic_mode == 'case1':
                 random_index = 300 + int(np.random.random() * 100)
             elif self.traffic_mode == 'case2':

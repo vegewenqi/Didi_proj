@@ -15,6 +15,7 @@ import sys
 import numpy as np
 from collections import defaultdict
 from math import fabs, cos, sin, pi
+from endtoend_env_utils import MODE2STEP, MODE2INDEX
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -49,9 +50,13 @@ class Traffic(object):
         self.training_light_phase = None
         self.mode = mode
         self.traffic_mode = traffic_mode
+        if self.traffic_mode != "auto":
+            self.file_path = "user_defined\\" + str(self.traffic_mode)
+        else:
+            self.file_path = str(self.traffic_mode)
         try:
             traci.start(
-                [SUMO_BINARY, "-c", os.path.dirname(__file__) + "/sumo_files/" + str(self.traffic_mode) + "/cross.sumocfg",
+                [SUMO_BINARY, "-c", os.path.dirname(__file__) + "\\sumo_files\\" + str(self.file_path) + "\\cross.sumocfg",
                  "--step-length", self.step_time_str,
                  # "--lateral-resolution", "3.5",
                  "--random",
@@ -114,7 +119,20 @@ class Traffic(object):
 
         self.init_step()
 
+    def case_task(self):
+        print(self.traffic_mode)
+        task = str(self.traffic_mode).split('_')
+        return task[-2]
+
     def init_step(self):
+        if self.traffic_mode == 'green_only_ego_left_1':
+            while traci.simulation.getTime() < MODE2STEP[self.traffic_mode]:
+                traci.simulationStep()
+        elif self.traffic_mode == 'yellow_mix_left_1':
+            while traci.simulation.getTime() < MODE2STEP[self.traffic_mode]:
+                traci.simulationStep()
+
+
         if self.traffic_mode == 'case1':
             while traci.simulation.getTime() < 42.5:
                 traci.simulationStep()
