@@ -15,7 +15,7 @@ import math
 import pandas as pd
 sns.set(style="darkgrid")
 
-WINDOWSIZE = 15
+WINDOWSIZE = 1
 
 
 class Recorder(object):

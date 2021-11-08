@@ -50,7 +50,7 @@ class CrossroadEnd2endMix(gym.Env):
                  multi_display=False,
                  state_mode='fix',  # 'dyna'
                  future_point_num=25,
-                 traffic_mode='yellow_mix_left_1',  # 'auto', 'green_only_ego_left_1', 'yellow_mix_left_1'；
+                 traffic_mode='auto',  # 'auto'
                  **kwargs):
         self.mode = mode
         self.traffic_mode = traffic_mode
@@ -760,17 +760,8 @@ class CrossroadEnd2endMix(gym.Env):
             else:
                 random_index = int(np.random.random() * (420 + 500)) + 700
         else:
-            if self.traffic_mode == 'green_only_ego_left_1':
-                random_index = MODE2INDEX[self.traffic_mode] + int(np.random.random() * 100)
-            elif self.traffic_mode == 'yellow_mix_left_1':
-                random_index = MODE2INDEX[self.traffic_mode] + int(np.random.random() * 100)
+            random_index = MODE2INDEX[self.traffic_mode] + int(np.random.random() * 100)
 
-            if self.traffic_mode == 'case1':
-                random_index = 300 + int(np.random.random() * 100)
-            elif self.traffic_mode == 'case2':
-                random_index = 950 + int(np.random.random() * 100)
-            elif self.traffic_mode == 'case3':
-                random_index = 700 + int(np.random.random() * 100)
         x, y, phi, exp_v = self.ref_path.idx2point(random_index)
         v = exp_v * np.random.random()
         routeID = TASK2ROUTEID[self.training_task]
@@ -1159,7 +1150,7 @@ class CrossroadEnd2endMix(gym.Env):
                 item_type = item['type']
                 if is_in_plot_area(item_x, item_y):
                     plot_phi_line(item_type, item_x, item_y, item_phi, 'black')
-                    draw_rotate_rec(item_type, item_x, item_y, item_phi, item_l, item_w, color='m', linestyle=':', patch=True)
+                    draw_rotate_rec(item_type, item_x, item_y, item_phi, item_l, item_w, color='g', linestyle=':', patch=True)
                     plt.text(item_x, item_y, str(item_mask)[0])
                 if i in index_top_k_in_weights:
                     plt.text(item_x, item_y, "{:.2f}".format(weights[i]), color='red', fontsize=15)
@@ -1190,8 +1181,8 @@ class CrossroadEnd2endMix(gym.Env):
                     item_w = item[5]
                     item_type = get_partici_type_str(item[-3:])
                     if is_in_plot_area(item_x, item_y):
-                        plot_phi_line(item_type, item_x, item_y, item_phi, 'orangered')
-                        draw_rotate_rec(item_type, item_x, item_y, item_phi, item_l, item_w, color='orangered')
+                        plot_phi_line(item_type, item_x, item_y, item_phi, 'green')
+                        draw_rotate_rec(item_type, item_x, item_y, item_phi, item_l, item_w, color='green')
 
                 # noised ego car
                 plot_phi_line('self_noised_car', noised_ego_x, noised_ego_y, noised_ego_phi, 'aquamarine')
@@ -1291,7 +1282,7 @@ def test_end2end():
     obs, all_info = env.reset()
     i = 0
     while i < 100000:
-        for j in range(100):
+        for j in range(50):
             i += 1
             action = np.array([-0.05, 0.3 + np.random.rand(1)*0.8], dtype=np.float32) # np.random.rand(1)*0.1 - 0.05
             obs, reward, done, info = env.step(action)

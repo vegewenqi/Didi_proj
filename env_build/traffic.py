@@ -125,32 +125,32 @@ class Traffic(object):
         return task[-2]
 
     def init_step(self):
-        if self.traffic_mode == 'green_only_ego_left_1':
-            while traci.simulation.getTime() < MODE2STEP[self.traffic_mode]:
-                traci.simulationStep()
-        elif self.traffic_mode == 'yellow_mix_left_1':
-            # while traci.simulation.getTime() < MODE2STEP[self.traffic_mode]:
-            print('****', self.traffic_mode)
-            while traci.simulation.getTime() < 55:
-
-                traci.simulationStep()
-
-
-        elif self.traffic_mode == 'case1':
-            while traci.simulation.getTime() < 42.5:
-                traci.simulationStep()
-        elif self.traffic_mode == 'case2':
-            while traci.simulation.getTime() < 39:
-                traci.simulationStep()
-        elif self.traffic_mode == 'case3':
-            while traci.simulation.getTime() < 10:
-                traci.simulationStep()
-        else:
+        if self.traffic_mode == 'auto':
             while traci.simulation.getTime() < 250:
                 if traci.simulation.getTime() < 249:
                     traci.trafficlight.setPhase('0', 2)
                 else:
                     traci.trafficlight.setPhase('0', 0)
+                traci.simulationStep()
+        else:
+            self.case_light = str(self.traffic_mode).split('_')[0]
+            if self.case_light == 'red':
+                self.training_light_phase = 4
+                traci.trafficlight.setPhase('0', self.training_light_phase)
+                traci.simulationStep()
+
+            elif self.case_light == 'green':
+                self.training_light_phase = 0
+                traci.trafficlight.setPhase('0', self.training_light_phase)
+                traci.simulationStep()
+
+            else:
+                assert self.case_light == 'yellow', 'no such a phase!'
+                self.training_light_phase = 1
+                traci.trafficlight.setPhase('0', self.training_light_phase)
+                traci.simulationStep()
+
+            while traci.simulation.getTime() < MODE2STEP[self.traffic_mode]:
                 traci.simulationStep()
 
     def _reset(self):
@@ -270,8 +270,8 @@ class Traffic(object):
             traci.simulationStep()
             self._get_traffic_light()
         else:
+            self._reset()
             self._get_traffic_light()
-            traci.simulationStep()
         return self.v_light
 
     def init_traffic(self, init_n_ego_dict, training_task):
@@ -355,8 +355,8 @@ class Traffic(object):
 
     def sim_step(self):
         self.sim_time += SIM_PERIOD
-        # if self.mode == 'training':
-        #     traci.trafficlight.setPhase('0', self.training_light_phase)
+        if (self.traffic_mode != 'auto') and (self.case_light != 'yellow'):
+            traci.trafficlight.setPhase('0', self.training_light_phase)
         traci.simulationStep()
         self._get_vehicles()
         self._get_traffic_light()

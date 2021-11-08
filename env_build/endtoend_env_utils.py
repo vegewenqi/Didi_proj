@@ -89,9 +89,10 @@ class Para:
 
 
 LIGHT_PHASE_TO_GREEN_OR_RED = {0: 'green', 1: 'green', 2: 'red', 3: 'red',
-                                 4: 'red', 5: 'red', 6: 'red'}  # 0: green, 1: red
+                                 4: 'red', 5: 'red', 6: 'red', 7: 'red', 8: 'red', 9: 'red'}  # 0: green, 1: red
 TASK_ENCODING = dict(left=[1.0, 0.0, 0.0], straight=[0.0, 1.0, 0.0], right=[0.0, 0.0, 1.0])
-LIGHT_ENCODING = {0: [1.0, 0.0], 1: [1.0, 0.0], 2: [1.0, 1.0], 3: [0.0, 1.0], 4: [0.0, 1.0], 5: [0.0, 1.0], 6: [0.0, 1.0]}
+LIGHT_ENCODING = {0: [1.0, 0.0], 1: [1.0, 0.0], 2: [1.0, 1.0], 3: [0.0, 1.0], 4: [0.0, 1.0], 5: [0.0, 1.0],
+                  6: [0.0, 1.0], 7: [0.0, 1.0], 8: [0.0, 1.0], 9: [0.0, 1.0]}
 REF_ENCODING = {0: [1.0, 0.0, 0.0], 1: [0.0, 1.0, 0.0], 2: [0.0, 0.0, 1.0]}
 
 SUMOCFG_DIR = os.path.dirname(__file__) + "/sumo_files/cross.sumocfg"
@@ -105,8 +106,13 @@ PERSON_MODE_DICT = dict(left=OrderedDict(c3=4),
                         straight=OrderedDict(c2=4),  # 0
                         right=OrderedDict(c1=4, c2=0))
 
-MODE2STEP = {'green_only_ego_left_1': 0, 'yellow_mix_left_1': 42.5}
-MODE2INDEX = {'green_only_ego_left_1': 500, 'yellow_mix_left_1': 300}
+MODE2STEP = {'green_only_ego_left_1': 0, 'green_only_ego_right_1': 0, 'green_only_ego_straight_1': 0, 'red_front_veh_left_1':45.5,
+             'red_no_front_veh_left_1': 0, 'yellow_no_front_veh_left_1': 13.5, 'yellow_no_front_veh_left_2': 13.5, 'yellow_front_veh_left_1': 13.5,
+             'yellow_front_veh_left_2': 15.5, 'yellow_mix_left_1': 42.5}
+MODE2INDEX = {'green_only_ego_left_1': 500, 'green_only_ego_right_1': 500, 'green_only_ego_straight_1': 500, 'red_front_veh_left_1':500,
+              'red_no_front_veh_left_1': 500, 'yellow_no_front_veh_left_1': 500, 'yellow_no_front_veh_left_2': 800, 'yellow_front_veh_left_1': 300,
+               'yellow_front_veh_left_2': 300,
+              'yellow_mix_left_1': 300}
 
 def dict2flat(inp):
     out = []
