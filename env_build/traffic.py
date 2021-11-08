@@ -129,11 +129,14 @@ class Traffic(object):
             while traci.simulation.getTime() < MODE2STEP[self.traffic_mode]:
                 traci.simulationStep()
         elif self.traffic_mode == 'yellow_mix_left_1':
-            while traci.simulation.getTime() < MODE2STEP[self.traffic_mode]:
+            # while traci.simulation.getTime() < MODE2STEP[self.traffic_mode]:
+            print('****', self.traffic_mode)
+            while traci.simulation.getTime() < 55:
+
                 traci.simulationStep()
 
 
-        if self.traffic_mode == 'case1':
+        elif self.traffic_mode == 'case1':
             while traci.simulation.getTime() < 42.5:
                 traci.simulationStep()
         elif self.traffic_mode == 'case2':
@@ -155,7 +158,7 @@ class Traffic(object):
         try:
             traci.start(
                 [SUMO_BINARY, "-c",
-                 os.path.dirname(__file__) + "/sumo_files/" + str(self.traffic_mode) + "/cross.sumocfg",
+                 os.path.dirname(__file__) + "\\sumo_files\\" + str(self.file_path) + "\\cross.sumocfg",
                  "--step-length", self.step_time_str,
                  # "--lateral-resolution", "3.5",
                  "--random",
@@ -170,7 +173,7 @@ class Traffic(object):
             port = sumolib.miscutils.getFreeSocketPort()
             traci.start(
                 [SUMO_BINARY, "-c",
-                 os.path.dirname(__file__) + "/sumo_files/" + str(self.traffic_mode) + "/cross.sumocfg",
+                 os.path.dirname(__file__) + "\\sumo_files\\" + str(self.file_path) + "\\cross.sumocfg",
                  "--step-length", self.step_time_str,
                  "--lateral-resolution", "3.5",
                  "--random",
