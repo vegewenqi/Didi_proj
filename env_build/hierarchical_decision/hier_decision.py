@@ -583,7 +583,7 @@ def main():
     time_now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     logdir = './results/{time}'.format(time=time_now)
     os.makedirs(logdir)
-    hier_decision = HierarchicalDecision('experiment-2021-10-27-09-43-30', 150000, logdir)
+    hier_decision = HierarchicalDecision('experiment-2021-11-08-10-35-44_scale_lr-3', 200000, logdir)
 
     for i in range(300):
         for _ in range(200):

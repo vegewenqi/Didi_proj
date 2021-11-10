@@ -15,7 +15,7 @@ import sys
 import numpy as np
 from collections import defaultdict
 from math import fabs, cos, sin, pi
-from endtoend_env_utils import MODE2STEP, MODE2INDEX
+from env_build.endtoend_env_utils import MODE2STEP
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
