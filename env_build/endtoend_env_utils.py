@@ -33,27 +33,54 @@ class ActionStore(list):
 class Para:
     # MAP
     L, W = 4.8, 2.0
-    LANE_WIDTH_1 = 3.75
-    LANE_WIDTH_2 = 3.25
-    LANE_WIDTH_3 = 4.00
+    LANE_WIDTH_1 = 3.50
+    LANE_WIDTH_2 = 3.70
+    LANE_WIDTH_3 = 3.75
+    LANE_WIDTH_4 = 3.80
     WALK_WIDTH = 6.00
-    GREEN_BELT_LAT = 10
-    GREEN_BELT_LON = 2
+    GREEN_BELT_LAT = 9.5
+    GREEN_BELT_LON = 1.0
     BIKE_LANE_WIDTH = 1.0
     PERSON_LANE_WIDTH = 2.0
 
-    OFFSET_L = -3
-    OFFSET_R = -7
-    OFFSET_U = 1
-    OFFSET_D = -0.38
+    OFFSET_L = -2
+    OFFSET_R = -5.2
+    OFFSET_U_X = 1.65
+    OFFSET_U_Y = 33.2
+    OFFSET_D_X = -1.20
+    OFFSET_D_Y = -30.90
 
-    LANE_NUMBER_LON_IN = 3
+    ANGLE_U = 85.59
+    ANGLE_D = 80.01
+
+    LANE_NUMBER_LON_IN = 2
     LANE_NUMBER_LON_OUT = 2
     LANE_NUMBER_LAT_IN = 4
     LANE_NUMBER_LAT_OUT = 3
 
-    CROSSROAD_SIZE_LAT = 64
-    CROSSROAD_SIZE_LON = 76
+    CROSSROAD_SIZE_LAT = 49
+    # L, W = 4.8, 2.0
+    # LANE_WIDTH_1 = 3.75
+    # LANE_WIDTH_2 = 3.25
+    # LANE_WIDTH_3 = 4.00
+    # WALK_WIDTH = 6.00
+    # GREEN_BELT_LAT = 10
+    # GREEN_BELT_LON = 2
+    # BIKE_LANE_WIDTH = 1.0
+    # PERSON_LANE_WIDTH = 2.0
+    #
+    # OFFSET_L = -3
+    # OFFSET_R = -7
+    # OFFSET_U = 1
+    # OFFSET_D = -0.38
+    #
+    # LANE_NUMBER_LON_IN = 3
+    # LANE_NUMBER_LON_OUT = 2
+    # LANE_NUMBER_LAT_IN = 4
+    # LANE_NUMBER_LAT_OUT = 3
+    #
+    # CROSSROAD_SIZE_LAT = 64
+    # CROSSROAD_SIZE_LON = 76
 
     # DIM
     EGO_ENCODING_DIM = 6
