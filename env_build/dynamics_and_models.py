@@ -854,43 +854,48 @@ class ReferencePath(object):
         else:
             return mul / np.abs(mul)
 
+    def get_bezier_control_points(self, x1, y1, phi1, x4, y4, phi4):
+        # weight = 1/2
+        # weight = 3/5
+        weight = 7/10
+        x2 = x1 * ((cos(phi1) ** 2) * (1-weight) + sin(phi1) ** 2) + y1 * (-sin(phi1) * cos(phi1) * weight) + x4 * ((cos(phi1) ** 2) * weight) + y4 * (sin(phi1) * cos(phi1) * weight)
+        y2 = x1 * (-sin(phi1) * cos(phi1) * weight) + y1 * (cos(phi1) ** 2 + (sin(phi1) ** 2) * (1-weight)) + x4 * (sin(phi1) * cos(phi1) * weight) + y4 * ((sin(phi1) ** 2) * weight)
+        x3 = x1 * (cos(phi4) ** 2) * weight + y1 * (sin(phi4) * cos(phi4) * weight) + x4 * ((cos(phi4) ** 2) * (1-weight) + sin(phi4) ** 2) + y4 * (-sin(phi4) * cos(phi4) * weight)
+        y3 = x1 * (sin(phi4) * cos(phi4) * weight) + y1 * ((sin(phi4) ** 2) * weight) + x4 * (-sin(phi4) * cos(phi4) * weight) + y4 * (cos(phi4) ** 2 + (sin(phi4) ** 2) * (1-weight))
+        control_point2 = x2, y2
+        control_point3 = x3, y3
+        return control_point2, control_point3
+
     def _construct_ref_path(self, task):
-        sl = 40  # straight length
+        sl = 60  # straight length
         dece_dist = 20
         meter_pointnum_ratio = 30
-        control_ext = 0.5 * (Para.CROSSROAD_SIZE_LAT + Para.CROSSROAD_SIZE_LON) / 3.
         planed_trj_g = []
         planed_trj_r = []
         if task == 'left':
-            lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1,
+            lane_width_flag = [Para.LANE_WIDTH_3, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
                                Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
             end_offsets = [Para.OFFSET_L + Para.GREEN_BELT_LAT + sum(lane_width_flag[:i]) + 0.5 * lane_width_flag[i] for
                            i in range(Para.LANE_NUMBER_LAT_OUT)]
-            start_offsets = [Para.OFFSET_D + Para.LANE_WIDTH_2 * 0.5]
+            start_offsets = [Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5) * sin(Para.ANGLE_D * pi/180)]
             for start_offset in start_offsets:
                 for end_offset in end_offsets:
-                    control_point1 = start_offset, -Para.CROSSROAD_SIZE_LON / 2
-                    control_point2 = start_offset, -Para.CROSSROAD_SIZE_LON / 2 + control_ext
-                    control_point3 = -Para.CROSSROAD_SIZE_LAT / 2 + control_ext, end_offset
+                    control_point1 = start_offset, Para.OFFSET_D_Y - start_offset * cos(Para.ANGLE_D * pi / 180)
                     control_point4 = -Para.CROSSROAD_SIZE_LAT / 2, end_offset
+                    control_point2, control_point3 = self.get_bezier_control_points(start_offset, -30, Para.ANGLE_D*pi/180, -Para.CROSSROAD_SIZE_LAT / 2, end_offset, pi)
                     self.control_points.append([control_point1, control_point2, control_point3, control_point4])
-
                     node = np.asfortranarray(
                         [[control_point1[0], control_point2[0], control_point3[0], control_point4[0]],
                          [control_point1[1], control_point2[1], control_point3[1], control_point4[1]]],
                         dtype=np.float32)
                     curve = bezier.Curve(node, degree=3)
-                    # 打印最大距离，最小距离
-                    s_vals = np.linspace(0, 1.0, int(pi / 2 * (Para.CROSSROAD_SIZE_LON / 2 +
+                    s_vals = np.linspace(0, 1.0, int(pi / 2 * ((Para.OFFSET_U_Y - Para.OFFSET_D_Y) / 2 +
                                             Para.OFFSET_L + Para.GREEN_BELT_LAT + 0.5 * Para.LANE_WIDTH_1)) * meter_pointnum_ratio)
                     trj_data = curve.evaluate_multi(s_vals)
                     trj_data = trj_data.astype(np.float32)
-                    start_straight_line_x = (Para.OFFSET_D + Para.LANE_WIDTH_2 * 0.5) * np.ones(
-                        shape=(sl * meter_pointnum_ratio,), dtype=np.float32)[:-1]
-                    start_straight_line_y = np.linspace(-Para.CROSSROAD_SIZE_LON / 2 - sl, -Para.CROSSROAD_SIZE_LON / 2,
-                                                        sl * meter_pointnum_ratio, dtype=np.float32)[:-1]
-                    end_straight_line_x = np.linspace(-Para.CROSSROAD_SIZE_LAT / 2, -Para.CROSSROAD_SIZE_LAT / 2 - sl,
-                                                      sl * meter_pointnum_ratio, dtype=np.float32)[1:]
+                    start_straight_line_x = np.linspace(Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5) * sin(Para.ANGLE_D * pi/180) - sl / math.tan(Para.ANGLE_D*pi/180), Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5) * sin(Para.ANGLE_D * pi/180), int(sl * sin(Para.ANGLE_D*pi/180) * meter_pointnum_ratio), dtype=np.float32)[:-1]
+                    start_straight_line_y = np.linspace(Para.OFFSET_D_Y - Para.GREEN_BELT_LON * cos(Para.ANGLE_D*pi/180) - sl*sin(Para.ANGLE_D*pi/180), Para.OFFSET_D_Y - Para.GREEN_BELT_LON * cos(Para.ANGLE_D*pi/180), int(sl * sin(Para.ANGLE_D*pi/180) * meter_pointnum_ratio), dtype=np.float32)[:-1]
+                    end_straight_line_x = np.linspace(-Para.CROSSROAD_SIZE_LAT / 2, -Para.CROSSROAD_SIZE_LAT / 2 - sl, sl * meter_pointnum_ratio, dtype=np.float32)[1:]
                     end_straight_line_y = end_offset * np.ones(shape=(sl * meter_pointnum_ratio,), dtype=np.float32)[1:]
                     planed_trj = np.append(np.append(start_straight_line_x, trj_data[0]), end_straight_line_x), \
                                  np.append(np.append(start_straight_line_y, trj_data[1]), end_straight_line_y)
@@ -908,7 +913,6 @@ class ReferencePath(object):
                     vs_red_3 = np.array([7.0] * (meter_pointnum_ratio * (int(Para.L) - dece_dist // 2) + len(trj_data[0]) - 1) + [8.33] * len(
                             end_straight_line_x), dtype=np.float32)
                     vs_red = np.append(np.append(np.append(vs_red_0, vs_red_1), vs_red_2), vs_red_3)
-
                     planed_trj_green = xs_1, ys_1, phis_1, vs_green
                     planed_trj_red = xs_1, ys_1, phis_1, vs_red
                     planed_trj_g.append(planed_trj_green)
@@ -917,40 +921,40 @@ class ReferencePath(object):
             self.path_list = {'green': planed_trj_g, 'red': planed_trj_r}
 
         elif task == 'straight':
-            lane_width_flag = [Para.LANE_WIDTH_3, Para.LANE_WIDTH_3, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
-            end_offsets = [Para.OFFSET_U + Para.GREEN_BELT_LON + sum(lane_width_flag[:i]) + 0.5 * lane_width_flag[i] for
+            lane_width_flag = [Para.LANE_WIDTH_4, Para.LANE_WIDTH_4, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+            end_offsets = [Para.OFFSET_U_X + sum(lane_width_flag[:i]) + 0.5 * lane_width_flag[i] for
                            i in range(Para.LANE_NUMBER_LON_OUT)]
-            start_offsets = [Para.OFFSET_D + Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 * 0.5]
+            start_offsets = [Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5) * sin(Para.ANGLE_D * pi/180), Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2 * 0.5) * sin(Para.ANGLE_D * pi/180)]
+            end_offsets_y = [Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * 0.5 * cos(Para.ANGLE_U*pi/180), Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * 1.5 * cos(Para.ANGLE_U*pi/180)]
+            start_offsets_y = [Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5) * cos(Para.ANGLE_D*pi/180), Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_4 * 0.5) * cos(Para.ANGLE_D*pi/180)]
 
             for start_offset in start_offsets:
                 for end_offset in end_offsets:
-                    control_point1 = start_offset, -Para.CROSSROAD_SIZE_LON / 2
-                    control_point2 = start_offset, -Para.CROSSROAD_SIZE_LON / 2 + control_ext
-                    control_point3 = end_offset, Para.CROSSROAD_SIZE_LON / 2 - control_ext
-                    control_point4 = end_offset, Para.CROSSROAD_SIZE_LON / 2
+                    control_point1 = start_offset, Para.OFFSET_D_Y - start_offset * cos(Para.ANGLE_D * pi / 180)
+                    control_point4 = end_offset, Para.OFFSET_U_Y - end_offset * cos(Para.ANGLE_U * pi / 180)
+                    control_point2, control_point3 = self.get_bezier_control_points(start_offset, Para.OFFSET_D_Y - start_offset * cos(Para.ANGLE_D * pi / 180),
+                                                                                    Para.ANGLE_D * pi / 180, end_offset, Para.OFFSET_U_Y - end_offset * cos(Para.ANGLE_U * pi / 180), Para.ANGLE_U * pi / 180)
                     self.control_points.append([control_point1, control_point2, control_point3, control_point4])
-
                     node = np.asfortranarray(
                         [[control_point1[0], control_point2[0], control_point3[0], control_point4[0]],
                          [control_point1[1], control_point2[1], control_point3[1], control_point4[1]]]
                         , dtype=np.float32)
                     curve = bezier.Curve(node, degree=3)
-                    s_vals = np.linspace(0, 1.0, Para.CROSSROAD_SIZE_LON * meter_pointnum_ratio)  # todo
+                    s_vals = np.linspace(0, 1.0, int((Para.OFFSET_U_Y - end_offset * cos(Para.ANGLE_U * pi / 180) - Para.OFFSET_D_Y - start_offset * cos(Para.ANGLE_D * pi / 180)) * meter_pointnum_ratio))  # todo
                     trj_data = curve.evaluate_multi(s_vals)
                     trj_data = trj_data.astype(np.float32)
-                    start_straight_line_x = start_offset * np.ones(shape=(sl * meter_pointnum_ratio,),
-                                                                   dtype=np.float32)[:-1]
-                    start_straight_line_y = np.linspace(-Para.CROSSROAD_SIZE_LON / 2 - sl, -Para.CROSSROAD_SIZE_LON / 2,
-                                                        sl * meter_pointnum_ratio, dtype=np.float32)[:-1]
-                    end_straight_line_x = end_offset * np.ones(shape=(sl * meter_pointnum_ratio,), dtype=np.float32)[1:]
-                    end_straight_line_y = np.linspace(Para.CROSSROAD_SIZE_LON / 2, Para.CROSSROAD_SIZE_LON / 2 + sl,
-                                                      sl * meter_pointnum_ratio, dtype=np.float32)[1:]
+                    start_straight_line_x = np.linspace(start_offset - sl / math.tan(Para.ANGLE_D * pi / 180), start_offset, int(sl * sin(Para.ANGLE_D * pi / 180) * meter_pointnum_ratio), dtype=np.float32)[:-1]
+                    start_straight_line_y = np.linspace(start_offsets_y[start_offsets.index(start_offset)] - sl * sin(Para.ANGLE_D*pi/180), start_offsets_y[start_offsets.index(start_offset)], int(sl * sin(Para.ANGLE_D * pi / 180) * meter_pointnum_ratio), dtype=np.float32)[:-1]
+                    end_straight_line_x = np.linspace(end_offset, end_offset + sl / math.tan(Para.ANGLE_U * pi / 180),
+                                                        int(sl * sin(Para.ANGLE_U * pi / 180) * meter_pointnum_ratio),
+                                                        dtype=np.float32)[:-1]
+                    end_straight_line_y = np.linspace(end_offsets_y[end_offsets.index(end_offset)], end_offsets_y[end_offsets.index(end_offset)] + sl * sin(Para.ANGLE_U*pi/180), int(sl * sin(Para.ANGLE_U * pi / 180) * meter_pointnum_ratio),
+                                                        dtype=np.float32)[:-1]
                     planed_trj = np.append(np.append(start_straight_line_x, trj_data[0]), end_straight_line_x), \
                                  np.append(np.append(start_straight_line_y, trj_data[1]), end_straight_line_y)
                     xs_1, ys_1 = planed_trj[0][:-1], planed_trj[1][:-1]
                     xs_2, ys_2 = planed_trj[0][1:], planed_trj[1][1:]
                     phis_1 = np.arctan2(ys_2 - ys_1, xs_2 - xs_1) * 180 / pi
-
                     vs_green = np.array([8.33] * len(start_straight_line_x) + [7.0] * (len(trj_data[0]) - 1) + [8.33] *
                                         len(end_straight_line_x), dtype=np.float32)
                     vs_red_0 = np.array([8.33] * (len(start_straight_line_x) - meter_pointnum_ratio * (sl - dece_dist + int(Para.L))),
@@ -961,7 +965,6 @@ class ReferencePath(object):
                     vs_red_3 = np.array([7.0] * (meter_pointnum_ratio * (int(Para.L) - dece_dist // 2) + len(trj_data[0]) - 1) +
                                         [8.33] * len(end_straight_line_x), dtype=np.float32)
                     vs_red = np.append(np.append(np.append(vs_red_0, vs_red_1), vs_red_2), vs_red_3)
-
                     planed_trj_green = xs_1, ys_1, phis_1, vs_green
                     planed_trj_red = xs_1, ys_1, phis_1, vs_red
                     planed_trj_g.append(planed_trj_green)
@@ -971,33 +974,27 @@ class ReferencePath(object):
 
         else:
             assert task == 'right'
-            control_ext = 0.5 * (Para.CROSSROAD_SIZE_LAT + Para.CROSSROAD_SIZE_LON) / 5
-            lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1,
+            lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
                                Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
             end_offsets = [Para.OFFSET_R - sum(lane_width_flag[:i]) - 0.5 * lane_width_flag[i] for i in
                            range(Para.LANE_NUMBER_LAT_OUT)]
-            start_offsets = [Para.OFFSET_D + Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_3 * 0.5]
-
+            start_offsets = [Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2 * 0.5) * sin(Para.ANGLE_D * pi/180)]
             for start_offset in start_offsets:
                 for end_offset in end_offsets:
-                    control_point1 = start_offset, -Para.CROSSROAD_SIZE_LON / 2
-                    control_point2 = start_offset, -Para.CROSSROAD_SIZE_LON / 2 + control_ext
-                    control_point3 = Para.CROSSROAD_SIZE_LAT / 2 - control_ext, end_offset
+                    control_point1 = start_offset, Para.OFFSET_D_Y - start_offset * cos(Para.ANGLE_D * pi / 180)
                     control_point4 = Para.CROSSROAD_SIZE_LAT / 2, end_offset
+                    control_point2, control_point3 = self.get_bezier_control_points(start_offset, Para.OFFSET_D_Y - start_offset * cos(Para.ANGLE_D * pi / 180), Para.ANGLE_D * pi / 180, Para.CROSSROAD_SIZE_LAT / 2, end_offset, 0)
                     self.control_points.append([control_point1, control_point2, control_point3, control_point4])
-
                     node = np.asfortranarray(
                         [[control_point1[0], control_point2[0], control_point3[0], control_point4[0]],
                          [control_point1[1], control_point2[1], control_point3[1], control_point4[1]]],
                         dtype=np.float32)
                     curve = bezier.Curve(node, degree=3)
-                    s_vals = np.linspace(0, 1.0, int(pi / 2 * (Para.CROSSROAD_SIZE_LON / 2 - 3.9 * Para.LANE_WIDTH_1)) * meter_pointnum_ratio)
+                    s_vals = np.linspace(0, 1.0, int(pi / 2 * (30 - 3.9 * Para.LANE_WIDTH_1)) * meter_pointnum_ratio)
                     trj_data = curve.evaluate_multi(s_vals)
                     trj_data = trj_data.astype(np.float32)
-                    start_straight_line_x = start_offset * np.ones(shape=(sl * meter_pointnum_ratio,),
-                                                                   dtype=np.float32)[:-1]
-                    start_straight_line_y = np.linspace(-Para.CROSSROAD_SIZE_LON / 2 - sl, -Para.CROSSROAD_SIZE_LON / 2,
-                                                        sl * meter_pointnum_ratio, dtype=np.float32)[:-1]
+                    start_straight_line_x = np.linspace(Para.OFFSET_D_X + Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5 + Para.LANE_WIDTH_2 - sl / math.tan(Para.ANGLE_D*pi/180), Para.OFFSET_D_X + Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5 + Para.LANE_WIDTH_2, int(sl * sin(Para.ANGLE_D*pi/180) * meter_pointnum_ratio), dtype=np.float32)[:-1]
+                    start_straight_line_y = np.linspace(Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5 + Para.LANE_WIDTH_2) * cos(Para.ANGLE_D * pi / 180) - sl, Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5 + Para.LANE_WIDTH_2) * cos(Para.ANGLE_D * pi / 180), int(sl * sin(Para.ANGLE_D*pi/180) * meter_pointnum_ratio), dtype=np.float32)[:-1]
                     end_straight_line_x = np.linspace(Para.CROSSROAD_SIZE_LAT / 2, Para.CROSSROAD_SIZE_LAT / 2 + sl,
                                                       sl * meter_pointnum_ratio, dtype=np.float32)[1:]
                     end_straight_line_y = end_offset * np.ones(shape=(sl * meter_pointnum_ratio,), dtype=np.float32)[1:]
@@ -1006,10 +1003,8 @@ class ReferencePath(object):
                     xs_1, ys_1 = planed_trj[0][:-1], planed_trj[1][:-1]
                     xs_2, ys_2 = planed_trj[0][1:], planed_trj[1][1:]
                     phis_1 = np.arctan2(ys_2 - ys_1, xs_2 - xs_1) * 180 / pi
-
                     vs_green = np.array([8.33] * len(start_straight_line_x) + [7.0] * (len(trj_data[0]) - 1) + [8.33] *
                                         len(end_straight_line_x), dtype=np.float32)
-
                     planed_trj_green = xs_1, ys_1, phis_1, vs_green
                     planed_trj_red = xs_1, ys_1, phis_1, vs_green  # the same velocity design for turning right
                     planed_trj_g.append(planed_trj_green)

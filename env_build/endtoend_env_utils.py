@@ -11,6 +11,7 @@ import math
 import os
 import numpy as np
 from collections import OrderedDict
+from shapely import geometry
 
 
 class ActionStore(list):
@@ -50,8 +51,8 @@ class Para:
     OFFSET_D_X = -1.20
     OFFSET_D_Y = -30.90
 
-    ANGLE_U = 85.59
-    ANGLE_D = 80.01
+    ANGLE_U = 85.6
+    ANGLE_D = 85.9
 
     LANE_NUMBER_LON_IN = 2
     LANE_NUMBER_LON_OUT = 2
@@ -320,23 +321,51 @@ def cal_ego_info_in_transform_coordination(ego_dynamics, x, y, rotate_d):
                              Corner_point=trans_corner_points))
     return ego_dynamics
 
+def if_inPoly(polygon, Points):
+    line = geometry.LineString(polygon)
+    point = geometry.Point(Points)
+    polygon = geometry.Polygon(line)
+    return polygon.contains(point)
 
 def xy2_edgeID_lane(x, y):
-    if y < -Para.CROSSROAD_SIZE_LON / 2:
+    Para.CROSSROAD_SIZE_LON = 60
+    if y < Para.OFFSET_D_Y:
         edgeID = '1o'
-        if x <= Para.OFFSET_D + Para.LANE_WIDTH_2:
+        x1 = Para.OFFSET_D_X + Para.GREEN_BELT_LON * math.sin(Para.ANGLE_D*math.pi/180)
+        y1 = Para.OFFSET_D_Y - Para.GREEN_BELT_LON * math.cos(Para.ANGLE_D*math.pi/180)
+        x2 = Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3) * math.sin(Para.ANGLE_D*math.pi/180)
+        y2 = Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3) * math.cos(Para.ANGLE_D*math.pi/180)
+        x3 = Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3) * math.sin(Para.ANGLE_D*math.pi/180) - 60 * math.cos(Para.ANGLE_D*math.pi/180)
+        y3 = Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3) * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
+        x4 = Para.OFFSET_D_X + Para.GREEN_BELT_LON * math.sin(Para.ANGLE_D*math.pi/180) - 60 * math.cos(Para.ANGLE_D*math.pi/180)
+        y4 = Para.OFFSET_D_Y - Para.GREEN_BELT_LON * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
+        if if_inPoly([(x1,y1), (x2,y2), (x3,y3), (x4,y4)], (x, y)):
+            lane = 3
+        else:
+            lane = 2
+    elif x < -Para.CROSSROAD_SIZE_LAT / 2 and Para.OFFSET_D_Y < y < Para.OFFSET_U_Y:
+        edgeID = '4i'
+        lane = int((Para.LANE_NUMBER_LAT_OUT + 1) - int((y - Para.OFFSET_L - Para.GREEN_BELT_LAT) / Para.LANE_WIDTH_3))
+    elif y > Para.OFFSET_U_Y:
+        edgeID = '3i'
+        x1 = Para.OFFSET_U_X
+        y1 = Para.OFFSET_U_Y
+        x2 = Para.OFFSET_U_X + Para.LANE_WIDTH_4 * math.sin(Para.ANGLE_U*math.pi/180)
+        y2 = Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * math.cos(Para.ANGLE_U*math.pi/180)
+        x3 = Para.OFFSET_U_X + Para.LANE_WIDTH_4 * math.sin(Para.ANGLE_U*math.pi/180) + 60 * math.cos(Para.ANGLE_U*math.pi/180)
+        y3 = Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * math.cos(Para.ANGLE_U*math.pi/180) + 60 * math.sin(Para.ANGLE_U*math.pi/180)
+        x4 = Para.OFFSET_U_X + 60 * math.cos(Para.ANGLE_U*math.pi/180)
+        y4 = Para.OFFSET_U_Y + 60 * math.sin(Para.ANGLE_U*math.pi/180)
+        if if_inPoly([(x1,y1), (x2,y2), (x3,y3), (x4,y4)], (x, y)):
+            lane = 3
+        else:
+            lane = 2
+    elif x > Para.CROSSROAD_SIZE_LAT / 2 and Para.OFFSET_D_Y < y < Para.OFFSET_U_Y:
+        edgeID = '2i'
+        if y >= y - Para.OFFSET_R - Para.LANE_WIDTH_1:
             lane = 4
         else:
-            lane = int(Para.LANE_NUMBER_LON_IN - int((x - Para.OFFSET_D - Para.LANE_WIDTH_2) / Para.LANE_WIDTH_3))
-    elif x < -Para.CROSSROAD_SIZE_LAT / 2:
-        edgeID = '4i'
-        lane = int((Para.LANE_NUMBER_LAT_OUT + 1) - int((y - Para.OFFSET_L) / Para.LANE_WIDTH_1))
-    elif y > Para.CROSSROAD_SIZE_LON / 2:
-        edgeID = '3i'
-        lane = 3 if x <= Para.OFFSET_U + Para.LANE_WIDTH_2 else 2
-    elif x > Para.CROSSROAD_SIZE_LAT / 2:
-        edgeID = '2i'
-        lane = int((Para.LANE_NUMBER_LAT_OUT + 1) - int(-(y - Para.OFFSET_R) / Para.LANE_WIDTH_1))
+            lane = int((Para.LANE_NUMBER_LAT_OUT + 1) - int(-(y - Para.OFFSET_R) / Para.LANE_WIDTH_1))
     else:
         edgeID = '0'
         lane = 0
