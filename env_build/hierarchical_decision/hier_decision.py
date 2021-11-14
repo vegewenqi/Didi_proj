@@ -19,9 +19,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 
-from dynamics_and_models import EnvironmentModel, ReferencePath
-from endtoend import CrossroadEnd2endMix
-from endtoend_env_utils import *
+from env_build.dynamics_and_models import EnvironmentModel, ReferencePath
+from env_build.endtoend import CrossroadEnd2endMix
+from env_build.endtoend_env_utils import *
 from multi_path_generator import MultiPathGenerator
 from utils.load_policy import LoadPolicy
 from utils.misc import TimerStat

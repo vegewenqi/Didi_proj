@@ -867,7 +867,7 @@ class ReferencePath(object):
         return control_point2, control_point3
 
     def _construct_ref_path(self, task):
-        sl = 60  # straight length
+        sl = 40  # straight length
         dece_dist = 20
         meter_pointnum_ratio = 30
         planed_trj_g = []

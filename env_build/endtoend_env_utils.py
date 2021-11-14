@@ -70,10 +70,10 @@ class Para:
     # BIKE_LANE_WIDTH = 1.0
     # PERSON_LANE_WIDTH = 2.0
     #
-    # OFFSET_L = -3
-    # OFFSET_R = -7
-    # OFFSET_U = 1
-    # OFFSET_D = -0.38
+    OFFSET_L = -3
+    OFFSET_R = -7
+    OFFSET_U = 1
+    OFFSET_D = -0.38
     #
     # LANE_NUMBER_LON_IN = 3
     # LANE_NUMBER_LON_OUT = 2
@@ -88,7 +88,7 @@ class Para:
     TRACK_ENCODING_DIM = 4
     LIGHT_ENCODING_DIM = 2
     TASK_ENCODING_DIM = 3
-    REF_ENCODING_DIM = 3
+    REF_ENCODING_DIM = 4
     HIS_ACT_ENCODING_DIM = 4
     PER_OTHER_INFO_DIM = 10
 
@@ -121,7 +121,7 @@ LIGHT_PHASE_TO_GREEN_OR_RED = {0: 'green', 1: 'green', 2: 'red', 3: 'red',
 TASK_ENCODING = dict(left=[1.0, 0.0, 0.0], straight=[0.0, 1.0, 0.0], right=[0.0, 0.0, 1.0])
 LIGHT_ENCODING = {0: [1.0, 0.0], 1: [1.0, 0.0], 2: [1.0, 1.0], 3: [0.0, 1.0], 4: [0.0, 1.0], 5: [0.0, 1.0],
                   6: [0.0, 1.0], 7: [0.0, 1.0], 8: [0.0, 1.0], 9: [0.0, 1.0]}
-REF_ENCODING = {0: [1.0, 0.0, 0.0], 1: [0.0, 1.0, 0.0], 2: [0.0, 0.0, 1.0]}
+REF_ENCODING = {0: [1.0, 0.0, 0.0, 0.0], 1: [0.0, 1.0, 0.0, 0.0], 2: [0.0, 0.0, 1.0, 0.0], 3: [0.0, 0.0, 0.0, 1.0]}
 
 SUMOCFG_DIR = os.path.dirname(__file__) + "/sumo_files/cross.sumocfg"
 VEHICLE_MODE_DICT = dict(left=OrderedDict(dl=2, du=2, ud=2, ul=2),
