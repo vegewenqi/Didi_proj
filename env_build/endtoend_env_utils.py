@@ -70,18 +70,8 @@ class Para:
     # BIKE_LANE_WIDTH = 1.0
     # PERSON_LANE_WIDTH = 2.0
     #
-    OFFSET_L = -3
-    OFFSET_R = -7
     OFFSET_U = 1
     OFFSET_D = -0.38
-    #
-    # LANE_NUMBER_LON_IN = 3
-    # LANE_NUMBER_LON_OUT = 2
-    # LANE_NUMBER_LAT_IN = 4
-    # LANE_NUMBER_LAT_OUT = 3
-    #
-    # CROSSROAD_SIZE_LAT = 64
-    # CROSSROAD_SIZE_LON = 76
 
     # DIM
     EGO_ENCODING_DIM = 6
