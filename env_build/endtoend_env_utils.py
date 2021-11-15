@@ -188,35 +188,43 @@ MODE2ROUTE = {'dr': ('1o', '2i'), 'du': ('1o', '3i'), 'dl': ('1o', '4i'),
 
 def judge_feasible(orig_x, orig_y, task):  # map dependant
     def is_in_straight_before1(orig_x, orig_y):
-        return Para.OFFSET_D < orig_x < Para.LANE_WIDTH_2 + Para.OFFSET_D and orig_y <= -Para.CROSSROAD_SIZE_LON / 2
+        orig_x_trans, orig_y_trans, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_D-90)
+        OFFSET_D_X_trans, OFFSET_D_Y_trans, _ = rotate_coordination(Para.OFFSET_D_X, Para.OFFSET_D_Y, 0, Para.ANGLE_D - 90)
+        return OFFSET_D_X_trans + Para.GREEN_BELT_LON < orig_x_trans < OFFSET_D_X_trans + Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 and orig_y_trans <= OFFSET_D_Y_trans
 
     def is_in_straight_before2(orig_x, orig_y):
-        return Para.LANE_WIDTH_2 + Para.OFFSET_D < orig_x < Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 + Para.OFFSET_D and orig_y <= -Para.CROSSROAD_SIZE_LON / 2
-
-    def is_in_straight_before3(orig_x, orig_y):
-        return Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 + Para.OFFSET_D < orig_x < Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 * 2 + Para.OFFSET_D and orig_y <= -Para.CROSSROAD_SIZE_LON / 2
+        orig_x_trans, orig_y_trans, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_D-90)
+        OFFSET_D_X_trans, OFFSET_D_Y_trans, _ = rotate_coordination(Para.OFFSET_D_X, Para.OFFSET_D_Y, 0, Para.ANGLE_D - 90)
+        return OFFSET_D_X_trans + Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 < orig_x_trans < OFFSET_D_X_trans + Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2\
+               and orig_y_trans <= OFFSET_D_Y_trans
 
     def is_in_straight_after(orig_x, orig_y):
-        return Para.OFFSET_U + Para.GREEN_BELT_LON < orig_x < Para.OFFSET_U + Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 2 and orig_y >= Para.CROSSROAD_SIZE_LON / 2
+        orig_x_trans, orig_y_trans, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_U-90)
+        OFFSET_U_X_trans, OFFSET_U_Y_trans, _ = rotate_coordination(Para.OFFSET_U_X, Para.OFFSET_U_Y, 0, Para.ANGLE_U - 90)
+        return OFFSET_U_X_trans + Para.GREEN_BELT_LON < orig_x_trans < OFFSET_U_X_trans + Para.LANE_WIDTH_4 * 2 and orig_y >= OFFSET_U_Y_trans
 
     def is_in_left(orig_x, orig_y):
-        return Para.OFFSET_L + Para.GREEN_BELT_LAT < orig_y < Para.OFFSET_L + Para.GREEN_BELT_LAT + Para.LANE_WIDTH_1 * 3 and orig_x < -Para.CROSSROAD_SIZE_LAT / 2
+        return Para.OFFSET_L + Para.GREEN_BELT_LAT < orig_y < Para.OFFSET_L + Para.GREEN_BELT_LAT + Para.LANE_WIDTH_3 * 3 and orig_x < -Para.CROSSROAD_SIZE_LAT / 2
 
     def is_in_right(orig_x, orig_y):
-        return Para.OFFSET_R - Para.LANE_WIDTH_1 * 3 < orig_y < Para.OFFSET_R and orig_x > Para.CROSSROAD_SIZE_LAT / 2
+        return Para.OFFSET_R - Para.LANE_WIDTH_1 - Para.LANE_WIDTH_3 * 2 < orig_y < Para.OFFSET_R and orig_x > Para.CROSSROAD_SIZE_LAT / 2
 
     def is_in_middle(orig_x, orig_y):
-        return True if -Para.CROSSROAD_SIZE_LON / 2 < orig_y < Para.CROSSROAD_SIZE_LON / 2 and -Para.CROSSROAD_SIZE_LAT / 2 < orig_x < Para.CROSSROAD_SIZE_LAT / 2 else False
+        _, orig_y_trans_D, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_D-90)
+        _, OFFSET_D_Y_trans, _ = rotate_coordination(Para.OFFSET_D_X, Para.OFFSET_D_Y, 0, Para.ANGLE_D - 90)
+        _, orig_y_trans_U, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_U-90)
+        _, OFFSET_U_Y_trans, _ = rotate_coordination(Para.OFFSET_U_X, Para.OFFSET_U_Y, 0, Para.ANGLE_U - 90)
+        return True if OFFSET_D_Y_trans < orig_y_trans_D  and orig_y_trans_U < OFFSET_U_Y_trans and -Para.CROSSROAD_SIZE_LAT / 2 < orig_x < Para.CROSSROAD_SIZE_LAT / 2 else False
 
     if task == 'left':
         return True if is_in_straight_before1(orig_x, orig_y) or is_in_left(orig_x, orig_y) \
                        or is_in_middle(orig_x, orig_y) else False
     elif task == 'straight':
         return True if is_in_straight_before2(orig_x, orig_y) or is_in_straight_after(
-            orig_x, orig_y) or is_in_middle(orig_x, orig_y) else False
+            orig_x, orig_y) or is_in_middle(orig_x, orig_y) or is_in_straight_before2(orig_x, orig_y) else False
     else:
         assert task == 'right'
-        return True if is_in_straight_before3(orig_x, orig_y) or is_in_right(orig_x, orig_y) \
+        return True if is_in_straight_before2(orig_x, orig_y) or is_in_right(orig_x, orig_y) \
                        or is_in_middle(orig_x, orig_y) else False
 
 
