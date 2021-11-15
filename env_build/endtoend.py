@@ -134,7 +134,7 @@ class CrossroadEnd2endMix(gym.Env):
         self.person_mode_dict = PERSON_MODE_DICT[self.training_task]
         self.env_model = EnvironmentModel()
         self.action_store.reset()
-        self.init_state = self._reset_init_state()
+        self.init_state = self._reset_init_state(LIGHT_PHASE_TO_GREEN_OR_RED[self.light_phase])
         self.traffic.init_traffic(self.init_state, self.training_task)
         self.traffic.sim_step()
         ego_dynamics = self._get_ego_dynamics([self.init_state['ego']['v_x'],
@@ -760,12 +760,18 @@ class CrossroadEnd2endMix(gym.Env):
 
         return np.array(other_vector, dtype=np.float32), np.array(other_mask_vector, dtype=np.float32)
 
-    def _reset_init_state(self):
+    def _reset_init_state(self, light_phase):
         if self.traffic_mode == 'auto':
             if self.training_task == 'left':
-                random_index = int(np.random.random() * (900 + 500)) + 700
+                if light_phase == 'green':
+                    random_index = int(np.random.random() * (900 + 500)) + 700
+                else:
+                    random_index = int(np.random.random() * 200) + 700
             elif self.training_task == 'straight':
-                random_index = int(np.random.random() * (1200 + 500)) + 700
+                if light_phase == 'green':
+                    random_index = int(np.random.random() * (1200 + 500)) + 700
+                else:
+                    random_index = int(np.random.random() * 200) + 700
             else:
                 random_index = int(np.random.random() * (420 + 500)) + 700
         else:
