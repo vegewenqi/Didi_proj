@@ -262,7 +262,7 @@ class Traffic(object):
     def init_light(self):
         if self.traffic_mode == 'auto':
             if random.random() > 0.8:
-                self.training_light_phase = 4
+                self.training_light_phase = 3
             else:
                 self.training_light_phase = 0
             traci.trafficlight.setPhase('0', self.training_light_phase)
@@ -355,6 +355,9 @@ class Traffic(object):
 
     def sim_step(self):
         self.sim_time += SIM_PERIOD
+        if self.mode == 'training' and (self.traffic_mode == 'auto'):
+            traci.trafficlight.setPhase('0', self.training_light_phase)
+        traci.simulationStep()
         if (self.traffic_mode != 'auto') and (self.case_light != 'yellow'):
             traci.trafficlight.setPhase('0', self.training_light_phase)
         traci.simulationStep()

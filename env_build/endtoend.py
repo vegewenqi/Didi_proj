@@ -954,7 +954,7 @@ class CrossroadEnd2endMix(gym.Env):
                       Para.OFFSET_U_Y - (Para.LANE_WIDTH_4 + Para.LANE_WIDTH_4 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.sin((90 - Para.ANGLE_U) / 180 * pi)],
                      color='black', linewidth=1)
 
-            # # stop line  # todo
+            # # stop line
             # lane_width_flag = [Para.LANE_WIDTH_2, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
             #                    Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # Down
             # plt.plot([Para.OFFSET_D, Para.OFFSET_D + sum(lane_width_flag[:Para.LANE_NUMBER_LON_IN])],
@@ -976,7 +976,7 @@ class CrossroadEnd2endMix(gym.Env):
             #                                                                           :Para.LANE_NUMBER_LAT_IN])],
             #          color='black')
 
-            # traffic light # todo
+            # traffic light
             v_light = self.light_phase
             light_line_width = 2
             # 1 : left 2: straight
@@ -1004,12 +1004,12 @@ class CrossroadEnd2endMix(gym.Env):
             plt.plot([Para.OFFSET_D_X + Para.GREEN_BELT_LON * math.cos((Para.ANGLE_D - 90) * math.pi / 180),
                       Para.OFFSET_D_X + (Para.GREEN_BELT_LON + sum(lane_width_flag[:1])) * math.cos((Para.ANGLE_D - 90) * math.pi / 180)],
                      [Para.OFFSET_D_Y + Para.GREEN_BELT_LON * math.sin((Para.ANGLE_D - 90) * math.pi / 180),
-                      Para.OFFSET_D_X + (Para.GREEN_BELT_LON + sum(lane_width_flag[:1])) * math.sin((Para.ANGLE_D - 90) * math.pi / 180)],
+                      Para.OFFSET_D_Y + (Para.GREEN_BELT_LON + sum(lane_width_flag[:1])) * math.sin((Para.ANGLE_D - 90) * math.pi / 180)],
                      color=v_color_1, linewidth=light_line_width)
             plt.plot([Para.OFFSET_D_X + (Para.GREEN_BELT_LON + sum(lane_width_flag[:1])) * math.cos((Para.ANGLE_D - 90) * math.pi / 180),
                       Para.OFFSET_D_X + (Para.GREEN_BELT_LON + sum(lane_width_flag[:2])) * math.cos((Para.ANGLE_D - 90) * math.pi / 180)],
-                     [Para.OFFSET_D_X + (Para.GREEN_BELT_LON + sum(lane_width_flag[:1])) * math.sin((Para.ANGLE_D - 90) * math.pi / 180),
-                      Para.OFFSET_D_X + (Para.GREEN_BELT_LON + sum(lane_width_flag[:2])) * math.sin((Para.ANGLE_D - 90) * math.pi / 180)],
+                     [Para.OFFSET_D_Y + (Para.GREEN_BELT_LON + sum(lane_width_flag[:1])) * math.sin((Para.ANGLE_D - 90) * math.pi / 180),
+                      Para.OFFSET_D_Y + (Para.GREEN_BELT_LON + sum(lane_width_flag[:2])) * math.sin((Para.ANGLE_D - 90) * math.pi / 180)],
                      color='green', linewidth=light_line_width)
 
             lane_width_flag = [Para.LANE_WIDTH_4, Para.LANE_WIDTH_3,
@@ -1090,7 +1090,7 @@ class CrossroadEnd2endMix(gym.Env):
             #             alpha=0.5))
             #     ii += 1
 
-            def is_in_plot_area(x, y, tolerance=5): # TODO
+            def is_in_plot_area(x, y, tolerance=5):
                 if -Para.CROSSROAD_SIZE_LAT / 2 - extension + tolerance < x < Para.CROSSROAD_SIZE_LAT / 2 + extension - tolerance and \
                         -(Para.OFFSET_U_Y - Para.OFFSET_D_Y) / 2 - extension + tolerance < y < (Para.OFFSET_U_Y - Para.OFFSET_D_Y) / 2 + extension - tolerance:
                     return True
@@ -1274,7 +1274,8 @@ class CrossroadEnd2endMix(gym.Env):
 
             # done info
             plt.text(text_x, text_y_start - next(ge), 'done info: {}'.format(self.done_type))
-
+            if self.done_type != 'not_done_yet':
+                print(self.done_type)
             # reward info
             if self.reward_info is not None:
                 for key, val in self.reward_info.items():
