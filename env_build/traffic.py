@@ -51,12 +51,12 @@ class Traffic(object):
         self.mode = mode
         self.traffic_mode = traffic_mode
         if self.traffic_mode != "auto":
-            self.file_path = "user_defined\\" + str(self.traffic_mode)
+            self.file_path = "user_defined/" + str(self.traffic_mode)
         else:
             self.file_path = str(self.traffic_mode)
         try:
             traci.start(
-                [SUMO_BINARY, "-c", os.path.dirname(__file__) + "\\sumo_files\\" + str(self.file_path) + "\\cross.sumocfg",
+                [SUMO_BINARY, "-c", os.path.dirname(__file__) + "/sumo_files/" + str(self.file_path) + "/cross.sumocfg",
                  "--step-length", self.step_time_str,
                  # "--lateral-resolution", "3.5",
                  "--random",
