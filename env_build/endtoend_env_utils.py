@@ -79,7 +79,8 @@ class Para:
     # (v_x, v_y, r, x, y, phi) for ego
     # (x, y, v, phi, l, w; type encoding (d=3), turn rad) for other
     EGO_MEAN = np.array([0., 0., 0., 0., 0., 0.], dtype=np.float32)
-    EGO_VAR = np.diag([0.0418, 0.0418, 0., 0.0245, 0.0227, 0.0029*(180./np.pi)**2]).astype(np.float32)
+    # EGO_VAR = np.diag([0.0418, 0.0418, 0., 0.0245, 0.0227, 0.0029*(180./np.pi)**2]).astype(np.float32)
+    EGO_VAR = np.diag([0., 0., 0., 0., 0., 0.]).astype(np.float32)
 
     VEH_MEAN = np.tile(np.zeros((PER_OTHER_INFO_DIM,), dtype=np.float32), MAX_VEH_NUM)
     VEH_VAR = np.tile(np.array([0.0245, 0.0227, 0.0418, 0.0029*(180./np.pi)**2, 0.0902, 0.0202, 0., 0., 0., 0.,], dtype=np.float32), MAX_VEH_NUM)

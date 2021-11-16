@@ -234,7 +234,7 @@ class EnvironmentModel(object):  # all tensors
                     tf.sqrt(tf.square(ego_point[0] - -Para.CROSSROAD_SIZE_LAT / 2) + tf.square(ego_point[1] - (Para.OFFSET_L + Para.GREEN_BELT_LAT))), tf.zeros_like(veh_infos[:, 0]))
 
             rewards = 0.01 * devi_v + 0.8 * devi_longitudinal + 0.8 * devi_lateral + 30 * devi_phi + 0.02 * punish_yaw_rate + \
-                      5 * punish_steer0 + 0.4 * punish_steer1 + 5e-2 * punish_steer2 + \
+                      5 * punish_steer0 + 0.4 * punish_steer1 + 0.1 * punish_steer2 + \
                       punish_a_x0 + punish_a_x1 + 0.05 * punish_a_x2
 
             punish_term_for_training = veh2veh4training + veh2road4training + veh2bike4training + veh2person4training
@@ -253,7 +253,7 @@ class EnvironmentModel(object):  # all tensors
                                devi_phi=devi_phi,
                                scaled_punish_steer0=5 * punish_steer0,
                                scaled_punish_steer1=0.4 * punish_steer1,
-                               scaled_punish_steer2=5e-2 * punish_steer2,
+                               scaled_punish_steer2=0.1 * punish_steer2,
                                scaled_punish_a_x0=punish_a_x0,
                                scaled_punish_a_x1=punish_a_x1,
                                scaled_punish_a_x2=0.05 * punish_a_x2,
