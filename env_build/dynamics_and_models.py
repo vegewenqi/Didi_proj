@@ -788,9 +788,11 @@ class ReferencePath(object):
             lane_width_flag = [Para.LANE_WIDTH_4, Para.LANE_WIDTH_4, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
             end_offsets = [Para.OFFSET_U_X + sum(lane_width_flag[:i]) + 0.5 * lane_width_flag[i] for
                            i in range(Para.LANE_NUMBER_LON_OUT)]
-            start_offsets = [Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5) * sin(Para.ANGLE_D * pi/180), Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2 * 0.5) * sin(Para.ANGLE_D * pi/180)]
+            # start_offsets = [Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5) * sin(Para.ANGLE_D * pi/180), Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2 * 0.5) * sin(Para.ANGLE_D * pi/180)]
+            start_offsets = [Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5) * sin(Para.ANGLE_D * pi/180)]
             end_offsets_y = [Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * 0.5 * cos(Para.ANGLE_U*pi/180), Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * 1.5 * cos(Para.ANGLE_U*pi/180)]
-            start_offsets_y = [Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5) * cos(Para.ANGLE_D*pi/180), Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_4 * 0.5) * cos(Para.ANGLE_D*pi/180)]
+            # start_offsets_y = [Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5) * cos(Para.ANGLE_D*pi/180), Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_4 * 0.5) * cos(Para.ANGLE_D*pi/180)]
+            start_offsets_y = [Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5) * cos(Para.ANGLE_D*pi/180)]
 
             for start_offset in start_offsets:
                 for end_offset in end_offsets:
