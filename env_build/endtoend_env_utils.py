@@ -60,18 +60,6 @@ class Para:
     LANE_NUMBER_LAT_OUT = 3
 
     CROSSROAD_SIZE_LAT = 49
-    # L, W = 4.8, 2.0
-    # LANE_WIDTH_1 = 3.75
-    # LANE_WIDTH_2 = 3.25
-    # LANE_WIDTH_3 = 4.00
-    # WALK_WIDTH = 6.00
-    # GREEN_BELT_LAT = 10
-    # GREEN_BELT_LON = 2
-    # BIKE_LANE_WIDTH = 1.0
-    # PERSON_LANE_WIDTH = 2.0
-    #
-    OFFSET_U = 1
-    OFFSET_D = -0.38
 
     # DIM
     EGO_ENCODING_DIM = 6

@@ -228,8 +228,8 @@ class EnvironmentModel(object):  # all tensors
             for ego_point in [ego_front_points, ego_rear_points]:
                 veh2road4training += tf.where(logical_and(ego_point[0] > Para.CROSSROAD_SIZE_LAT / 2, ego_point[1] > Para.OFFSET_R - 1.),
                     tf.sqrt(tf.square(ego_point[0] - Para.CROSSROAD_SIZE_LAT / 2) + tf.square(ego_point[1] - Para.OFFSET_R)), tf.zeros_like(veh_infos[:, 0]))
-                veh2road4training += tf.where(logical_and(ego_point[0] < Para.OFFSET_U, ego_point[1] > Para.CROSSROAD_SIZE_LON / 2),
-                    tf.sqrt(tf.square(ego_point[0] - Para.OFFSET_U) + tf.square(ego_point[1] - Para.CROSSROAD_SIZE_LON / 2)), tf.zeros_like(veh_infos[:, 0]))
+                veh2road4training += tf.where(logical_and(ego_point[0] < Para.OFFSET_U_X, ego_point[1] > Para.OFFSET_U_Y),
+                    tf.sqrt(tf.square(ego_point[0] - Para.OFFSET_U_X) + tf.square(ego_point[1] - Para.OFFSET_U_Y)), tf.zeros_like(veh_infos[:, 0]))
                 veh2road4training += tf.where(logical_and(ego_point[0] < -Para.CROSSROAD_SIZE_LAT / 2, ego_point[1] < Para.OFFSET_L + Para.GREEN_BELT_LAT),
                     tf.sqrt(tf.square(ego_point[0] - -Para.CROSSROAD_SIZE_LAT / 2) + tf.square(ego_point[1] - (Para.OFFSET_L + Para.GREEN_BELT_LAT))), tf.zeros_like(veh_infos[:, 0]))
 

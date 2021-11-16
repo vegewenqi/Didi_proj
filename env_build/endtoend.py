@@ -954,27 +954,27 @@ class CrossroadEnd2endMix(gym.Env):
                       Para.OFFSET_U_Y - (Para.LANE_WIDTH_4 + Para.LANE_WIDTH_4 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.sin((90 - Para.ANGLE_U) / 180 * pi)],
                      color='black', linewidth=1)
 
-            # stop line  # todo
-            lane_width_flag = [Para.LANE_WIDTH_2, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
-                               Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # Down
-            plt.plot([Para.OFFSET_D, Para.OFFSET_D + sum(lane_width_flag[:Para.LANE_NUMBER_LON_IN])],
-                     [-Para.CROSSROAD_SIZE_LON / 2, -Para.CROSSROAD_SIZE_LON / 2], color='black')
-            lane_width_flag = [Para.LANE_WIDTH_2, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
-                               Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # Up
-            plt.plot([-sum(lane_width_flag[:Para.LANE_NUMBER_LON_IN]) + Para.OFFSET_U, Para.OFFSET_U],
-                     [Para.CROSSROAD_SIZE_LON / 2, Para.CROSSROAD_SIZE_LON / 2], color='black')
-            lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1,
-                               Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
-            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, -Para.CROSSROAD_SIZE_LAT / 2],
-                     [Para.OFFSET_L, Para.OFFSET_L - sum(lane_width_flag[:Para.LANE_NUMBER_LAT_IN])],
-                     color='black')  # left
-            lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1,
-                               Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
-            plt.plot([Para.CROSSROAD_SIZE_LAT / 2, Para.CROSSROAD_SIZE_LAT / 2], [Para.OFFSET_R + Para.GREEN_BELT_LAT,
-                                                                                  Para.OFFSET_R + Para.GREEN_BELT_LAT + sum(
-                                                                                      lane_width_flag[
-                                                                                      :Para.LANE_NUMBER_LAT_IN])],
-                     color='black')
+            # # stop line  # todo
+            # lane_width_flag = [Para.LANE_WIDTH_2, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
+            #                    Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # Down
+            # plt.plot([Para.OFFSET_D, Para.OFFSET_D + sum(lane_width_flag[:Para.LANE_NUMBER_LON_IN])],
+            #          [-Para.CROSSROAD_SIZE_LON / 2, -Para.CROSSROAD_SIZE_LON / 2], color='black')
+            # lane_width_flag = [Para.LANE_WIDTH_2, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
+            #                    Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # Up
+            # plt.plot([-sum(lane_width_flag[:Para.LANE_NUMBER_LON_IN]) + Para.OFFSET_U, Para.OFFSET_U],
+            #          [Para.CROSSROAD_SIZE_LON / 2, Para.CROSSROAD_SIZE_LON / 2], color='black')
+            # lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1,
+            #                    Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+            # plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, -Para.CROSSROAD_SIZE_LAT / 2],
+            #          [Para.OFFSET_L, Para.OFFSET_L - sum(lane_width_flag[:Para.LANE_NUMBER_LAT_IN])],
+            #          color='black')  # left
+            # lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1, Para.LANE_WIDTH_1,
+            #                    Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+            # plt.plot([Para.CROSSROAD_SIZE_LAT / 2, Para.CROSSROAD_SIZE_LAT / 2], [Para.OFFSET_R + Para.GREEN_BELT_LAT,
+            #                                                                       Para.OFFSET_R + Para.GREEN_BELT_LAT + sum(
+            #                                                                           lane_width_flag[
+            #                                                                           :Para.LANE_NUMBER_LAT_IN])],
+            #          color='black')
 
             # traffic light # todo
             v_light = self.light_phase
@@ -1305,9 +1305,9 @@ def test_end2end():
     obs, all_info = env.reset()
     i = 0
     while i < 100000:
-        for j in range(50):
+        for j in range(60):
             i += 1
-            action = np.array([-0.05, 0.3 + np.random.rand(1)*0.8], dtype=np.float32) # np.random.rand(1)*0.1 - 0.05
+            action = np.array([0.05, 0.6 + np.random.rand(1)*0.8], dtype=np.float32) # np.random.rand(1)*0.1 - 0.05
             obs, reward, done, info = env.step(action)
             obses, actions = obs[np.newaxis, :], action[np.newaxis, :]
             obses = tf.convert_to_tensor(np.tile(obs, (1, 1)), dtype=tf.float32)
@@ -1319,8 +1319,8 @@ def test_end2end():
             #     obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
             #         veh2bike4real, veh2person4real = env_model.rollout_out(actions + tf.experimental.numpy.random.rand(2)*0.05, ref_points[:, :, i])
             #     env_model.render()
-            # # if done:
-            # #     break
+            if done:
+                break
         obs, _ = env.reset()
         # env.render(weights=np.zeros(env.other_number,))
 
