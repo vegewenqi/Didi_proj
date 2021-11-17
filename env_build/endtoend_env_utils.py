@@ -340,14 +340,21 @@ def xy2_edgeID_lane(x, y):
         y3 = Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3) * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
         x4 = Para.OFFSET_D_X + Para.GREEN_BELT_LON * math.sin(Para.ANGLE_D*math.pi/180) - 60 * math.cos(Para.ANGLE_D*math.pi/180)
         y4 = Para.OFFSET_D_Y - Para.GREEN_BELT_LON * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
+        x5 = Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2) * math.sin(Para.ANGLE_D*math.pi/180)
+        y5 = Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2) * math.cos(Para.ANGLE_D*math.pi/180)
+        x6 = Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2) * math.sin(Para.ANGLE_D*math.pi/180) - 60 * math.cos(Para.ANGLE_D*math.pi/180)
+        y6 = Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2) * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
         if isInterArea([x, y], [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]):
             lane = 3
-        else:
+        elif isInterArea([x, y], [[x2, y2], [x5, y5], [x6, y6], [x3, y3]]):
             lane = 2
+        else:
+            edgeID = '0'
+            lane = 0
     elif x < -Para.CROSSROAD_SIZE_LAT / 2 and Para.OFFSET_D_Y < y < Para.OFFSET_U_Y:
         edgeID = '4i'
         lane = int((Para.LANE_NUMBER_LAT_OUT + 1) - int((y - Para.OFFSET_L - Para.GREEN_BELT_LAT) / Para.LANE_WIDTH_3))
-    elif y > Para.OFFSET_U_Y:
+    elif y > Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * 2 * math.cos(Para.ANGLE_U*math.pi/180):
         edgeID = '3i'
         x1 = Para.OFFSET_U_X
         y1 = Para.OFFSET_U_Y
@@ -357,10 +364,17 @@ def xy2_edgeID_lane(x, y):
         y3 = Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * math.cos(Para.ANGLE_U*math.pi/180) + 60 * math.sin(Para.ANGLE_U*math.pi/180)
         x4 = Para.OFFSET_U_X + 60 * math.cos(Para.ANGLE_U*math.pi/180)
         y4 = Para.OFFSET_U_Y + 60 * math.sin(Para.ANGLE_U*math.pi/180)
-        if isInterArea([x, y], [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]):
+        x5 = Para.OFFSET_U_X + Para.LANE_WIDTH_4 * 2 * math.sin(Para.ANGLE_U*math.pi/180)
+        y5 = Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * 2 * math.cos(Para.ANGLE_U*math.pi/180)
+        x6 = Para.OFFSET_U_X + Para.LANE_WIDTH_4 * 2 * math.sin(Para.ANGLE_U*math.pi/180) + 60 * math.cos(Para.ANGLE_U*math.pi/180)
+        y6 = Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * 2 * math.cos(Para.ANGLE_U*math.pi/180) + 60 * math.sin(Para.ANGLE_U*math.pi/180)
+        if isInterArea([x, y], [[x1, y1], [x4, y4], [x3, y3], [x2, y2]]):
             lane = 3
-        else:
+        elif isInterArea([x, y], [[x2, y2], [x3, y3], [x6, y6], [x5, y5]]):
             lane = 2
+        else:
+            edgeID = '0'
+            lane = 0
     elif x > Para.CROSSROAD_SIZE_LAT / 2 and Para.OFFSET_D_Y < y < Para.OFFSET_U_Y:
         edgeID = '2i'
         if y >= y - Para.OFFSET_R - Para.LANE_WIDTH_1:
@@ -414,5 +428,5 @@ def test_action_store():
     
 
 if __name__ == '__main__':
-    test_action_store()
-    # print(xy2_edgeID_lane(-3.98,-87.20))
+    # test_action_store()
+    print(xy2_edgeID_lane(9.14,32.77))
