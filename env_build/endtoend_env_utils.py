@@ -328,8 +328,8 @@ def isInterArea(testPoint,AreaPoint):   #testPoint为待测点[x,y]
     else:
         return False
 
+
 def xy2_edgeID_lane(x, y):
-    Para.CROSSROAD_SIZE_LON = 60
     if y < Para.OFFSET_D_Y:
         edgeID = '1o'
         x1 = Para.OFFSET_D_X + Para.GREEN_BELT_LON * math.sin(Para.ANGLE_D*math.pi/180)
