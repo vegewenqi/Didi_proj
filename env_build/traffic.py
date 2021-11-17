@@ -390,7 +390,7 @@ class Traffic(object):
             except traci.exceptions.TraCIException:
                 if 'ego' not in traci.vehicle.getIDList():
                     # traci.simulationStep()
-                    traci.vehicle.addLegacy(vehID=egoID, routeID=('1o', '4i'),
+                    traci.vehicle.addLegacy(vehID=egoID, routeID='dl',
                                             # depart=0, pos=20, lane=lane, speed=ego_dict['v_x'],
                                             typeID='self_car')
                     print(egoID, egdeID, lane, ego_x_in_sumo, ego_y_in_sumo, ego_a_in_sumo, keeproute)
