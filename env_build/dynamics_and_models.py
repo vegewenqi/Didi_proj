@@ -742,6 +742,10 @@ class ReferencePath(object):
             end_offsets = [Para.OFFSET_L + Para.GREEN_BELT_LAT + sum(lane_width_flag[:i]) + 0.5 * lane_width_flag[i] for
                            i in range(Para.LANE_NUMBER_LAT_OUT)]
             start_offsets = [Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5) * sin(Para.ANGLE_D * pi/180)]
+            start_x = []
+            start_y = []
+            end_x = []
+            end_y = []
             for start_offset in start_offsets:
                 for end_offset in end_offsets:
                     control_point1 = start_offset, Para.OFFSET_D_Y - start_offset * cos(Para.ANGLE_D * pi / 180)
@@ -753,7 +757,7 @@ class ReferencePath(object):
                          [control_point1[1], control_point2[1], control_point3[1], control_point4[1]]],
                         dtype=np.float32)
                     curve = bezier.Curve(node, degree=3)
-                    s_vals = np.linspace(0, 1.0, int(pi / 2 * ((Para.OFFSET_U_Y - Para.OFFSET_D_Y) / 2 +
+                    s_vals = np.linspace(0, 1.0, int(pi / 2 * ((Para.OFFSET_U_Y - Para.OFFSET_D_Y) / 2 +   # todo: int(curve.length*meter_pointnum_ratio)
                                             Para.OFFSET_L + Para.GREEN_BELT_LAT + 0.5 * Para.LANE_WIDTH_1)) * meter_pointnum_ratio)
                     trj_data = curve.evaluate_multi(s_vals)
                     trj_data = trj_data.astype(np.float32)
@@ -775,7 +779,7 @@ class ReferencePath(object):
                     vs_red_2 = np.linspace(0.0, 0.0, meter_pointnum_ratio * (dece_dist // 2), endpoint=True,
                                            dtype=np.float32)
                     vs_red_3 = np.array([7.0] * (meter_pointnum_ratio * (int(Para.L) - dece_dist // 2) + len(trj_data[0]) - 1) + [8.33] * len(
-                            end_straight_line_x), dtype=np.float32)
+                            end_straight_line_x), dtype=np.float32)  # todo: 改成0
                     vs_red = np.append(np.append(np.append(vs_red_0, vs_red_1), vs_red_2), vs_red_3)
                     planed_trj_green = xs_1, ys_1, phis_1, vs_green
                     planed_trj_red = xs_1, ys_1, phis_1, vs_red
