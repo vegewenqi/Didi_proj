@@ -771,11 +771,8 @@ class ReferencePath(object):
                                         len(end_straight_line_x), dtype=np.float32)
                     vs_red_0 = np.array([8.33] * (len(start_straight_line_x) - meter_pointnum_ratio * (sl - dece_dist + int(Para.L/2))), dtype=np.float32)
                     vs_red_1 = np.linspace(8.33, 0.0, meter_pointnum_ratio * dece_dist, endpoint=True, dtype=np.float32)
-                    vs_red_2 = np.linspace(0.0, 0.0, meter_pointnum_ratio * (dece_dist // 2), endpoint=True,
-                                           dtype=np.float32)
-                    vs_red_3 = np.array([0.0] * (meter_pointnum_ratio * (int(Para.L) - dece_dist // 2) + len(trj_data[0]) - 1) + [0.0] * len(
-                            end_straight_line_x), dtype=np.float32)
-                    vs_red = np.append(np.append(np.append(vs_red_0, vs_red_1), vs_red_2), vs_red_3)
+                    vs_red_2 = np.array([0.0] * (meter_pointnum_ratio * int(Para.L/2) + len(trj_data[0]) - 1) + [0.0] * len(end_straight_line_x), dtype=np.float32)
+                    vs_red = np.append(np.append(vs_red_0, vs_red_1), vs_red_2)
                     planed_trj_green = xs_1, ys_1, phis_1, vs_green
                     planed_trj_red = xs_1, ys_1, phis_1, vs_red
                     planed_trj_g.append(planed_trj_green)
@@ -817,11 +814,8 @@ class ReferencePath(object):
                     vs_red_0 = np.array([8.33] * (len(start_straight_line_x) - meter_pointnum_ratio * (sl - dece_dist + int(Para.L/2))),
                         dtype=np.float32)
                     vs_red_1 = np.linspace(8.33, 0.0, meter_pointnum_ratio * dece_dist, endpoint=True, dtype=np.float32)
-                    vs_red_2 = np.linspace(0.0, 0.0, meter_pointnum_ratio * (dece_dist // 2), endpoint=True,
-                                           dtype=np.float32)
-                    vs_red_3 = np.array([0.0] * (meter_pointnum_ratio * (int(Para.L) - dece_dist // 2) + len(trj_data[0]) - 1) +
-                                        [0.0] * len(end_straight_line_x), dtype=np.float32)
-                    vs_red = np.append(np.append(np.append(vs_red_0, vs_red_1), vs_red_2), vs_red_3)
+                    vs_red_2 = np.array([0.0] * (meter_pointnum_ratio * int(Para.L/2) + len(trj_data[0]) - 1) + [0.0] * len(end_straight_line_x), dtype=np.float32)
+                    vs_red = np.append(np.append(vs_red_0, vs_red_1), vs_red_2)
                     planed_trj_green = xs_1, ys_1, phis_1, vs_green
                     planed_trj_red = xs_1, ys_1, phis_1, vs_red
                     planed_trj_g.append(planed_trj_green)
