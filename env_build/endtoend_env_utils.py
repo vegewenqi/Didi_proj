@@ -314,6 +314,20 @@ def if_inPoly(polygon, Points):
     polygon = geometry.Polygon(line)
     return polygon.contains(point)
 
+def isInterArea(testPoint,AreaPoint):   #testPoint为待测点[x,y]
+    LBPoint = AreaPoint[0]  #AreaPoint为按顺时针顺序的4个点[[x1,y1],[x2,y2],[x3,y3],[x4,y4]]
+    LTPoint = AreaPoint[1]
+    RTPoint = AreaPoint[2]
+    RBPoint = AreaPoint[3]
+    a = (LTPoint[0]-LBPoint[0])*(testPoint[1]-LBPoint[1])-(LTPoint[1]-LBPoint[1])*(testPoint[0]-LBPoint[0])
+    b = (RTPoint[0]-LTPoint[0])*(testPoint[1]-LTPoint[1])-(RTPoint[1]-LTPoint[1])*(testPoint[0]-LTPoint[0])
+    c = (RBPoint[0]-RTPoint[0])*(testPoint[1]-RTPoint[1])-(RBPoint[1]-RTPoint[1])*(testPoint[0]-RTPoint[0])
+    d = (LBPoint[0]-RBPoint[0])*(testPoint[1]-RBPoint[1])-(LBPoint[1]-RBPoint[1])*(testPoint[0]-RBPoint[0])
+    if (a>0 and b>0 and c>0 and d>0) or (a<0 and b<0 and c<0 and d<0):
+        return True
+    else:
+        return False
+
 def xy2_edgeID_lane(x, y):
     Para.CROSSROAD_SIZE_LON = 60
     if y < Para.OFFSET_D_Y:
@@ -326,7 +340,7 @@ def xy2_edgeID_lane(x, y):
         y3 = Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3) * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
         x4 = Para.OFFSET_D_X + Para.GREEN_BELT_LON * math.sin(Para.ANGLE_D*math.pi/180) - 60 * math.cos(Para.ANGLE_D*math.pi/180)
         y4 = Para.OFFSET_D_Y - Para.GREEN_BELT_LON * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
-        if if_inPoly([(x1,y1), (x2,y2), (x3,y3), (x4,y4)], (x, y)):
+        if isInterArea([x, y], [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]):
             lane = 3
         else:
             lane = 2
@@ -343,7 +357,7 @@ def xy2_edgeID_lane(x, y):
         y3 = Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * math.cos(Para.ANGLE_U*math.pi/180) + 60 * math.sin(Para.ANGLE_U*math.pi/180)
         x4 = Para.OFFSET_U_X + 60 * math.cos(Para.ANGLE_U*math.pi/180)
         y4 = Para.OFFSET_U_Y + 60 * math.sin(Para.ANGLE_U*math.pi/180)
-        if if_inPoly([(x1,y1), (x2,y2), (x3,y3), (x4,y4)], (x, y)):
+        if isInterArea([x, y], [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]):
             lane = 3
         else:
             lane = 2
@@ -401,3 +415,4 @@ def test_action_store():
 
 if __name__ == '__main__':
     test_action_store()
+    # print(xy2_edgeID_lane(-3.98,-87.20))
