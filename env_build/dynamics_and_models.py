@@ -756,8 +756,8 @@ class ReferencePath(object):
                     s_vals = np.linspace(0, 1.0, int(curve.length) * meter_pointnum_ratio)
                     trj_data = curve.evaluate_multi(s_vals)
                     trj_data = trj_data.astype(np.float32)
-                    start_straight_line_x = np.linspace(start_x - sl / math.tan(Para.ANGLE_D*pi/180), start_x, int(sl * sin(Para.ANGLE_D*pi/180) * meter_pointnum_ratio), dtype=np.float32)[:-1]
-                    start_straight_line_y = np.linspace(start_ys[start_xs.index(start_x)] - sl*sin(Para.ANGLE_D*pi/180), start_ys[start_xs.index(start_x)], int(sl * sin(Para.ANGLE_D*pi/180) * meter_pointnum_ratio), dtype=np.float32)[:-1]
+                    start_straight_line_x = np.linspace(start_x - sl * cos(Para.ANGLE_D*pi/180), start_x, int(sl * meter_pointnum_ratio), dtype=np.float32)[:-1]
+                    start_straight_line_y = np.linspace(start_ys[start_xs.index(start_x)] - sl * sin(Para.ANGLE_D*pi/180), start_ys[start_xs.index(start_x)], int(sl * meter_pointnum_ratio), dtype=np.float32)[:-1]
                     end_straight_line_x = np.linspace(end_xs[end_ys.index(end_y)], end_xs[end_ys.index(end_y)] - sl, sl * meter_pointnum_ratio, dtype=np.float32)[1:]
                     end_straight_line_y = end_y * np.ones(shape=(sl * meter_pointnum_ratio,), dtype=np.float32)[1:]
                     planed_trj = np.append(np.append(start_straight_line_x, trj_data[0]), end_straight_line_x), \
@@ -803,12 +803,10 @@ class ReferencePath(object):
                     s_vals = np.linspace(0, 1.0, int(curve.length) * meter_pointnum_ratio)
                     trj_data = curve.evaluate_multi(s_vals)
                     trj_data = trj_data.astype(np.float32)
-                    start_straight_line_x = np.linspace(start_x - sl / math.tan(Para.ANGLE_D * pi / 180), start_x, int(sl * sin(Para.ANGLE_D * pi / 180) * meter_pointnum_ratio), dtype=np.float32)[:-1]
-                    start_straight_line_y = np.linspace(start_ys[start_xs.index(start_x)] - sl * sin(Para.ANGLE_D*pi/180), start_ys[start_xs.index(start_x)], int(sl * sin(Para.ANGLE_D * pi / 180) * meter_pointnum_ratio), dtype=np.float32)[:-1]
-                    end_straight_line_x = np.linspace(end_x, end_x + sl / math.tan(Para.ANGLE_U * pi / 180), int(sl * sin(Para.ANGLE_U * pi / 180) * meter_pointnum_ratio),
-                                                        dtype=np.float32)[:-1]
-                    end_straight_line_y = np.linspace(end_ys[end_xs.index(end_x)], end_ys[end_xs.index(end_x)] + sl * sin(Para.ANGLE_U*pi/180), int(sl * sin(Para.ANGLE_U * pi / 180) * meter_pointnum_ratio),
-                                                        dtype=np.float32)[:-1]
+                    start_straight_line_x = np.linspace(start_x - sl * cos(Para.ANGLE_D * pi / 180), start_x, int(sl * meter_pointnum_ratio), dtype=np.float32)[:-1]
+                    start_straight_line_y = np.linspace(start_ys[start_xs.index(start_x)] - sl * sin(Para.ANGLE_D*pi/180), start_ys[start_xs.index(start_x)], int(sl * meter_pointnum_ratio), dtype=np.float32)[:-1]
+                    end_straight_line_x = np.linspace(end_x, end_x + sl * cos(Para.ANGLE_U * pi / 180), int(sl * meter_pointnum_ratio), dtype=np.float32)[:-1]
+                    end_straight_line_y = np.linspace(end_ys[end_xs.index(end_x)], end_ys[end_xs.index(end_x)] + sl * sin(Para.ANGLE_U*pi/180), int(sl * meter_pointnum_ratio), dtype=np.float32)[:-1]
                     planed_trj = np.append(np.append(start_straight_line_x, trj_data[0]), end_straight_line_x), \
                                  np.append(np.append(start_straight_line_y, trj_data[1]), end_straight_line_y)
                     xs_1, ys_1 = planed_trj[0][:-1], planed_trj[1][:-1]
@@ -852,10 +850,9 @@ class ReferencePath(object):
                     s_vals = np.linspace(0, 1.0, int(curve.length) * meter_pointnum_ratio)
                     trj_data = curve.evaluate_multi(s_vals)
                     trj_data = trj_data.astype(np.float32)
-                    start_straight_line_x = np.linspace(start_x - sl / math.tan(Para.ANGLE_D*pi/180), start_x, int(sl * sin(Para.ANGLE_D*pi/180) * meter_pointnum_ratio), dtype=np.float32)[:-1]
-                    start_straight_line_y = np.linspace(start_ys[start_xs.index(start_x)] - sl * sin(Para.ANGLE_D*pi/180), start_ys[start_xs.index(start_x)], int(sl * sin(Para.ANGLE_D*pi/180) * meter_pointnum_ratio), dtype=np.float32)[:-1]
-                    end_straight_line_x = np.linspace(end_xs[end_ys.index(end_y)], end_xs[end_ys.index(end_y)] + sl,
-                                                      sl * meter_pointnum_ratio, dtype=np.float32)[1:]
+                    start_straight_line_x = np.linspace(start_x - sl * cos(Para.ANGLE_D*pi/180), start_x, int(sl * meter_pointnum_ratio), dtype=np.float32)[:-1]
+                    start_straight_line_y = np.linspace(start_ys[start_xs.index(start_x)] - sl * sin(Para.ANGLE_D*pi/180), start_ys[start_xs.index(start_x)], int(sl * meter_pointnum_ratio), dtype=np.float32)[:-1]
+                    end_straight_line_x = np.linspace(end_xs[end_ys.index(end_y)], end_xs[end_ys.index(end_y)] + sl, sl * meter_pointnum_ratio, dtype=np.float32)[1:]
                     end_straight_line_y = end_y * np.ones(shape=(sl * meter_pointnum_ratio,), dtype=np.float32)[1:]
                     planed_trj = np.append(np.append(start_straight_line_x, trj_data[0]), end_straight_line_x), \
                                  np.append(np.append(start_straight_line_y, trj_data[1]), end_straight_line_y)
