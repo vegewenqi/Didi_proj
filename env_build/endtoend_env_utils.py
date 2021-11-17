@@ -46,13 +46,13 @@ class Para:
 
     OFFSET_L = -2
     OFFSET_R = -5.2
-    OFFSET_U_X = 1.65
-    OFFSET_U_Y = 33.2
-    OFFSET_D_X = -1.20
-    OFFSET_D_Y = -30.90
+    OFFSET_U_X = 1.59
+    OFFSET_U_Y = 32.37
+    OFFSET_D_X = -1.04
+    OFFSET_D_Y = -29.18
 
-    ANGLE_U = 85.6
-    ANGLE_D = 85.9
+    ANGLE_U = math.degrees(np.arctan(169.03/12.08))
+    ANGLE_D = math.degrees(np.arctan(166.71/12.84))
 
     LANE_NUMBER_LON_IN = 2
     LANE_NUMBER_LON_OUT = 2
@@ -323,14 +323,14 @@ def isInterArea(testPoint,AreaPoint):   #testPoint为待测点[x,y]
     b = (RTPoint[0]-LTPoint[0])*(testPoint[1]-LTPoint[1])-(RTPoint[1]-LTPoint[1])*(testPoint[0]-LTPoint[0])
     c = (RBPoint[0]-RTPoint[0])*(testPoint[1]-RTPoint[1])-(RBPoint[1]-RTPoint[1])*(testPoint[0]-RTPoint[0])
     d = (LBPoint[0]-RBPoint[0])*(testPoint[1]-RBPoint[1])-(LBPoint[1]-RBPoint[1])*(testPoint[0]-RBPoint[0])
-    if (a>0 and b>0 and c>0 and d>0) or (a<0 and b<0 and c<0 and d<0):
+    if (a >= 0 and b >= 0 and c >= 0 and d >= 0) or (a <= 0 and b <= 0 and c <= 0 and d <= 0):
         return True
     else:
         return False
 
-
 def xy2_edgeID_lane(x, y):
-    if y < Para.OFFSET_D_Y:
+    Para.CROSSROAD_SIZE_LON = 60
+    if y < Para.OFFSET_D_Y - Para.GREEN_BELT_LON * math.cos(Para.ANGLE_D*math.pi/180):
         edgeID = '1o'
         x1 = Para.OFFSET_D_X + Para.GREEN_BELT_LON * math.sin(Para.ANGLE_D*math.pi/180)
         y1 = Para.OFFSET_D_Y - Para.GREEN_BELT_LON * math.cos(Para.ANGLE_D*math.pi/180)
