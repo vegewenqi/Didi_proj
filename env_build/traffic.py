@@ -357,8 +357,7 @@ class Traffic(object):
         self.sim_time += SIM_PERIOD
         if self.mode == 'training' and (self.traffic_mode == 'auto'):
             traci.trafficlight.setPhase('0', self.training_light_phase)
-        traci.simulationStep()
-        if (self.traffic_mode != 'auto') and (self.case_light != 'yellow'):
+        elif (self.traffic_mode != 'auto') and (self.case_light != 'yellow'):
             traci.trafficlight.setPhase('0', self.training_light_phase)
         traci.simulationStep()
         self._get_vehicles()
@@ -389,7 +388,7 @@ class Traffic(object):
                 traci.vehicle.moveToXY(egoID, egdeID, lane, ego_x_in_sumo, ego_y_in_sumo, ego_a_in_sumo, keeproute)
             except traci.exceptions.TraCIException:
                 if 'ego' not in traci.vehicle.getIDList():
-                    # traci.simulationStep()
+                    traci.simulationStep()
                     traci.vehicle.addLegacy(vehID=egoID, routeID='dl',
                                             # depart=0, pos=20, lane=lane, speed=ego_dict['v_x'],
                                             typeID='self_car')
