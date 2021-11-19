@@ -85,7 +85,7 @@ class Para:
     OFFSET_R = -5.2
     OFFSET_U_X = 1.65
     OFFSET_U_Y = 33.2
-    OFFSET_D_X = -1.06
+    OFFSET_D_X = -1.07
     OFFSET_D_Y = -29.60
 
     # N----D
@@ -417,21 +417,20 @@ def isInterArea(testPoint,AreaPoint):   #testPoint为待测点[x,y]
         return False
 
 def xy2_edgeID_lane(x, y):
-    Para.CROSSROAD_SIZE_LON = 60
-    if y < Para.OFFSET_D_Y - Para.GREEN_BELT_LON * math.cos(Para.ANGLE_D*math.pi/180):
+    if y < Para.OFFSET_D_Y - Para.D_GREEN * math.cos(Para.ANGLE_D*math.pi/180):
         edgeID = '1o'
-        x1 = Para.OFFSET_D_X + Para.GREEN_BELT_LON * math.sin(Para.ANGLE_D*math.pi/180)
-        y1 = Para.OFFSET_D_Y - Para.GREEN_BELT_LON * math.cos(Para.ANGLE_D*math.pi/180)
-        x2 = Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3) * math.sin(Para.ANGLE_D*math.pi/180)
-        y2 = Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3) * math.cos(Para.ANGLE_D*math.pi/180)
-        x3 = Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3) * math.sin(Para.ANGLE_D*math.pi/180) - 60 * math.cos(Para.ANGLE_D*math.pi/180)
-        y3 = Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3) * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
-        x4 = Para.OFFSET_D_X + Para.GREEN_BELT_LON * math.sin(Para.ANGLE_D*math.pi/180) - 60 * math.cos(Para.ANGLE_D*math.pi/180)
-        y4 = Para.OFFSET_D_Y - Para.GREEN_BELT_LON * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
-        x5 = Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2) * math.sin(Para.ANGLE_D*math.pi/180)
-        y5 = Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2) * math.cos(Para.ANGLE_D*math.pi/180)
-        x6 = Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2) * math.sin(Para.ANGLE_D*math.pi/180) - 60 * math.cos(Para.ANGLE_D*math.pi/180)
-        y6 = Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2) * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
+        x1 = Para.OFFSET_D_X + Para.D_GREEN * math.sin(Para.ANGLE_D*math.pi/180)
+        y1 = Para.OFFSET_D_Y - Para.D_GREEN * math.cos(Para.ANGLE_D*math.pi/180)
+        x2 = Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0) * math.sin(Para.ANGLE_D*math.pi/180)
+        y2 = Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0) * math.cos(Para.ANGLE_D*math.pi/180)
+        x3 = Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0) * math.sin(Para.ANGLE_D*math.pi/180) - 60 * math.cos(Para.ANGLE_D*math.pi/180)
+        y3 = Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0) * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
+        x4 = Para.OFFSET_D_X + Para.D_GREEN * math.sin(Para.ANGLE_D*math.pi/180) - 60 * math.cos(Para.ANGLE_D*math.pi/180)
+        y4 = Para.OFFSET_D_Y - Para.D_GREEN * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
+        x5 = Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1) * math.sin(Para.ANGLE_D*math.pi/180)
+        y5 = Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1) * math.cos(Para.ANGLE_D*math.pi/180)
+        x6 = Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1) * math.sin(Para.ANGLE_D*math.pi/180) - 60 * math.cos(Para.ANGLE_D*math.pi/180)
+        y6 = Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1) * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
         if isInterArea([x, y], [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]):
             lane = 3
         elif isInterArea([x, y], [[x2, y2], [x5, y5], [x6, y6], [x3, y3]]):
@@ -441,21 +440,26 @@ def xy2_edgeID_lane(x, y):
             lane = 0
     elif x < -Para.CROSSROAD_SIZE_LAT / 2 and Para.OFFSET_D_Y < y < Para.OFFSET_U_Y:
         edgeID = '4i'
-        lane = int((Para.LANE_NUMBER_LAT_OUT + 1) - int((y - Para.OFFSET_L - Para.GREEN_BELT_LAT) / Para.LANE_WIDTH_3))
-    elif y > Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * 2 * math.cos(Para.ANGLE_U*math.pi/180):
+        if Para.OFFSET_L + Para.L_GREEN <= y < Para.OFFSET_L + Para.L_GREEN + Para.L_OUT_0:
+            lane = 4
+        elif Para.OFFSET_L + Para.L_GREEN + Para.L_OUT_0 <= y < Para.OFFSET_L + Para.L_GREEN + Para.L_OUT_0 + Para.L_OUT_1:
+            lane = 3
+        else:
+            lane = 2
+    elif y > Para.OFFSET_U_Y - (Para.U_OUT_0 + Para.U_OUT_1) * math.cos(Para.ANGLE_U*math.pi/180):
         edgeID = '3i'
         x1 = Para.OFFSET_U_X
         y1 = Para.OFFSET_U_Y
-        x2 = Para.OFFSET_U_X + Para.LANE_WIDTH_4 * math.sin(Para.ANGLE_U*math.pi/180)
-        y2 = Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * math.cos(Para.ANGLE_U*math.pi/180)
-        x3 = Para.OFFSET_U_X + Para.LANE_WIDTH_4 * math.sin(Para.ANGLE_U*math.pi/180) + 60 * math.cos(Para.ANGLE_U*math.pi/180)
-        y3 = Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * math.cos(Para.ANGLE_U*math.pi/180) + 60 * math.sin(Para.ANGLE_U*math.pi/180)
+        x2 = Para.OFFSET_U_X + Para.U_OUT_0 * math.sin(Para.ANGLE_U*math.pi/180)
+        y2 = Para.OFFSET_U_Y - Para.U_OUT_0 * math.cos(Para.ANGLE_U*math.pi/180)
+        x3 = Para.OFFSET_U_X + Para.U_OUT_0 * math.sin(Para.ANGLE_U*math.pi/180) + 60 * math.cos(Para.ANGLE_U*math.pi/180)
+        y3 = Para.OFFSET_U_Y - Para.U_OUT_0 * math.cos(Para.ANGLE_U*math.pi/180) + 60 * math.sin(Para.ANGLE_U*math.pi/180)
         x4 = Para.OFFSET_U_X + 60 * math.cos(Para.ANGLE_U*math.pi/180)
         y4 = Para.OFFSET_U_Y + 60 * math.sin(Para.ANGLE_U*math.pi/180)
-        x5 = Para.OFFSET_U_X + Para.LANE_WIDTH_4 * 2 * math.sin(Para.ANGLE_U*math.pi/180)
-        y5 = Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * 2 * math.cos(Para.ANGLE_U*math.pi/180)
-        x6 = Para.OFFSET_U_X + Para.LANE_WIDTH_4 * 2 * math.sin(Para.ANGLE_U*math.pi/180) + 60 * math.cos(Para.ANGLE_U*math.pi/180)
-        y6 = Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * 2 * math.cos(Para.ANGLE_U*math.pi/180) + 60 * math.sin(Para.ANGLE_U*math.pi/180)
+        x5 = Para.OFFSET_U_X + (Para.U_OUT_0 + Para.U_OUT_1) * math.sin(Para.ANGLE_U*math.pi/180)
+        y5 = Para.OFFSET_U_Y - (Para.U_OUT_0 + Para.U_OUT_1) * math.cos(Para.ANGLE_U*math.pi/180)
+        x6 = Para.OFFSET_U_X + (Para.U_OUT_0 + Para.U_OUT_1) * math.sin(Para.ANGLE_U*math.pi/180) + 60 * math.cos(Para.ANGLE_U*math.pi/180)
+        y6 = Para.OFFSET_U_Y - (Para.U_OUT_0 + Para.U_OUT_1) * math.cos(Para.ANGLE_U*math.pi/180) + 60 * math.sin(Para.ANGLE_U*math.pi/180)
         if isInterArea([x, y], [[x1, y1], [x4, y4], [x3, y3], [x2, y2]]):
             lane = 3
         elif isInterArea([x, y], [[x2, y2], [x3, y3], [x6, y6], [x5, y5]]):
@@ -465,10 +469,12 @@ def xy2_edgeID_lane(x, y):
             lane = 0
     elif x > Para.CROSSROAD_SIZE_LAT / 2 and Para.OFFSET_D_Y < y < Para.OFFSET_U_Y:
         edgeID = '2i'
-        if y >= y - Para.OFFSET_R - Para.LANE_WIDTH_1:
+        if y >= Para.OFFSET_R - Para.R_OUT_0:
             lane = 4
+        elif Para.OFFSET_R - Para.R_OUT_0 - Para.R_OUT_1 <= y < Para.OFFSET_R - Para.R_OUT_0:
+            lane = 3
         else:
-            lane = int((Para.LANE_NUMBER_LAT_OUT + 1) - int(-(y - Para.OFFSET_R) / Para.LANE_WIDTH_1))
+            lane = 2
     else:
         edgeID = '0'
         lane = 0
@@ -518,7 +524,7 @@ def test_action_store():
 
 if __name__ == '__main__':
     # test_action_store()
-    # print(xy2_edgeID_lane(9.14,32.77))
+    # print(xy2_edgeID_lane(4.62,37.99))
     # point_1 = [-22612.55, 6917.94]
     # line_point_1 = [-22559.33, 6924.80]
     # line_point_2 = [-22562.78, 6914.85]
@@ -528,4 +534,11 @@ if __name__ == '__main__':
     # distance, angle = calculate_distance_angle(A, B)
     # print('distance:', distance, 'angle:', angle)
     a = Para()
-    print(a.CROSSROAD_SIZE_LAT)
+    # print(a.CROSSROAD_SIZE_LAT)
+    print('U', Para.U_IN_0, Para.U_IN_1, '------', Para.U_OUT_0, Para.U_OUT_1)
+    print('D', Para.D_IN_0, Para.D_IN_1, '------', Para.D_OUT_0, Para.D_OUT_1)
+    print('L', Para.L_IN_0, Para.L_IN_1, Para.L_IN_2, Para.L_IN_3, '------', Para.L_OUT_0, Para.L_OUT_1, Para.L_OUT_2)
+    print('R', Para.R_IN_0, Para.R_IN_1, Para.R_IN_2, Para.R_IN_3, '------', Para.R_OUT_0, Para.R_OUT_1, Para.R_OUT_2)
+    print(Para.L_GREEN, Para.R_GREEN, Para.D_GREEN)
+    print(Para.CROSSROAD_SIZE_LAT)
+    print(Para.ANGLE_U, Para.ANGLE_D)
