@@ -32,34 +32,122 @@ class ActionStore(list):
 
     
 class Para:
+    # N(left to right)(1-10)：
+    N_I = [[-22585.56, 6952.40], [-22583.76, 6951.73], [-22582.49, 6951.69], [-22579.32, 6950.42], [-22576.35, 6949.04],
+           [-22575.04, 6948.30], [-22572.23, 6947.10], [-22568.94, 6945.69], [-22567.95, 6945.23], [-22566.09, 6944.48]]
+    N_O = [[-22577.3, 6972.54], [-22575.4, 6971.89], [-22574.5, 6971.56], [-22571.1, 6970.33], [-22568.0, 6969.13],
+           [-22566.7, 6968.75], [-22563.5, 6967.5], [-22560.3, 6966.32], [-22559.4, 6965.97], [-22557.6, 6965.27]]
+    # S(left to right)(1-5)：
+    S_I = [[-22605.54, 6893.55], [-22602.10, 6892.21], [-22598.56, 6890.39], [-22594.67, 6888.74], [-22591.33, 6887.24]]
+    S_O = [[-22612.16, 6878.01], [-22608.71, 6876.58], [-22605.09, 6875.08], [-22601.20, 6873.40], [-22597.78, 6871.96]]
+    # W(up to down)(1-9)：
+    W_I = [[-22604.56, 6944.07], [-22605.89, 6940.73], [-22606.83, 6937.10], [-22607.81, 6934.05], [-22610.35, 6924.49],
+           [-22611.39, 6921.26], [-22612.55, 6917.94], [-22613.82, 6914.50], [-22614.78, 6910.95]]
+    W_O = [[-22625.47, 6951.37], [-22626.46, 6947.91], [-22627.42, 6944.30], [-22628.55, 6941.23], [-22640.24, 6934.84],
+           [-22640.65, 6931.46], [-22644.06, 6928.82], [-22643.34, 6924.73], [-22644.22, 6921.27]]
+    # E(up to down)(1-9)：
+    E_I = [[-22558.54, 6928.29], [-22559.33, 6924.80], [-22560.49, 6921.22], [-22561.70, 6917.87], [-22562.78, 6914.85],
+           [-22567.85, 6906.15], [-22568.97, 6903.05], [-22570.08, 6899.55], [-22571.34, 6895.99]]
+    E_O = [[-22534.59, 6919.89], [-22535.88, 6916.50], [-22536.87, 6912.87], [-22538.00, 6909.60], [-22538.79, 6906.43],
+           [-22544.10, 6897.77], [-22545.03, 6894.59], [-22546.14, 6891.03], [-22547.37, 6887.58]]
+
+    def calculate_distance_angle(point_A, point_B):
+        # Return the distance and angle between B-A and the positive x-axis.
+        ax, ay = point_A[0], point_A[1]
+        bx, by = point_B[0], point_B[1]
+        distance = math.hypot(bx - ax, by - ay)
+        angle = math.atan2(by - ay, bx - ax) * 180 / math.pi
+        return distance, angle
+
+    def get_point_line_distance(point, line):
+        point_x = point[0]
+        point_y = point[1]
+        line_s_x = line[0][0]
+        line_s_y = line[0][1]
+        line_e_x = line[1][0]
+        line_e_y = line[1][1]
+        if line_e_x - line_s_x == 0:
+            return math.fabs(point_x - line_s_x)
+        if line_e_y - line_s_y == 0:
+            return math.fabs(point_y - line_s_y)
+        k = (line_e_y - line_s_y) / (line_e_x - line_s_x)
+        b = line_s_y - k * line_s_x
+        dis = math.fabs(k * point_x - point_y + b) / math.pow(k * k + 1, 0.5)
+        return dis
+
     # MAP
     L, W = 4.8, 2.0
-    LANE_WIDTH_1 = 3.50
-    LANE_WIDTH_2 = 3.70
-    LANE_WIDTH_3 = 3.75
-    LANE_WIDTH_4 = 3.80
     WALK_WIDTH = 6.00
-    GREEN_BELT_LAT = 9.5
-    GREEN_BELT_LON = 1.0
     BIKE_LANE_WIDTH = 1.0
     PERSON_LANE_WIDTH = 2.0
 
     OFFSET_L = -2
     OFFSET_R = -5.2
-    OFFSET_U_X = 1.59
-    OFFSET_U_Y = 32.37
-    OFFSET_D_X = -1.04
-    OFFSET_D_Y = -29.18
+    OFFSET_U_X = 1.65
+    OFFSET_U_Y = 33.2
+    OFFSET_D_X = -1.07
+    OFFSET_D_Y = -29.60
 
-    ANGLE_U = math.degrees(np.arctan(169.03/12.08))
-    ANGLE_D = math.degrees(np.arctan(166.71/12.84))
+    # N----D
+    D_IN_0, _ = calculate_distance_angle(N_I[3], N_I[4])
+    D_IN_1, _ = calculate_distance_angle(N_I[2], N_I[3])
+    D_GREEN, _ = calculate_distance_angle(N_I[4], N_I[5])
+    D_OUT_0, _ = calculate_distance_angle(N_I[5], N_I[6])
+    D_OUT_1, _ = calculate_distance_angle(N_I[6], N_I[7])
+    _, D_ANGLE1 = calculate_distance_angle(N_I[5], N_O[5])
+    _, D_ANGLE2 = calculate_distance_angle(E_I[4], E_O[4])
+    ANGLE_D = D_ANGLE1 - D_ANGLE2
+
+    # S----U
+    U_IN_0, _ = calculate_distance_angle(S_I[2], S_I[3])
+    U_IN_1, _ = calculate_distance_angle(S_I[3], S_I[4])
+    U_OUT_0, _ = calculate_distance_angle(S_I[1], S_I[2])
+    U_OUT_1, _ = calculate_distance_angle(S_I[0], S_I[1])
+    _, U_ANGLE1 = calculate_distance_angle(S_O[2], S_I[2])
+    _, U_ANGLE2 = calculate_distance_angle(W_O[4], W_I[4])
+    ANGLE_U = U_ANGLE1 - U_ANGLE2
+
+    # W----R
+    R_IN_0, _ = calculate_distance_angle(W_I[4], W_I[5])
+    R_IN_1, _ = calculate_distance_angle(W_I[5], W_I[6])
+    R_IN_2, _ = calculate_distance_angle(W_I[6], W_I[7])
+    R_IN_3, _ = calculate_distance_angle(W_I[7], W_I[8])
+    R_GREEN, _ = calculate_distance_angle(W_I[3], W_I[4])
+    R_GREEN -= 0.1
+    R_OUT_0, _ = calculate_distance_angle(W_I[2], W_I[3])
+    R_OUT_1, _ = calculate_distance_angle(W_I[1], W_I[2])
+    R_OUT_2, _ = calculate_distance_angle(W_I[0], W_I[1])
+
+    # E----L
+    L_IN_0, _ = calculate_distance_angle(E_I[3], E_I[4])
+    L_IN_1, _ = calculate_distance_angle(E_I[2], E_I[3])
+    L_IN_2, _ = calculate_distance_angle(E_I[1], E_I[2])
+    L_IN_3, _ = calculate_distance_angle(E_I[0], E_I[1])
+    L_GREEN, _ = calculate_distance_angle(E_I[4], E_I[5])
+    L_GREEN -= 0.2
+    L_OUT_0, _ = calculate_distance_angle(E_I[5], E_I[6])
+    L_OUT_1, _ = calculate_distance_angle(E_I[6], E_I[7])
+    L_OUT_2, _ = calculate_distance_angle(E_I[7], E_I[8])
+
+    CROSSROAD_SIZE_LAT = get_point_line_distance(W_I[5], [E_I[1], E_I[4]])
 
     LANE_NUMBER_LON_IN = 2
     LANE_NUMBER_LON_OUT = 2
     LANE_NUMBER_LAT_IN = 4
     LANE_NUMBER_LAT_OUT = 3
 
-    CROSSROAD_SIZE_LAT = 49
+
+    # MAP
+    # todo
+
+    LANE_WIDTH_1 = 3.50
+    LANE_WIDTH_2 = 3.70
+    LANE_WIDTH_3 = 3.75
+    LANE_WIDTH_4 = 3.80
+
+    GREEN_BELT_LAT = 9.5
+    GREEN_BELT_LON = 1.0
+
 
     # DIM
     EGO_ENCODING_DIM = 6
@@ -329,21 +417,20 @@ def isInterArea(testPoint,AreaPoint):   #testPoint为待测点[x,y]
         return False
 
 def xy2_edgeID_lane(x, y):
-    Para.CROSSROAD_SIZE_LON = 60
-    if y < Para.OFFSET_D_Y - Para.GREEN_BELT_LON * math.cos(Para.ANGLE_D*math.pi/180):
+    if y < Para.OFFSET_D_Y - Para.D_GREEN * math.cos(Para.ANGLE_D*math.pi/180):
         edgeID = '1o'
-        x1 = Para.OFFSET_D_X + Para.GREEN_BELT_LON * math.sin(Para.ANGLE_D*math.pi/180)
-        y1 = Para.OFFSET_D_Y - Para.GREEN_BELT_LON * math.cos(Para.ANGLE_D*math.pi/180)
-        x2 = Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3) * math.sin(Para.ANGLE_D*math.pi/180)
-        y2 = Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3) * math.cos(Para.ANGLE_D*math.pi/180)
-        x3 = Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3) * math.sin(Para.ANGLE_D*math.pi/180) - 60 * math.cos(Para.ANGLE_D*math.pi/180)
-        y3 = Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3) * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
-        x4 = Para.OFFSET_D_X + Para.GREEN_BELT_LON * math.sin(Para.ANGLE_D*math.pi/180) - 60 * math.cos(Para.ANGLE_D*math.pi/180)
-        y4 = Para.OFFSET_D_Y - Para.GREEN_BELT_LON * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
-        x5 = Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2) * math.sin(Para.ANGLE_D*math.pi/180)
-        y5 = Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2) * math.cos(Para.ANGLE_D*math.pi/180)
-        x6 = Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2) * math.sin(Para.ANGLE_D*math.pi/180) - 60 * math.cos(Para.ANGLE_D*math.pi/180)
-        y6 = Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2) * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
+        x1 = Para.OFFSET_D_X + Para.D_GREEN * math.sin(Para.ANGLE_D*math.pi/180)
+        y1 = Para.OFFSET_D_Y - Para.D_GREEN * math.cos(Para.ANGLE_D*math.pi/180)
+        x2 = Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0) * math.sin(Para.ANGLE_D*math.pi/180)
+        y2 = Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0) * math.cos(Para.ANGLE_D*math.pi/180)
+        x3 = Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0) * math.sin(Para.ANGLE_D*math.pi/180) - 60 * math.cos(Para.ANGLE_D*math.pi/180)
+        y3 = Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0) * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
+        x4 = Para.OFFSET_D_X + Para.D_GREEN * math.sin(Para.ANGLE_D*math.pi/180) - 60 * math.cos(Para.ANGLE_D*math.pi/180)
+        y4 = Para.OFFSET_D_Y - Para.D_GREEN * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
+        x5 = Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1) * math.sin(Para.ANGLE_D*math.pi/180)
+        y5 = Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1) * math.cos(Para.ANGLE_D*math.pi/180)
+        x6 = Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1) * math.sin(Para.ANGLE_D*math.pi/180) - 60 * math.cos(Para.ANGLE_D*math.pi/180)
+        y6 = Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1) * math.cos(Para.ANGLE_D*math.pi/180) - 60 * math.sin(Para.ANGLE_D*math.pi/180)
         if isInterArea([x, y], [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]):
             lane = 3
         elif isInterArea([x, y], [[x2, y2], [x5, y5], [x6, y6], [x3, y3]]):
@@ -353,21 +440,26 @@ def xy2_edgeID_lane(x, y):
             lane = 0
     elif x < -Para.CROSSROAD_SIZE_LAT / 2 and Para.OFFSET_D_Y < y < Para.OFFSET_U_Y:
         edgeID = '4i'
-        lane = int((Para.LANE_NUMBER_LAT_OUT + 1) - int((y - Para.OFFSET_L - Para.GREEN_BELT_LAT) / Para.LANE_WIDTH_3))
-    elif y > Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * 2 * math.cos(Para.ANGLE_U*math.pi/180):
+        if Para.OFFSET_L + Para.L_GREEN <= y < Para.OFFSET_L + Para.L_GREEN + Para.L_OUT_0:
+            lane = 4
+        elif Para.OFFSET_L + Para.L_GREEN + Para.L_OUT_0 <= y < Para.OFFSET_L + Para.L_GREEN + Para.L_OUT_0 + Para.L_OUT_1:
+            lane = 3
+        else:
+            lane = 2
+    elif y > Para.OFFSET_U_Y - (Para.U_OUT_0 + Para.U_OUT_1) * math.cos(Para.ANGLE_U*math.pi/180):
         edgeID = '3i'
         x1 = Para.OFFSET_U_X
         y1 = Para.OFFSET_U_Y
-        x2 = Para.OFFSET_U_X + Para.LANE_WIDTH_4 * math.sin(Para.ANGLE_U*math.pi/180)
-        y2 = Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * math.cos(Para.ANGLE_U*math.pi/180)
-        x3 = Para.OFFSET_U_X + Para.LANE_WIDTH_4 * math.sin(Para.ANGLE_U*math.pi/180) + 60 * math.cos(Para.ANGLE_U*math.pi/180)
-        y3 = Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * math.cos(Para.ANGLE_U*math.pi/180) + 60 * math.sin(Para.ANGLE_U*math.pi/180)
+        x2 = Para.OFFSET_U_X + Para.U_OUT_0 * math.sin(Para.ANGLE_U*math.pi/180)
+        y2 = Para.OFFSET_U_Y - Para.U_OUT_0 * math.cos(Para.ANGLE_U*math.pi/180)
+        x3 = Para.OFFSET_U_X + Para.U_OUT_0 * math.sin(Para.ANGLE_U*math.pi/180) + 60 * math.cos(Para.ANGLE_U*math.pi/180)
+        y3 = Para.OFFSET_U_Y - Para.U_OUT_0 * math.cos(Para.ANGLE_U*math.pi/180) + 60 * math.sin(Para.ANGLE_U*math.pi/180)
         x4 = Para.OFFSET_U_X + 60 * math.cos(Para.ANGLE_U*math.pi/180)
         y4 = Para.OFFSET_U_Y + 60 * math.sin(Para.ANGLE_U*math.pi/180)
-        x5 = Para.OFFSET_U_X + Para.LANE_WIDTH_4 * 2 * math.sin(Para.ANGLE_U*math.pi/180)
-        y5 = Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * 2 * math.cos(Para.ANGLE_U*math.pi/180)
-        x6 = Para.OFFSET_U_X + Para.LANE_WIDTH_4 * 2 * math.sin(Para.ANGLE_U*math.pi/180) + 60 * math.cos(Para.ANGLE_U*math.pi/180)
-        y6 = Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * 2 * math.cos(Para.ANGLE_U*math.pi/180) + 60 * math.sin(Para.ANGLE_U*math.pi/180)
+        x5 = Para.OFFSET_U_X + (Para.U_OUT_0 + Para.U_OUT_1) * math.sin(Para.ANGLE_U*math.pi/180)
+        y5 = Para.OFFSET_U_Y - (Para.U_OUT_0 + Para.U_OUT_1) * math.cos(Para.ANGLE_U*math.pi/180)
+        x6 = Para.OFFSET_U_X + (Para.U_OUT_0 + Para.U_OUT_1) * math.sin(Para.ANGLE_U*math.pi/180) + 60 * math.cos(Para.ANGLE_U*math.pi/180)
+        y6 = Para.OFFSET_U_Y - (Para.U_OUT_0 + Para.U_OUT_1) * math.cos(Para.ANGLE_U*math.pi/180) + 60 * math.sin(Para.ANGLE_U*math.pi/180)
         if isInterArea([x, y], [[x1, y1], [x4, y4], [x3, y3], [x2, y2]]):
             lane = 3
         elif isInterArea([x, y], [[x2, y2], [x3, y3], [x6, y6], [x5, y5]]):
@@ -377,10 +469,12 @@ def xy2_edgeID_lane(x, y):
             lane = 0
     elif x > Para.CROSSROAD_SIZE_LAT / 2 and Para.OFFSET_D_Y < y < Para.OFFSET_U_Y:
         edgeID = '2i'
-        if y >= y - Para.OFFSET_R - Para.LANE_WIDTH_1:
+        if y >= Para.OFFSET_R - Para.R_OUT_0:
             lane = 4
+        elif Para.OFFSET_R - Para.R_OUT_0 - Para.R_OUT_1 <= y < Para.OFFSET_R - Para.R_OUT_0:
+            lane = 3
         else:
-            lane = int((Para.LANE_NUMBER_LAT_OUT + 1) - int(-(y - Para.OFFSET_R) / Para.LANE_WIDTH_1))
+            lane = 2
     else:
         edgeID = '0'
         lane = 0
@@ -425,8 +519,26 @@ def test_action_store():
     action_store.put(np.array([1., 0.], dtype=np.float32))
     action_store.put(np.array([1., 0.], dtype=np.float32))
     print(action_store)
-    
+
+
 
 if __name__ == '__main__':
     # test_action_store()
-    print(xy2_edgeID_lane(9.14,32.77))
+    # print(xy2_edgeID_lane(4.62,37.99))
+    # point_1 = [-22612.55, 6917.94]
+    # line_point_1 = [-22559.33, 6924.80]
+    # line_point_2 = [-22562.78, 6914.85]
+    # print(get_point_line_distance(point_1, [line_point_1, line_point_2]))
+    # A = [-22614.78, 6910.95]
+    # B = [-22613.82, 6914.50]
+    # distance, angle = calculate_distance_angle(A, B)
+    # print('distance:', distance, 'angle:', angle)
+    a = Para()
+    # print(a.CROSSROAD_SIZE_LAT)
+    print('U', Para.U_IN_0, Para.U_IN_1, '------', Para.U_OUT_0, Para.U_OUT_1)
+    print('D', Para.D_IN_0, Para.D_IN_1, '------', Para.D_OUT_0, Para.D_OUT_1)
+    print('L', Para.L_IN_0, Para.L_IN_1, Para.L_IN_2, Para.L_IN_3, '------', Para.L_OUT_0, Para.L_OUT_1, Para.L_OUT_2)
+    print('R', Para.R_IN_0, Para.R_IN_1, Para.R_IN_2, Para.R_IN_3, '------', Para.R_OUT_0, Para.R_OUT_1, Para.R_OUT_2)
+    print(Para.L_GREEN, Para.R_GREEN, Para.D_GREEN)
+    print(Para.CROSSROAD_SIZE_LAT)
+    print(Para.ANGLE_U, Para.ANGLE_D)

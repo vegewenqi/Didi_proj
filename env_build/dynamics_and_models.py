@@ -737,11 +737,11 @@ class ReferencePath(object):
         planed_trj_g = []
         planed_trj_r = []
         if task == 'left':
-            lane_width_flag = [Para.LANE_WIDTH_3, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3]
-            start_xs = [Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5) * sin(Para.ANGLE_D * pi / 180)]
-            start_ys = [Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5) * cos(Para.ANGLE_D*pi/180)]
+            lane_width_flag = [Para.L_OUT_0, Para.L_OUT_1, Para.L_OUT_2]
+            start_xs = [Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 * 0.5) * sin(Para.ANGLE_D * pi / 180)]
+            start_ys = [Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0 * 0.5) * cos(Para.ANGLE_D * pi / 180)]
             end_xs = [-Para.CROSSROAD_SIZE_LAT / 2] * Para.LANE_NUMBER_LAT_OUT
-            end_ys = [Para.OFFSET_L + Para.GREEN_BELT_LAT + sum(lane_width_flag[:i]) + 0.5 * lane_width_flag[i] for i in range(Para.LANE_NUMBER_LAT_OUT)]
+            end_ys = [Para.OFFSET_L + Para.L_GREEN + sum(lane_width_flag[:i]) + 0.5 * lane_width_flag[i] for i in range(Para.LANE_NUMBER_LAT_OUT)]
             for start_x in start_xs:
                 for end_y in end_ys:
                     control_point1 = start_x, start_ys[start_xs.index(start_x)]     # 左转第一个控制点
@@ -781,11 +781,11 @@ class ReferencePath(object):
             self.path_list = {'green': planed_trj_g, 'red': planed_trj_r}
 
         elif task == 'straight':
-            lane_width_flag = [Para.LANE_WIDTH_4, Para.LANE_WIDTH_4]
-            start_xs = [Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5) * sin(Para.ANGLE_D * pi/180)]
-            start_ys = [Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 * 0.5) * cos(Para.ANGLE_D*pi/180)]
+            lane_width_flag = [Para.U_OUT_0, Para.U_OUT_1]
+            start_xs = [Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 * 0.5) * sin(Para.ANGLE_D * pi / 180)]
+            start_ys = [Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0 * 0.5) * cos(Para.ANGLE_D * pi / 180)]
             end_xs = [Para.OFFSET_U_X + sum(lane_width_flag[:i]) + 0.5 * lane_width_flag[i] for i in range(Para.LANE_NUMBER_LON_OUT)]
-            end_ys = [Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * 0.5 * cos(Para.ANGLE_U*pi/180), Para.OFFSET_U_Y - Para.LANE_WIDTH_4 * 1.5 * cos(Para.ANGLE_U*pi/180)]
+            end_ys = [Para.OFFSET_U_Y - Para.U_OUT_0 * 0.5 * cos(Para.ANGLE_U*pi/180), Para.OFFSET_U_Y - (Para.U_OUT_0 + Para.U_OUT_1 * 0.5) * cos(Para.ANGLE_U * pi / 180)]
             for start_x in start_xs:
                 for end_x in end_xs:
                     control_point1 = start_x, start_ys[start_xs.index(start_x)]     # 直行第一个控制点
@@ -825,9 +825,9 @@ class ReferencePath(object):
 
         else:
             assert task == 'right'
-            lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3]
-            start_xs = [Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2 * 0.5) * sin(Para.ANGLE_D * pi/180)]
-            start_ys = [Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2 * 0.5) * cos(Para.ANGLE_D*pi/180)]
+            lane_width_flag = [Para.R_OUT_0, Para.R_OUT_1, Para.R_OUT_2]
+            start_xs = [Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1 * 0.5) * sin(Para.ANGLE_D * pi / 180)]
+            start_ys = [Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1 * 0.5) * cos(Para.ANGLE_D * pi / 180)]
             end_xs = [Para.CROSSROAD_SIZE_LAT / 2] * Para.LANE_NUMBER_LAT_OUT
             end_ys = [Para.OFFSET_R - sum(lane_width_flag[:i]) - 0.5 * lane_width_flag[i] for i in range(Para.LANE_NUMBER_LAT_OUT)]
             for start_x in start_xs:
