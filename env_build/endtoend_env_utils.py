@@ -201,13 +201,15 @@ PERSON_MODE_DICT = dict(left=OrderedDict(c3=4),
                         straight=OrderedDict(c2=4),  # 0
                         right=OrderedDict(c1=4, c2=0))
 
-MODE2STEP = {'green_only_ego_left_1': 0, 'green_only_ego_right_1': 0, 'green_only_ego_straight_1': 0, 'red_front_veh_left_1':45.5,
-             'red_no_front_veh_left_1': 0, 'yellow_no_front_veh_left_1': 13.5, 'yellow_no_front_veh_left_2': 13.5, 'yellow_front_veh_left_1': 13.5,
-             'yellow_front_veh_left_2': 15.5, 'yellow_mix_left_1': 42.5}
-MODE2INDEX = {'green_only_ego_left_1': 500, 'green_only_ego_right_1': 500, 'green_only_ego_straight_1': 500, 'red_front_veh_left_1':500,
-              'red_no_front_veh_left_1': 500, 'yellow_no_front_veh_left_1': 500, 'yellow_no_front_veh_left_2': 800, 'yellow_front_veh_left_1': 300,
-               'yellow_front_veh_left_2': 300,
-              'yellow_mix_left_1': 300}
+# MODE2STEP = {'green_only_ego_left_1': 0, 'green_only_ego_right_1': 0, 'green_only_ego_straight_1': 0, 'red_front_veh_left_1':45.5,
+#              'red_no_front_veh_left_1': 0, 'yellow_no_front_veh_left_1': 13.5, 'yellow_no_front_veh_left_2': 13.5, 'yellow_front_veh_left_1': 13.5,
+#              'yellow_front_veh_left_2': 15.5, 'yellow_mix_left_1': 42.5}
+# MODE2INDEX = {'green_only_ego_left_1': 500, 'green_only_ego_right_1': 500, 'green_only_ego_straight_1': 500, 'red_front_veh_left_1':500,
+#               'red_no_front_veh_left_1': 500, 'yellow_no_front_veh_left_1': 500, 'yellow_no_front_veh_left_2': 800, 'yellow_front_veh_left_1': 300,
+#                'yellow_front_veh_left_2': 300,
+#               'yellow_mix_left_1': 300}
+MODE2STEP = {'green_mix_left_1':7}
+MODE2INDEX = {'green_mix_left_1':500}
 
 def dict2flat(inp):
     out = []
