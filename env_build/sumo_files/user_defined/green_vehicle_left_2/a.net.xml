@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 11/21/21 14:34:40 by Eclipse SUMO netedit Version 1.6.0
+<!-- generated on 11/21/21 18:12:25 by Eclipse SUMO netedit Version 1.6.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
-        <sumo-net-file value="D:\codecode\AAAmine\Didi\Didi_proj\env_build\sumo_files\user_defined\green_only_ego_left_1\a.net.xml"/>
+        <sumo-net-file value="D:\codecode\AAAmine\Didi\Didi_proj\env_build\sumo_files\user_defined\green_vehicle_left_2\a.net.xml"/>
     </input>
 
     <output>
-        <output-file value="D:\codecode\AAAmine\Didi\Didi_proj\env_build\sumo_files\user_defined\green_only_ego_left_1\a.net.xml"/>
+        <output-file value="D:\codecode\AAAmine\Didi\Didi_proj\env_build\sumo_files\user_defined\green_vehicle_left_2\a.net.xml"/>
     </output>
 
     <processing>
