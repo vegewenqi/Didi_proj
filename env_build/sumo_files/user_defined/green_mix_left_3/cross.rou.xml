@@ -51,7 +51,7 @@
     <vehicle id="02" type="car_1" depart="7" route="ud" departLane="best"
           departPos="120" departSpeed="random" number="1"/>
 
-    <vehicle id="04" type="vir_car" depart="7" route="dl" departLane="best"
+    <vehicle id="vir_car" type="vir_car" depart="7" route="dl" departLane="best"
           departPos="130" departSpeed="random" number="1"/>
     <vehicle id="03" type="car_1" depart="7" route="dr" departLane="best"
           departPos="120" departSpeed="random" number="1"/>

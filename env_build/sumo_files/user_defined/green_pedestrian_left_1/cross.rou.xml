@@ -44,7 +44,7 @@
     <route id="circle" edges="a1toa2 a2toa3 a3toa4 a4toa1"/>
     <vehicle id="circle_car" type="car_1" route="circle" depart="0"/>
 
-    <vehicle id="00" type="vir_car" depart="7" route="dl" departLane="best"
+    <vehicle id="vir_car" type="vir_car" depart="7" route="dl" departLane="best"
           departPos="130" departSpeed="random" number="1"/>
 
 </routes>
