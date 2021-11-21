@@ -41,30 +41,22 @@
     <route id="ul" edges="3o 4i"/>
     <route id="ur" edges="3o 2i"/>
 
-    <vehicle id="00" type="car_1" depart="3" route="ur" departLane="best"
+    <vehicle id="00" type="car_1" depart="3" route="lu" departLane="best"
           departPos="130" departSpeed="random" number="1"/>
-    <vehicle id="04" type="vir_car" depart="3" route="dr" departLane="best"
+    <vehicle id="04" type="vir_car" depart="8" route="dr" departLane="best"
+          departPos="115" departSpeed="random" number="1"/>
+    <vehicle id="01" type="car_1" depart="8" route="dr" departLane="best"
           departPos="130" departSpeed="random" number="1"/>
-    <vehicle id="01" type="car_1" depart="3" route="dr" departLane="best"
-          departPos="125" departSpeed="random" number="1"/>
-    <vehicle id="02" type="car_1" depart="3" route="du" departLane="best"
-          departPos="130" departSpeed="random" number="1"/>
-    <vehicle id="05" type="car_1" depart="3" route="ud" departLane="best"
-             departPos="130" departSpeed="random" number="1"/>
-    <vehicle id="06" type="car_1" depart="3" route="ld" departLane="best"
-             departPos="130" departSpeed="random" number="1"/>
 
-    <vehicle id="001" type="bicycle_1" depart="3" route="du" departLane="1"
-          departPos="155" departSpeed="random" number="1"/>
-    <vehicle id="002" type="bicycle_1" depart="3" route="du" departLane="1"
-          departPos="155" departSpeed="random" number="1"/>
-    <vehicle id="003" type="bicycle_1" depart="3" route="du" departLane="1"
-          departPos="155" departSpeed="random" number="1"/>
+    <vehicle id="06" type="car_1" depart="8" route="ld" departLane="best"
+             departPos="100" departSpeed="random" number="1"/>
 
-
-
-    <vehicle id="08" type="car_1" depart="10" route="ur" departLane="best"
-          departPos="120" departSpeed="random" number="1"/>
+    <vehicle id="02" type="car_1" depart="8" route="lr" departLane="best"
+             departPos="140" departSpeed="random" number="1"/>
+    <vehicle id="05" type="car_1" depart="8" route="lr" departLane="best"
+             departPos="138" departSpeed="random" number="1"/>
+    <vehicle id="07" type="car_1" depart="8" route="ru" departLane="best"
+             departPos="125" departSpeed="random" number="1"/>
 
 
 
