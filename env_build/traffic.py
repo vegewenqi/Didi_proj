@@ -120,7 +120,6 @@ class Traffic(object):
         self.init_step()
 
     def case_task(self):
-        print(self.traffic_mode)
         task = str(self.traffic_mode).split('_')
         return task[-2]
 
@@ -158,7 +157,7 @@ class Traffic(object):
         try:
             traci.start(
                 [SUMO_BINARY, "-c",
-                 os.path.dirname(__file__) + "\\sumo_files\\" + str(self.file_path) + "\\cross.sumocfg",
+                 os.path.dirname(__file__) + "/sumo_files/" + str(self.file_path) + "/cross.sumocfg",
                  "--step-length", self.step_time_str,
                  # "--lateral-resolution", "3.5",
                  "--random",
@@ -173,7 +172,7 @@ class Traffic(object):
             port = sumolib.miscutils.getFreeSocketPort()
             traci.start(
                 [SUMO_BINARY, "-c",
-                 os.path.dirname(__file__) + "\\sumo_files\\" + str(self.file_path) + "\\cross.sumocfg",
+                 os.path.dirname(__file__) + "/sumo_files/" + str(self.file_path) + "/cross.sumocfg",
                  "--step-length", self.step_time_str,
                  "--lateral-resolution", "3.5",
                  "--random",
