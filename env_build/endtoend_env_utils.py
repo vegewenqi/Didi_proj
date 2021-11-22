@@ -203,10 +203,19 @@ PERSON_MODE_DICT = dict(left=OrderedDict(c3=4),
 
 MODE2STEP = {'green_ego_left_1': 0+5, 'green_ped_left_1': 7+5, 'green_ped_left_2': 7+5, 'green_bike_left_1': 0+5, 'green_bike_left_2': 0+5,
              'green_bike_left_3': 0+5, 'green_veh_left_1': 2+8, 'green_veh_left_2': 0+8, 'green_veh_left_3': 7+8, 'green_veh_left_4': 7+6,
-             'green_mix_left_1': 7+5, 'green_mix_left_2': 7+5, 'green_mix_left_3': 7+6}
+             'green_mix_left_1': 7+5, 'green_mix_left_2': 7+5, 'green_mix_left_3': 7+6,
+             'green_ego_right_1': 5, 'green_ego_straight_1': 5
+
+
+
+
+             }
 MODE2INDEX = {'green_ego_left_1': 500, 'green_ped_left_1': 450, 'green_ped_left_2': 500, 'green_bike_left_1': 500, 'green_bike_left_2': 500,
              'green_bike_left_3': 500, 'green_veh_left_1': 500, 'green_veh_left_2': 450, 'green_veh_left_3': 600, 'green_veh_left_4': 550,
-             'green_mix_left_1': 500, 'green_mix_left_2': 500, 'green_mix_left_3': 450}
+             'green_mix_left_1': 500, 'green_mix_left_2': 500, 'green_mix_left_3': 450,
+              'green_ego_right_1': 500, 'green_ego_straight_1': 450
+
+              }
 
 def dict2flat(inp):
     out = []
