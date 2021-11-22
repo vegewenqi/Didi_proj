@@ -21,7 +21,7 @@
     <vType id="self_car" length="5" width="1.8" accel="3.5" decel="2.2" sigma="1.0" guiShape="passenger/wagon"
            color="1,0,1" jmCrossingGap="4" maxSpeed="4"/>
     <vType id="vir_car" length="4.8" width="2.0" accel="2.6" decel="4.5" apparentDecel="4.5" emergencyDecel="4.5"
-       sigma="0.5" tau="1" minGap="4.5" maxSpeed="4" speedDev="0" color="white" vClass="passenger"
+       sigma="0.5" tau="1" minGap="4.5" maxSpeed="3" speedDev="0" color="white" vClass="passenger"
        guiShape="passenger" impatience="0" laneChangeModel="LC2013" carFollowModel="Krauss" latAlignment="center"
        minGapLat="0.1" jmCrossingGap="4" maxSpeedLat="1"/>
 
@@ -49,24 +49,16 @@
     <vehicle id="01" type="car_1" depart="5" route="ud" departLane="best"
           departPos="130" departSpeed="random" number="1"/>
     <vehicle id="02" type="car_1" depart="7" route="ud" departLane="best"
-          departPos="100" departSpeed="random" number="1"/>
+          departPos="120" departSpeed="random" number="1"/>
 
     <vehicle id="vir_car" type="vir_car" depart="7" route="dl" departLane="best"
           departPos="130" departSpeed="random" number="1"/>
     <vehicle id="03" type="car_1" depart="7" route="dr" departLane="best"
-          departPos="135" departSpeed="random" number="1"/>
+          departPos="120" departSpeed="random" number="1"/>
 
-    <vehicle id="05" type="car_1" depart="10" route="ul" departLane="best"
+    <vehicle id="05" type="car_1" depart="25" route="ul" departLane="best"
           departPos="130" departSpeed="random" number="1"/>
-
-    <vehicle id="001" type="bicycle_1" depart="17" route="ud" departLane="1"
-          departPos="155" departSpeed="random" number="1"/>
-    <vehicle id="002" type="bicycle_1" depart="17" route="ud" departLane="1"
-          departPos="155" departSpeed="random" number="1"/>
-    <vehicle id="003" type="bicycle_1" depart="17" route="ud" departLane="1"
-          departPos="155" departSpeed="random" number="1"/>
-
-    <vehicle id="06" type="car_1" depart="20" route="ul" departLane="best"
+    <vehicle id="06" type="car_1" depart="25" route="ul" departLane="best"
           departPos="120" departSpeed="random" number="1"/>
 
 </routes>

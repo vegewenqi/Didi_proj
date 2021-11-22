@@ -44,29 +44,20 @@
     <route id="circle" edges="a1toa2 a2toa3 a3toa4 a4toa1"/>
     <vehicle id="circle_car" type="car_1" route="circle" depart="0"/>
 
-    <vehicle id="00" type="car_1" depart="0" route="dl" departLane="best"
-          departPos="130" departSpeed="random" number="1"/>
-    <vehicle id="01" type="car_1" depart="5" route="ud" departLane="best"
-          departPos="130" departSpeed="random" number="1"/>
-    <vehicle id="02" type="car_1" depart="7" route="ud" departLane="best"
-          departPos="100" departSpeed="random" number="1"/>
-
-    <vehicle id="vir_car" type="vir_car" depart="7" route="dl" departLane="best"
-          departPos="130" departSpeed="random" number="1"/>
-    <vehicle id="03" type="car_1" depart="7" route="dr" departLane="best"
-          departPos="135" departSpeed="random" number="1"/>
-
-    <vehicle id="05" type="car_1" depart="10" route="ul" departLane="best"
+    <vehicle id="vir_car" type="vir_car" depart="0" route="dl" departLane="best"
           departPos="130" departSpeed="random" number="1"/>
 
-    <vehicle id="001" type="bicycle_1" depart="17" route="ud" departLane="1"
+    <vehicle id="001" type="bicycle_1" depart="0" route="ud" departLane="1"
           departPos="155" departSpeed="random" number="1"/>
-    <vehicle id="002" type="bicycle_1" depart="17" route="ud" departLane="1"
+    <vehicle id="002" type="bicycle_1" depart="10" route="ud" departLane="1"
           departPos="155" departSpeed="random" number="1"/>
-    <vehicle id="003" type="bicycle_1" depart="17" route="ud" departLane="1"
+    <vehicle id="003" type="bicycle_1" depart="10" route="ud" departLane="1"
           departPos="155" departSpeed="random" number="1"/>
-
-    <vehicle id="06" type="car_1" depart="20" route="ul" departLane="best"
-          departPos="120" departSpeed="random" number="1"/>
+    <vehicle id="004" type="bicycle_1" depart="10" route="ud" departLane="1"
+          departPos="155" departSpeed="random" number="1"/>
+    <vehicle id="005" type="bicycle_1" depart="10" route="ud" departLane="1"
+          departPos="155" departSpeed="random" number="1"/>
+    <vehicle id="006" type="bicycle_1" depart="10" route="ud" departLane="1"
+          departPos="155" departSpeed="random" number="1"/>
 
 </routes>

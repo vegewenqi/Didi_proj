@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 11/21/21 14:34:40 by Eclipse SUMO netedit Version 1.6.0
+<!-- generated on 11/21/21 15:15:50 by Eclipse SUMO netedit Version 1.6.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
-        <sumo-net-file value="D:\codecode\AAAmine\Didi\Didi_proj\env_build\sumo_files\user_defined\green_only_ego_left_1\a.net.xml"/>
+        <sumo-net-file value="D:\codecode\AAAmine\Didi\Didi_proj\env_build\sumo_files\user_defined\green_vehicle_left_1\a.net.xml"/>
     </input>
 
     <output>
-        <output-file value="D:\codecode\AAAmine\Didi\Didi_proj\env_build\sumo_files\user_defined\green_only_ego_left_1\a.net.xml"/>
+        <output-file value="D:\codecode\AAAmine\Didi\Didi_proj\env_build\sumo_files\user_defined\green_vehicle_left_1\a.net.xml"/>
     </output>
 
     <processing>
@@ -103,7 +103,7 @@
         <lane id=":0_14_0" index="0" disallow="pedestrian bicycle" speed="13.89" length="62.97" width="3.98" shape="2.04,-29.81 3.64,33.13"/>
     </edge>
     <edge id=":0_15" function="internal">
-        <lane id=":0_15_0" index="0" disallow="pedestrian bicycle" speed="13.89" length="50.49" width="3.30" shape="2.04,-29.81 1.47,-12.44 -3.06,-0.03 -11.55,7.40 -20.00,9.07"/>
+        <lane id=":0_15_0" index="0" disallow="pedestrian bicycle" speed="13.89" length="22.61" width="3.30" shape="2.04,-29.81 1.47,-12.44 -0.32,-7.53"/>
     </edge>
     <edge id=":0_28" function="internal">
         <lane id=":0_28_0" index="0" allow="bicycle" speed="10.43" length="4.03" width="1.00" shape="20.00,-16.80 24.00,-16.29"/>
@@ -112,7 +112,7 @@
         <lane id=":0_29_0" index="0" disallow="pedestrian bicycle" speed="11.29" length="21.17" width="3.60" shape="6.80,-23.76 6.96,-23.03 10.60,-18.01 16.28,-15.00 24.00,-13.99"/>
     </edge>
     <edge id=":0_30" function="internal">
-        <lane id=":0_30_0" index="0" disallow="pedestrian bicycle" speed="13.89" length="4.08" width="3.30" shape="-20.00,9.07 -24.00,9.86"/>
+        <lane id=":0_30_0" index="0" disallow="pedestrian bicycle" speed="13.89" length="31.96" width="3.30" shape="-0.32,-7.53 -3.06,-0.03 -11.55,7.40 -24.00,9.86"/>
     </edge>
     <edge id=":0_16" function="internal">
         <lane id=":0_16_0" index="0" allow="bicycle" speed="9.73" length="19.35" width="1.00" shape="-24.00,-16.31 -16.74,-17.10 -11.68,-19.48 -8.82,-23.47 -8.65,-25.01"/>
@@ -259,7 +259,7 @@
     </edge>
 
     <tlLogic id="0" type="static" programID="0" offset="0">
-        <phase duration="60" state="gGgGGGgrgrrrgGgGGGgrgrrrrGrGrrrrr"/>
+        <phase duration="60" state="gGgGGGgrgrrrgGgGGggrgrrrrGrGrrrrr"/>
         <phase duration="15" state="grgGGGgrgrrrgrgGGGgrgrrrrrrrrrrrr"/>
         <phase duration="5"  state="grgyyygrgrrrgrgyyygrgrrrrrrrrrrrr"/>
         <phase duration="20" state="grgrrrgrgrrrgrgrrrgrgrrrrrrrrrrrr"/>
@@ -273,9 +273,9 @@
 
     <junction id="0" type="traffic_light" x="-0.07" y="-1.10" incLanes="3o_0 3o_1 3o_2 3o_3 2o_0 2o_1 2o_2 2o_3 2o_4 2o_5 2o_6 1o_0 1o_1 1o_2 1o_3 1o_4 4o_0 4o_1 4o_2 4o_3 4o_4 4o_5 :0_w1_0 :0_w3_0 :0_w5_0 :0_w0_0" intLanes=":0_22_0 :0_1_0 :0_23_0 :0_3_0 :0_24_0 :0_25_0 :0_6_0 :0_26_0 :0_8_0 :0_8_1 :0_27_0 :0_28_0 :0_12_0 :0_29_0 :0_14_0 :0_30_0 :0_31_0 :0_17_0 :0_32_0 :0_19_0 :0_19_1 :0_33_0 :0_c0_0 :0_c1_0 :0_c2_0 :0_c3_0" shape="-10.65,-28.87 -24.00,-18.79 -24.00,22.02 -9.19,34.03 12.26,32.53 24.00,21.82 24.00,-18.75 10.03,-30.41" customShape="1">
         <request index="0"  response="10010000000000000001000000" foes="10010000000000000001000000" cont="1"/>
-        <request index="1"  response="01011111111000001101000000" foes="01011111111000001101000100" cont="0"/>
+        <request index="1"  response="01011111110000001101000000" foes="01011111111000001101000100" cont="0"/>
         <request index="2"  response="10010000000000001101000010" foes="10010000000000001101000010" cont="1"/>
-        <request index="3"  response="01011111101000011101000000" foes="01011111101000011101000000" cont="0"/>
+        <request index="3"  response="01011111100000011101000000" foes="01011111101000011101000000" cont="0"/>
         <request index="4"  response="00111110000101011101000000" foes="00111110000101011101000000" cont="1"/>
         <request index="5"  response="00110000000000000000000000" foes="00110000000001000000000000" cont="1"/>
         <request index="6"  response="10101000000000000000010101" foes="10101000000101000010011111" cont="0"/>
@@ -324,7 +324,7 @@
     <junction id=":0_27_0" type="internal" x="-1.92" y="-25.51" incLanes=":0_10_0" intLanes=":0_1_0 :0_3_0 :0_4_0 :0_12_0 :0_14_0 :0_15_0 :0_16_0 :0_17_0 :0_18_0 :0_19_0 :0_19_1 :0_c1_0 :0_c2_0"/>
     <junction id=":0_28_0" type="internal" x="20.00" y="-16.80" incLanes=":0_11_0" intLanes=":0_4_0 :0_17_0 :0_19_0 :0_19_1 :0_c1_0 :0_c2_0"/>
     <junction id=":0_29_0" type="internal" x="6.80" y="-23.76" incLanes=":0_13_0 1o_1" intLanes=":0_4_0 :0_12_0 :0_17_0 :0_19_0 :0_19_1 :0_c1_0 :0_c2_0"/>
-    <junction id=":0_30_0" type="internal" x="-20.00" y="9.07" incLanes=":0_15_0" intLanes=":0_0_0 :0_1_0 :0_2_0 :0_3_0 :0_6_0 :0_8_0 :0_8_1 :0_10_0 :0_17_0 :0_19_0 :0_19_1 :0_21_0 :0_c2_0 :0_c3_0"/>
+    <junction id=":0_30_0" type="internal" x="-0.32" y="-7.53" incLanes=":0_15_0 3o_1 3o_2 3o_3" intLanes=":0_0_0 :0_1_0 :0_2_0 :0_3_0 :0_6_0 :0_8_0 :0_8_1 :0_10_0 :0_17_0 :0_19_0 :0_19_1 :0_21_0 :0_c2_0 :0_c3_0"/>
     <junction id=":0_31_0" type="internal" x="-8.65" y="-25.01" incLanes=":0_16_0" intLanes=":0_1_0 :0_3_0 :0_10_0 :0_c2_0 :0_c3_0"/>
     <junction id=":0_32_0" type="internal" x="-14.96" y="-15.31" incLanes=":0_18_0 4o_1" intLanes=":0_1_0 :0_3_0 :0_10_0 :0_17_0 :0_c2_0 :0_c3_0"/>
     <junction id=":0_33_0" type="internal" x="2.95" y="29.17" incLanes=":0_21_0" intLanes=":0_1_0 :0_3_0 :0_4_0 :0_5_0 :0_6_0 :0_7_0 :0_8_0 :0_8_1 :0_12_0 :0_14_0 :0_15_0 :0_c0_0 :0_c3_0"/>

@@ -51,7 +51,7 @@ class CrossroadEnd2endMix(gym.Env):
                  state_mode='fix',  # 'dyna'
                  future_point_num=25,
                  # traffic_mode='auto',  # 'auto'
-                 traffic_mode='green_mix_left_1',  # 'auto'
+                 traffic_mode='green_mix_left_3',  # 'auto' #(choice?)todo
                  **kwargs):
         self.mode = mode
         self.traffic_mode = traffic_mode
@@ -234,8 +234,8 @@ class CrossroadEnd2endMix(gym.Env):
          3: good done: task succeed
          4: not done
         """
-        if self.traffic.collision_flag:
-            return 'collision', 1
+        # if self.traffic.collision_flag:
+        #     return 'collision', 1
         if self._break_road_constrain():
             return 'break_road_constrain', 1
         elif self._deviate_too_much():
@@ -782,6 +782,7 @@ class CrossroadEnd2endMix(gym.Env):
                 random_index = int(np.random.random() * (420 + 500)) + 700
         else:
             random_index = MODE2INDEX[self.traffic_mode] + int(np.random.random() * 100)
+            # random_index = MODE2INDEX[self.traffic_mode]
 
         x, y, phi, exp_v = self.ref_path.idx2point(random_index)
         v = exp_v * np.random.random()
