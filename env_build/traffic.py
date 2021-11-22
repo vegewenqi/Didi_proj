@@ -36,7 +36,7 @@ SIM_PERIOD = 1.0 / 10
 
 class Traffic(object):
 
-    def __init__(self, step_length, mode, init_n_ego_dict, traffic_mode):  # mode 'display' or 'training'
+    def __init__(self, step_length, mode, init_n_ego_dict, traffic_mode, traffic_case=None):  # mode 'display' or 'training'
         self.random_traffic = None
         self.sim_time = 0
         self.n_ego_vehicles = defaultdict(list)
@@ -50,8 +50,9 @@ class Traffic(object):
         self.training_light_phase = None
         self.mode = mode
         self.traffic_mode = traffic_mode
-        if self.traffic_mode != "auto":
-            self.file_path = "user_defined/" + str(self.traffic_mode)
+        self.traffic_case = traffic_case
+        if (self.traffic_mode != "auto") and (traffic_case is not None):
+            self.file_path = "user_defined/" + str(traffic_case)
         else:
             self.file_path = str(self.traffic_mode)
         try:
@@ -70,7 +71,7 @@ class Traffic(object):
             print('Retry by other port')
             port = sumolib.miscutils.getFreeSocketPort()
             traci.start(
-                [SUMO_BINARY, "-c", os.path.dirname(__file__) + "/sumo_files/" + str(self.traffic_mode) + "/cross.sumocfg",
+                [SUMO_BINARY, "-c", os.path.dirname(__file__) + "/sumo_files/" + str(self.file_path) + "/cross.sumocfg",
                  "--step-length", self.step_time_str,
                  "--lateral-resolution", "3.5",
                  "--random",
@@ -119,10 +120,6 @@ class Traffic(object):
 
         self.init_step()
 
-    def case_task(self):
-        task = str(self.traffic_mode).split('_')
-        return task[-2]
-
     def init_step(self):
         if self.traffic_mode == 'auto':
             while traci.simulation.getTime() < 250:
@@ -132,7 +129,7 @@ class Traffic(object):
                     traci.trafficlight.setPhase('0', 0)
                 traci.simulationStep()
         else:
-            self.case_light = str(self.traffic_mode).split('_')[0]
+            self.case_light = str(self.traffic_case).split('_')[0]
             if self.case_light == 'red':
                 self.training_light_phase = 4
                 traci.trafficlight.setPhase('0', self.training_light_phase)
@@ -149,7 +146,7 @@ class Traffic(object):
                 traci.trafficlight.setPhase('0', self.training_light_phase)
                 traci.simulationStep()
 
-            while traci.simulation.getTime() < MODE2STEP[self.traffic_mode]:
+            while traci.simulation.getTime() < MODE2STEP[self.traffic_case]:
                 traci.simulationStep()
 
     def _reset(self):
@@ -239,7 +236,8 @@ class Traffic(object):
                 try:
                     traci.vehicle.remove(egoID)
                 except traci.exceptions.TraCIException:
-                    print('Don\'t worry, it\'s been handled well')
+                    # print('Don\'t worry, it\'s been handled well')
+                    pass
                 traci.simulationStep()
                 traci.vehicle.addLegacy(vehID=egoID, routeID=ego_dict['routeID'],
                                         # depart=0, pos=20, lane=lane, speed=ego_dict['v_x'],
@@ -256,11 +254,17 @@ class Traffic(object):
         for ego_id in self.n_ego_dict.keys():
             if ego_id in random_traffic:
                 del random_traffic[ego_id]
-            elif self.mode == 'training' and ('vir_car' in veh_infos):
+            elif self.mode == 'training' and ('vir_car' in random_traffic):
                 del random_traffic['vir_car']
         return random_traffic
 
-    def init_light(self):
+    def init_light(self, traffic_case):
+        self.traffic_case = traffic_case
+        if (self.traffic_mode != "auto") and (self.traffic_case is not None):
+            self.file_path = "user_defined/" + str(traffic_case)
+        else:
+            self.file_path = str(self.traffic_mode)
+
         if self.traffic_mode == 'auto':
             if random.random() > 0.8:
                 self.training_light_phase = 3

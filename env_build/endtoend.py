@@ -51,10 +51,16 @@ class CrossroadEnd2endMix(gym.Env):
                  state_mode='fix',  # 'dyna'
                  future_point_num=25,
                  # traffic_mode='auto',  # 'auto'
-                 traffic_mode='green_mix_left_3',  # 'auto' #(choice?)todo
+                 traffic_mode='user',  # 'auto' or 'user'
                  **kwargs):
         self.mode = mode
         self.traffic_mode = traffic_mode
+        if traffic_mode == 'auto':
+            self.traffic_case = None
+        elif traffic_mode == 'user':
+            self.traffic_case = choice(list(MODE2STEP.keys()))
+        else:
+            assert 1, 'setting wrong traffic mode'
         self.dynamics = VehicleDynamics()
         self.interested_other = None
         self.detected_vehicles = None
@@ -110,7 +116,8 @@ class CrossroadEnd2endMix(gym.Env):
             self.traffic = Traffic(self.step_length,
                                    mode=self.mode,
                                    init_n_ego_dict=self.init_state,
-                                   traffic_mode=traffic_mode)
+                                   traffic_mode=traffic_mode,
+                                   traffic_case=self.traffic_case)
             self.reset()
             action = self.action_space.sample()
             observation, _reward, done, _info = self.step(action)
@@ -122,11 +129,18 @@ class CrossroadEnd2endMix(gym.Env):
         return [seed]
 
     def reset(self, **kwargs):  # kwargs include three keys
-        self.light_phase = self.traffic.init_light()
+        if self.traffic_mode == 'auto':
+            self.traffic_case = None
+        elif self.traffic_mode == 'user':
+            self.traffic_case = choice(list(MODE2STEP.keys()))
+        else:
+            assert 1, 'setting wrong traffic mode'
+        print(self.traffic_case)
+        self.light_phase = self.traffic.init_light(self.traffic_case)
         if self.traffic_mode == 'auto':
             self.training_task = choice(['left', 'straight', 'right'])
         else:
-            self.training_task = self.traffic.case_task()
+            self.training_task = str(self.traffic_case).split('_')[-2]
         self.task_encoding = TASK_ENCODING[self.training_task]
         self.light_encoding = LIGHT_ENCODING[self.light_phase]
         self.ref_path = ReferencePath(self.training_task, LIGHT_PHASE_TO_GREEN_OR_RED[self.light_phase])
@@ -781,7 +795,7 @@ class CrossroadEnd2endMix(gym.Env):
             else:
                 random_index = int(np.random.random() * (420 + 500)) + 700
         else:
-            random_index = MODE2INDEX[self.traffic_mode] + int(np.random.random() * 100)
+            random_index = MODE2INDEX[self.traffic_case] + int(np.random.random() * 100)
             # random_index = MODE2INDEX[self.traffic_mode]
 
         x, y, phi, exp_v = self.ref_path.idx2point(random_index)
@@ -1276,8 +1290,8 @@ class CrossroadEnd2endMix(gym.Env):
 
             # done info
             plt.text(text_x, text_y_start - next(ge), 'done info: {}'.format(self.done_type))
-            if self.done_type != 'not_done_yet':
-                print(self.done_type)
+            # if self.done_type != 'not_done_yet':
+            #     print(self.done_type)
             # reward info
             if self.reward_info is not None:
                 for key, val in self.reward_info.items():
@@ -1322,8 +1336,8 @@ def test_end2end():
             #     obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
             #         veh2bike4real, veh2person4real = env_model.rollout_out(actions + tf.experimental.numpy.random.rand(2)*0.05, ref_points[:, :, i])
             #     env_model.render()
-            if done:
-                break
+            # if done:
+            #     break
         obs, _ = env.reset()
         # env.render(weights=np.zeros(env.other_number,))
 

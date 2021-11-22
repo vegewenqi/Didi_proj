@@ -41,9 +41,12 @@
     <route id="ul" edges="3o 4i"/>
     <route id="ur" edges="3o 2i"/>
 
+    <route id="circle" edges="a1toa2 a2toa3 a3toa4 a4toa1"/>
+    <vehicle id="circle_car" type="car_1" route="circle" depart="0"/>
+
     <vehicle id="00" type="car_1" depart="0" route="ur" departLane="best"
           departPos="135" departSpeed="random" number="1"/>
-    <vehicle id="04" type="vir_car" depart="0" route="dr" departLane="best"
+    <vehicle id="vir_car" type="vir_car" depart="0" route="dr" departLane="best"
           departPos="125" departSpeed="random" number="1"/>
     <vehicle id="01" type="car_1" depart="0" route="dr" departLane="best"
           departPos="115" departSpeed="random" number="1"/>
