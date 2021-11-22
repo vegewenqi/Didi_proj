@@ -204,17 +204,22 @@ PERSON_MODE_DICT = dict(left=OrderedDict(c3=4),
 MODE2STEP = {'green_ego_left_1': 0+5, 'green_ped_left_1': 7+5, 'green_ped_left_2': 7+5, 'green_bike_left_1': 0+5, 'green_bike_left_2': 0+5,
              'green_bike_left_3': 0+5, 'green_veh_left_1': 2+8, 'green_veh_left_2': 0+8, 'green_veh_left_3': 7+8, 'green_veh_left_4': 7+6,
              'green_mix_left_1': 7+5, 'green_mix_left_2': 7+5, 'green_mix_left_3': 7+6,
-             'green_ego_right_1': 5, 'green_ego_straight_1': 5
-
-
-
-
+             'green_ego_right_1': 5, 'green_ego_straight_1': 5, 'green_ped_right_1': 3+5, 'green_ped_right_2': 1+5, 'green_ped_right_3': 8+9,
+             'green_bike_right_1': 3+5, 'green_bike_right_2': 3+5, 'green_bike_right_3': 3+5, 'green_bike_right_4': 2+10, 'green_bike_right_5': 0+10, 'green_bike_straight_1': 6+5,
+             'green_veh_right_1': 3+9, 'green_veh_right_2': 12+5, 'green_veh_straight_1': 5+9, 'green_veh_straight_2': 9,
+             'green_veh_straight_3': 4+6, 'green_veh_straight_4': 3+6,
+             'green_mix_right_1': 3+6, 'green_mix_right_2': 9, 'green_mix_right_3': 8,
+             'green_mix_right_4': 9+9, 'green_mix_right_5': 8+14
              }
 MODE2INDEX = {'green_ego_left_1': 500, 'green_ped_left_1': 450, 'green_ped_left_2': 500, 'green_bike_left_1': 500, 'green_bike_left_2': 500,
              'green_bike_left_3': 500, 'green_veh_left_1': 500, 'green_veh_left_2': 450, 'green_veh_left_3': 600, 'green_veh_left_4': 550,
              'green_mix_left_1': 500, 'green_mix_left_2': 500, 'green_mix_left_3': 450,
-              'green_ego_right_1': 500, 'green_ego_straight_1': 450
-
+              'green_ego_right_1': 500, 'green_ego_straight_1': 450, 'green_ped_right_1': 450, 'green_ped_right_2': 500, 'green_ped_right_3': 450,
+              'green_bike_right_1': 450, 'green_bike_right_2': 500, 'green_bike_right_3': 500, 'green_bike_right_4': 500, 'green_bike_right_5': 450, 'green_bike_straight_1': 500,
+              'green_veh_right_1': 500, 'green_veh_right_2': 500, 'green_veh_straight_1': 550, 'green_veh_straight_2': 500,
+              'green_veh_straight_3': 500, 'green_veh_straight_4': 500,
+              'green_mix_right_1': 500, 'green_mix_right_2': 500, 'green_mix_right_3': 500,
+              'green_mix_right_4': 500, 'green_mix_right_5': 500
               }
 
 def dict2flat(inp):
