@@ -409,6 +409,28 @@ def cal_ego_info_in_transform_coordination(ego_dynamics, x, y, rotate_d):
                              Corner_point=trans_corner_points))
     return ego_dynamics
 
+
+def coordination_didi2sumo(orig_x, orig_y):
+    _, line_angle = Para.calculate_distance_angle(Para.E_I[4], Para.E_I[1])
+    line_angle_1 = line_angle * math.pi / 180
+    shift_x = Para.E_I[4][0]-2*math.cos(line_angle_1)-(Para.CROSSROAD_SIZE_LAT/2)*math.sin(line_angle_1)
+    shift_y = Para.E_I[4][1]-2*math.sin(line_angle_1)+(Para.CROSSROAD_SIZE_LAT/2)*math.cos(line_angle_1)
+    _, rotate_angle = Para.calculate_distance_angle(Para.E_O[4], Para.E_I[4])
+    angle = rotate_angle  # check
+    shifted_x, shifted_y, _ = shift_and_rotate_coordination(orig_x, orig_y, angle, shift_x, shift_y, rotate_angle)
+    return shifted_x, shifted_y
+
+def coordination_sumo2didi(orig_x, orig_y):
+    _, line_angle = Para.calculate_distance_angle(Para.E_I[4], Para.E_I[1])
+    line_angle_1 = line_angle * math.pi / 180
+    shift_x = Para.E_I[4][0]-2*math.cos(line_angle_1)-(Para.CROSSROAD_SIZE_LAT/2)*math.sin(line_angle_1)
+    shift_y = Para.E_I[4][1]-2*math.sin(line_angle_1)+(Para.CROSSROAD_SIZE_LAT/2)*math.cos(line_angle_1)
+    _, rotate_angle = Para.calculate_distance_angle(Para.E_O[4], Para.E_I[4])
+    angle = rotate_angle  # check
+    shifted_x, shifted_y, _ = rotate_and_shift_coordination(orig_x, orig_y, angle, -shift_x, -shift_y, -rotate_angle)
+    return shifted_x, shifted_y
+
+
 def if_inPoly(polygon, Points):
     line = geometry.LineString(polygon)
     point = geometry.Point(Points)
@@ -546,12 +568,15 @@ if __name__ == '__main__':
     # B = [-22613.82, 6914.50]
     # distance, angle = calculate_distance_angle(A, B)
     # print('distance:', distance, 'angle:', angle)
-    a = Para()
+    # a = Para()
     # print(a.CROSSROAD_SIZE_LAT)
-    print('U', Para.U_IN_0, Para.U_IN_1, '------', Para.U_OUT_0, Para.U_OUT_1)
-    print('D', Para.D_IN_0, Para.D_IN_1, '------', Para.D_OUT_0, Para.D_OUT_1)
-    print('L', Para.L_IN_0, Para.L_IN_1, Para.L_IN_2, Para.L_IN_3, '------', Para.L_OUT_0, Para.L_OUT_1, Para.L_OUT_2)
-    print('R', Para.R_IN_0, Para.R_IN_1, Para.R_IN_2, Para.R_IN_3, '------', Para.R_OUT_0, Para.R_OUT_1, Para.R_OUT_2)
-    print(Para.L_GREEN, Para.R_GREEN, Para.D_GREEN)
-    print(Para.CROSSROAD_SIZE_LAT)
-    print(Para.ANGLE_U, Para.ANGLE_D)
+    # print('U', Para.U_IN_0, Para.U_IN_1, '------', Para.U_OUT_0, Para.U_OUT_1)
+    # print('D', Para.D_IN_0, Para.D_IN_1, '------', Para.D_OUT_0, Para.D_OUT_1)
+    # print('L', Para.L_IN_0, Para.L_IN_1, Para.L_IN_2, Para.L_IN_3, '------', Para.L_OUT_0, Para.L_OUT_1, Para.L_OUT_2)
+    # print('R', Para.R_IN_0, Para.R_IN_1, Para.R_IN_2, Para.R_IN_3, '------', Para.R_OUT_0, Para.R_OUT_1, Para.R_OUT_2)
+    # print(Para.L_GREEN, Para.R_GREEN, Para.D_GREEN)
+    # print(Para.CROSSROAD_SIZE_LAT)
+    # print(Para.ANGLE_U, Para.ANGLE_D)
+    print('didi2sumo', coordination_didi2sumo(Para.E_I[4][0], Para.E_I[4][1]))
+    print('sumo2didi', coordination_sumo2didi(-24.005982240251946, -2.090883080432098))
+    print(Para.E_I[4][0], Para.E_I[4][1])
