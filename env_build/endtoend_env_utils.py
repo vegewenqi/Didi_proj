@@ -207,9 +207,9 @@ MODE2STEP = {'green_ego_left_1': 0+5, 'green_ped_left_1': 7+5, 'green_ped_left_2
              'green_ego_right_1': 5, 'green_ego_straight_1': 5, 'green_ped_right_1': 3+5, 'green_ped_right_2': 1+5, 'green_ped_right_3': 8+9,
              'green_bike_right_1': 3+5, 'green_bike_right_2': 3+5, 'green_bike_right_3': 3+5, 'green_bike_right_4': 2+10, 'green_bike_right_5': 0+10, 'green_bike_straight_1': 6+5,
              'green_veh_right_1': 3+9, 'green_veh_right_2': 12+5, 'green_veh_straight_1': 5+9, 'green_veh_straight_2': 9,
-             'green_veh_straight_3': 4+6, 'green_veh_straight_4': 3+6,
+             'green_veh_straight_3': 4+6, 'green_veh_straight_4': 3+6, 'green_mix_straight_1': 2+11, 'green_mix_straight_2': 2+11, 'green_mix_straight_3': 2+8, 'green_mix_straight_4': 2+3,
              'green_mix_right_1': 3+6, 'green_mix_right_2': 9, 'green_mix_right_3': 8,
-             'green_mix_right_4': 9+9, 'green_mix_right_5': 8+14
+             'green_mix_right_4': 9+9, 'green_mix_right_5': 8+14, 'red_mix_left_1': 5+5, 'red_mix_left_2': 5+7, 'yellow_mix_left_1': 5+2, 'yellow_mix_left_2': 5+5, 'yellow_mix_left_3': 5+8, 'yellow_mix_left_4': 5+7,
              }
 MODE2INDEX = {'green_ego_left_1': 500, 'green_ped_left_1': 450, 'green_ped_left_2': 500, 'green_bike_left_1': 500, 'green_bike_left_2': 500,
              'green_bike_left_3': 500, 'green_veh_left_1': 500, 'green_veh_left_2': 450, 'green_veh_left_3': 600, 'green_veh_left_4': 550,
@@ -217,9 +217,9 @@ MODE2INDEX = {'green_ego_left_1': 500, 'green_ped_left_1': 450, 'green_ped_left_
               'green_ego_right_1': 500, 'green_ego_straight_1': 450, 'green_ped_right_1': 450, 'green_ped_right_2': 500, 'green_ped_right_3': 450,
               'green_bike_right_1': 450, 'green_bike_right_2': 500, 'green_bike_right_3': 500, 'green_bike_right_4': 500, 'green_bike_right_5': 450, 'green_bike_straight_1': 500,
               'green_veh_right_1': 500, 'green_veh_right_2': 500, 'green_veh_straight_1': 550, 'green_veh_straight_2': 500,
-              'green_veh_straight_3': 500, 'green_veh_straight_4': 500,
+              'green_veh_straight_3': 500, 'green_veh_straight_4': 500, 'green_mix_straight_1': 480, 'green_mix_straight_2': 500, 'green_mix_straight_3': 550, 'green_mix_straight_4': 500,
               'green_mix_right_1': 500, 'green_mix_right_2': 500, 'green_mix_right_3': 500,
-              'green_mix_right_4': 500, 'green_mix_right_5': 500
+              'green_mix_right_4': 500, 'green_mix_right_5': 500, 'red_mix_left_1': 470, 'red_mix_left_2': 450, 'yellow_mix_left_1': 500, 'yellow_mix_left_2': 550, 'yellow_mix_left_3': 520, 'yellow_mix_left_4': 520,
               }
 
 def dict2flat(inp):
