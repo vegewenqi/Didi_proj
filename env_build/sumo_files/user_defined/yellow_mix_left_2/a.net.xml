@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 11/23/21 16:55:06 by Eclipse SUMO netedit Version 1.6.0
+<!-- generated on 11/23/21 19:29:34 by Eclipse SUMO netedit Version 1.6.0
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
-        <sumo-net-file value="D:\codecode\AAAmine\Didi\Didi_proj\env_build\sumo_files\user_defined\green_mix_straight_1\a.net.xml"/>
+        <sumo-net-file value="D:\codecode\AAAmine\Didi\Didi_proj\env_build\sumo_files\user_defined\yellow_mix_left_3\a.net.xml"/>
     </input>
 
     <output>
-        <output-file value="D:\codecode\AAAmine\Didi\Didi_proj\env_build\sumo_files\user_defined\green_mix_straight_1\a.net.xml"/>
+        <output-file value="D:\codecode\AAAmine\Didi\Didi_proj\env_build\sumo_files\user_defined\yellow_mix_left_3\a.net.xml"/>
     </output>
 
     <processing>
@@ -259,10 +259,10 @@
     </edge>
 
     <tlLogic id="0" type="static" programID="0" offset="0">
-        <phase duration="60" state="gGgGGGgrgrrrgGgGGGgrgrrrrGrGrrrrr"/>
-        <phase duration="15" state="grgGGGgrgrrrgrgGGGgrgrrrrrrrrrrrr"/>
-        <phase duration="5"  state="grgyyygrgrrrgrgyyygrgrrrrrrrrrrrr"/>
-        <phase duration="20" state="grgrrrgrgrrrgrgrrrgrgrrrrrrrrrrrr"/>
+        <phase duration="1"  state="gGgGGGgrgrrrgGgGGGgrgrrrrGrGrrrrr"/>
+        <phase duration="5"  state="grgGGGgrgrrrgrgGGGgrgrrrrrrrrrrrr"/>
+        <phase duration="10" state="grgyyygrgrrrgrgyyygrgrrrrrrrrrrrr"/>
+        <phase duration="60" state="grgrrrgrgrrrgrgrrrgrgrrrrrrrrrrrr"/>
         <phase duration="25" state="grgrrrgGgGGrgrgrrrgGgGGrGrGrrrrrr"/>
         <phase duration="5"  state="grgrrrgrgyyrgrgrrrgrgyyrrrrrrrrrr"/>
         <phase duration="10" state="grgrrrgrgrrrgrgrrrgrgrrrrrrrrrrrr"/>

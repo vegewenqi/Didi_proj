@@ -564,20 +564,16 @@ def plot_static_path():
     # plt.arrow(lane_width * 2.5, -square_length / 2 - 10 + 3, 0.5, 1.0, color='darkviolet', head_width=0.7)
 
     ax.add_patch(
-        plt.Rectangle((Para.CROSSROAD_SIZE_LAT / 2, Para.OFFSET_R), extension, Para.GREEN_BELT_LAT, edgecolor='white',
+        plt.Rectangle((Para.CROSSROAD_SIZE_LAT / 2, Para.OFFSET_R), extension, Para.R_GREEN, edgecolor='white',
                       facecolor='green',
                       linewidth=1, alpha=0.7))
     ax.add_patch(
-        plt.Rectangle((-Para.CROSSROAD_SIZE_LAT / 2 - extension, Para.OFFSET_L), extension, Para.GREEN_BELT_LAT,
-                      edgecolor='white', facecolor='green',
-                      linewidth=1, alpha=0.7))
-    ax.add_patch(
-        plt.Rectangle((-Para.CROSSROAD_SIZE_LAT / 2 - extension, Para.OFFSET_L), extension, Para.GREEN_BELT_LAT,
+        plt.Rectangle((-Para.CROSSROAD_SIZE_LAT / 2 - extension, Para.OFFSET_L), extension, Para.L_GREEN,
                       edgecolor='white', facecolor='green',
                       linewidth=1, alpha=0.7))
     ax.add_patch(plt.Rectangle((Para.OFFSET_D_X - extension * math.cos(Para.ANGLE_D / 180 * pi),
                                 Para.OFFSET_D_Y - extension * math.sin(Para.ANGLE_D / 180 * pi)),
-                               Para.GREEN_BELT_LON, extension, edgecolor='white', facecolor='green',
+                               Para.D_GREEN, extension, edgecolor='white', facecolor='green',
                                angle=-(90 - Para.ANGLE_D), linewidth=1, alpha=0.7))
 
     # Left out lane
@@ -724,27 +720,25 @@ def plot_static_path():
     # stop line  # todo
     light_line_width = 2
     v_color_1, v_color_2, h_color_1, h_color_2 = 'gray', 'gray', 'gray', 'gray'
-    lane_width_flag = [Para.LANE_WIDTH_3, Para.LANE_WIDTH_2,
-                       Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # Down
-    plt.plot([Para.OFFSET_D_X + Para.GREEN_BELT_LON * math.cos((Para.ANGLE_D - 90) * math.pi / 180),
-              Para.OFFSET_D_X + (Para.GREEN_BELT_LON + sum(lane_width_flag[:1])) * math.cos(
+    lane_width_flag = [Para.D_IN_0, Para.D_IN_1, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]     # Down
+    plt.plot([Para.OFFSET_D_X + Para.D_GREEN * math.cos((Para.ANGLE_D - 90) * math.pi / 180),
+              Para.OFFSET_D_X + (Para.D_GREEN + sum(lane_width_flag[:1])) * math.cos(
                   (Para.ANGLE_D - 90) * math.pi / 180)],
-             [Para.OFFSET_D_Y + Para.GREEN_BELT_LON * math.sin((Para.ANGLE_D - 90) * math.pi / 180),
-              Para.OFFSET_D_Y + (Para.GREEN_BELT_LON + sum(lane_width_flag[:1])) * math.sin(
+             [Para.OFFSET_D_Y + Para.D_GREEN * math.sin((Para.ANGLE_D - 90) * math.pi / 180),
+              Para.OFFSET_D_Y + (Para.D_GREEN + sum(lane_width_flag[:1])) * math.sin(
                   (Para.ANGLE_D - 90) * math.pi / 180)],
              color=v_color_1, linewidth=light_line_width)
-    plt.plot([Para.OFFSET_D_X + (Para.GREEN_BELT_LON + sum(lane_width_flag[:1])) * math.cos(
+    plt.plot([Para.OFFSET_D_X + (Para.D_GREEN + sum(lane_width_flag[:1])) * math.cos(
         (Para.ANGLE_D - 90) * math.pi / 180),
-              Para.OFFSET_D_X + (Para.GREEN_BELT_LON + sum(lane_width_flag[:2])) * math.cos(
+              Para.OFFSET_D_X + (Para.D_GREEN + sum(lane_width_flag[:2])) * math.cos(
                   (Para.ANGLE_D - 90) * math.pi / 180)],
-             [Para.OFFSET_D_Y + (Para.GREEN_BELT_LON + sum(lane_width_flag[:1])) * math.sin(
+             [Para.OFFSET_D_Y + (Para.D_GREEN + sum(lane_width_flag[:1])) * math.sin(
                  (Para.ANGLE_D - 90) * math.pi / 180),
-              Para.OFFSET_D_Y + (Para.GREEN_BELT_LON + sum(lane_width_flag[:2])) * math.sin(
+              Para.OFFSET_D_Y + (Para.D_GREEN + sum(lane_width_flag[:2])) * math.sin(
                   (Para.ANGLE_D - 90) * math.pi / 180)],
              color='gray', linewidth=light_line_width)
 
-    lane_width_flag = [Para.LANE_WIDTH_4, Para.LANE_WIDTH_3,
-                       Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # Up
+    lane_width_flag = [Para.U_IN_0, Para.U_IN_1, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]     # Up
     plt.plot([Para.OFFSET_U_X,
               Para.OFFSET_U_X + sum(lane_width_flag[:1]) * math.cos((Para.ANGLE_U + 90) * math.pi / 180)],
              [Para.OFFSET_U_Y,
@@ -756,7 +750,7 @@ def plot_static_path():
               Para.OFFSET_U_Y + sum(lane_width_flag[:2]) * math.sin((Para.ANGLE_U + 90) * math.pi / 180)],
              color='gray', linewidth=light_line_width)
 
-    lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
+    lane_width_flag = [Para.L_IN_0, Para.L_IN_1, Para.L_IN_2, Para.L_IN_3,
                        Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # left
     plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, -Para.CROSSROAD_SIZE_LAT / 2],
              [Para.OFFSET_L, Para.OFFSET_L - sum(lane_width_flag[:1])],
@@ -768,19 +762,19 @@ def plot_static_path():
              [Para.OFFSET_L - sum(lane_width_flag[:3]), Para.OFFSET_L - sum(lane_width_flag[:4])],
              color='gray', linewidth=light_line_width)
 
-    lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
-                       Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # right
+
+    lane_width_flag = [Para.R_IN_0, Para.R_IN_1, Para.R_IN_2, Para.R_IN_3, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]    # right
     plt.plot([Para.CROSSROAD_SIZE_LAT / 2, Para.CROSSROAD_SIZE_LAT / 2],
-             [Para.OFFSET_R + Para.GREEN_BELT_LAT,
-              Para.OFFSET_R + Para.GREEN_BELT_LAT + sum(lane_width_flag[:1])],
+             [Para.OFFSET_R + Para.R_GREEN,
+              Para.OFFSET_R + Para.R_GREEN + sum(lane_width_flag[:1])],
              color=h_color_1, linewidth=light_line_width)
     plt.plot([Para.CROSSROAD_SIZE_LAT / 2, Para.CROSSROAD_SIZE_LAT / 2],
-             [Para.OFFSET_R + Para.GREEN_BELT_LAT + sum(lane_width_flag[:1]),
-              Para.OFFSET_R + Para.GREEN_BELT_LAT + sum(lane_width_flag[:3])],
+             [Para.OFFSET_R + Para.R_GREEN + sum(lane_width_flag[:1]),
+              Para.OFFSET_R + Para.R_GREEN + sum(lane_width_flag[:3])],
              color=h_color_2, linewidth=light_line_width)
     plt.plot([Para.CROSSROAD_SIZE_LAT / 2, Para.CROSSROAD_SIZE_LAT / 2],
-             [Para.OFFSET_R + Para.GREEN_BELT_LAT + sum(lane_width_flag[:3]),
-              Para.OFFSET_R + Para.GREEN_BELT_LAT + sum(lane_width_flag[:4])],
+             [Para.OFFSET_R + Para.R_GREEN + sum(lane_width_flag[:3]),
+              Para.OFFSET_R + Para.R_GREEN + sum(lane_width_flag[:4])],
              color='gray', linewidth=light_line_width)
 
     for task in ['left', 'straight', 'right']:
@@ -791,12 +785,12 @@ def plot_static_path():
         path_list_copy = path_list['green']
         for i, (path_x, path_y, _, _) in enumerate(path_list_copy):
             plt.plot(path_x[600:-600], path_y[600:-600], color=color[i])
-        # for i, four_points in enumerate(control_points):
-        #     for point in four_points:
-        #         plt.scatter(point[0], point[1], color=color[i], s=20, alpha=0.5)
-        #     plt.plot([four_points[0][0], four_points[1][0]], [four_points[0][1], four_points[1][1]], linestyle='--', color=color[i], alpha=0.3)
-        #     plt.plot([four_points[1][0], four_points[2][0]], [four_points[1][1], four_points[2][1]], linestyle='--', color=color[i], alpha=0.3)
-        #     plt.plot([four_points[2][0], four_points[3][0]], [four_points[2][1], four_points[3][1]], linestyle='--', color=color[i], alpha=0.3)
+        for i, four_points in enumerate(control_points):
+            for point in four_points:
+                plt.scatter(point[0], point[1], color=color[i], s=20, alpha=0.5)
+            plt.plot([four_points[0][0], four_points[1][0]], [four_points[0][1], four_points[1][1]], linestyle='--', color=color[i], alpha=0.3)
+            plt.plot([four_points[1][0], four_points[2][0]], [four_points[1][1], four_points[2][1]], linestyle='--', color=color[i], alpha=0.3)
+            plt.plot([four_points[2][0], four_points[3][0]], [four_points[2][1], four_points[3][1]], linestyle='--', color=color[i], alpha=0.3)
 
     plt.savefig('./multipath_planning.pdf')
     plt.show()
