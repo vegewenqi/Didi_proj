@@ -224,3 +224,4 @@ cython_debug/
 /algorithm/__pycache__/
 /algorithm/utils/__pycache__/
 /env_build/__pycache__/
+/env_build/utils/models/

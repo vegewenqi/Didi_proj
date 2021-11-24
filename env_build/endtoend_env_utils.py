@@ -136,19 +136,6 @@ class Para:
     LANE_NUMBER_LAT_IN = 4
     LANE_NUMBER_LAT_OUT = 3
 
-
-    # MAP
-    # todo
-
-    # LANE_WIDTH_1 = 3.50
-    # LANE_WIDTH_2 = 3.70
-    # LANE_WIDTH_3 = 3.75
-    # LANE_WIDTH_4 = 3.80
-    #
-    # GREEN_BELT_LAT = 9.5
-    # GREEN_BELT_LON = 1.0
-
-
     # DIM
     EGO_ENCODING_DIM = 6
     TRACK_ENCODING_DIM = 4
@@ -270,24 +257,24 @@ def judge_feasible(orig_x, orig_y, task):  # map dependant
     def is_in_straight_before1(orig_x, orig_y):
         orig_x_trans, orig_y_trans, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_D-90)
         OFFSET_D_X_trans, OFFSET_D_Y_trans, _ = rotate_coordination(Para.OFFSET_D_X, Para.OFFSET_D_Y, 0, Para.ANGLE_D - 90)
-        return OFFSET_D_X_trans + Para.GREEN_BELT_LON < orig_x_trans < OFFSET_D_X_trans + Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 and orig_y_trans <= OFFSET_D_Y_trans
+        return OFFSET_D_X_trans + Para.D_GREEN < orig_x_trans < OFFSET_D_X_trans + Para.D_GREEN + Para.D_IN_0 and orig_y_trans <= OFFSET_D_Y_trans
 
     def is_in_straight_before2(orig_x, orig_y):
         orig_x_trans, orig_y_trans, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_D-90)
         OFFSET_D_X_trans, OFFSET_D_Y_trans, _ = rotate_coordination(Para.OFFSET_D_X, Para.OFFSET_D_Y, 0, Para.ANGLE_D - 90)
-        return OFFSET_D_X_trans + Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 < orig_x_trans < OFFSET_D_X_trans + Para.GREEN_BELT_LON + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_2\
+        return OFFSET_D_X_trans + Para.D_GREEN + Para.D_IN_0 < orig_x_trans < OFFSET_D_X_trans + Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1\
                and orig_y_trans <= OFFSET_D_Y_trans
 
     def is_in_straight_after(orig_x, orig_y):
         orig_x_trans, orig_y_trans, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_U-90)
         OFFSET_U_X_trans, OFFSET_U_Y_trans, _ = rotate_coordination(Para.OFFSET_U_X, Para.OFFSET_U_Y, 0, Para.ANGLE_U - 90)
-        return OFFSET_U_X_trans + Para.GREEN_BELT_LON < orig_x_trans < OFFSET_U_X_trans + Para.LANE_WIDTH_4 * 2 and orig_y >= OFFSET_U_Y_trans
+        return OFFSET_U_X_trans + Para.D_GREEN < orig_x_trans < OFFSET_U_X_trans + Para.U_OUT_0 + Para.U_OUT_1 and orig_y >= OFFSET_U_Y_trans
 
     def is_in_left(orig_x, orig_y):
-        return Para.OFFSET_L + Para.GREEN_BELT_LAT < orig_y < Para.OFFSET_L + Para.GREEN_BELT_LAT + Para.LANE_WIDTH_3 * 3 and orig_x < -Para.CROSSROAD_SIZE_LAT / 2
+        return Para.OFFSET_L + Para.L_GREEN < orig_y < Para.OFFSET_L + Para.L_GREEN + Para.L_OUT_0 + Para.L_OUT_1 + Para.L_OUT_2 and orig_x < -Para.CROSSROAD_SIZE_LAT / 2
 
     def is_in_right(orig_x, orig_y):
-        return Para.OFFSET_R - Para.LANE_WIDTH_1 - Para.LANE_WIDTH_3 * 2 < orig_y < Para.OFFSET_R and orig_x > Para.CROSSROAD_SIZE_LAT / 2
+        return Para.OFFSET_R - Para.R_OUT_0 - Para.R_OUT_1 - Para.R_OUT_2 < orig_y < Para.OFFSET_R and orig_x > Para.CROSSROAD_SIZE_LAT / 2
 
     def is_in_middle(orig_x, orig_y):
         _, orig_y_trans_D, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_D-90)

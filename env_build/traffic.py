@@ -254,7 +254,7 @@ class Traffic(object):
         for ego_id in self.n_ego_dict.keys():
             if ego_id in random_traffic:
                 del random_traffic[ego_id]
-            elif self.mode == 'training' and ('vir_car' in random_traffic):
+            elif 'vir_car' in random_traffic:
                 del random_traffic['vir_car']
         return random_traffic
 
@@ -330,7 +330,7 @@ class Traffic(object):
     def _get_vehicles(self):
         self.n_ego_vehicles = defaultdict(list)
         veh_infos = traci.junction.getContextSubscriptionResults('0')
-        if self.mode == 'training' and ('vir_car' in veh_infos):
+        if 'vir_car' in veh_infos:
             del veh_infos['vir_car']
         for egoID in self.n_ego_dict.keys():
             veh_info_dict = copy.deepcopy(veh_infos)
