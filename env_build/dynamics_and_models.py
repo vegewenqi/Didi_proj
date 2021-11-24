@@ -767,10 +767,10 @@ class ReferencePath(object):
                     xs_2, ys_2 = planed_trj[0][1:], planed_trj[1][1:]
                     phis_1 = np.arctan2(ys_2 - ys_1, xs_2 - xs_1) * 180 / pi
 
-                    vs_green = np.array([8.33] * len(start_straight_line_x) + [7.0] * (len(trj_data[0]) - 1) + [8.33] *
+                    vs_green = np.array([5.0] * len(start_straight_line_x) + [4.0] * (len(trj_data[0]) - 1) + [5.0] *
                                         len(end_straight_line_x), dtype=np.float32)
-                    vs_red_0 = np.array([8.33] * (len(start_straight_line_x) - meter_pointnum_ratio * (sl - dece_dist + int(Para.L/2))), dtype=np.float32)
-                    vs_red_1 = np.linspace(8.33, 0.0, meter_pointnum_ratio * dece_dist, endpoint=True, dtype=np.float32)
+                    vs_red_0 = np.array([5.0] * (len(start_straight_line_x) - meter_pointnum_ratio * (sl - dece_dist + int(Para.L/2))), dtype=np.float32)
+                    vs_red_1 = np.linspace(5.0, 0.0, meter_pointnum_ratio * dece_dist, endpoint=True, dtype=np.float32)
                     vs_red_2 = np.array([0.0] * (meter_pointnum_ratio * int(Para.L/2) + len(trj_data[0]) - 1) + [0.0] * len(end_straight_line_x), dtype=np.float32)
                     vs_red = np.append(np.append(vs_red_0, vs_red_1), vs_red_2)
                     planed_trj_green = xs_1, ys_1, phis_1, vs_green
@@ -809,11 +809,11 @@ class ReferencePath(object):
                     xs_1, ys_1 = planed_trj[0][:-1], planed_trj[1][:-1]
                     xs_2, ys_2 = planed_trj[0][1:], planed_trj[1][1:]
                     phis_1 = np.arctan2(ys_2 - ys_1, xs_2 - xs_1) * 180 / pi
-                    vs_green = np.array([8.33] * len(start_straight_line_x) + [7.0] * (len(trj_data[0]) - 1) + [8.33] *
+                    vs_green = np.array([5.0] * len(start_straight_line_x) + [4.0] * (len(trj_data[0]) - 1) + [5.0] *
                                         len(end_straight_line_x), dtype=np.float32)
-                    vs_red_0 = np.array([8.33] * (len(start_straight_line_x) - meter_pointnum_ratio * (sl - dece_dist + int(Para.L/2))),
+                    vs_red_0 = np.array([5.0] * (len(start_straight_line_x) - meter_pointnum_ratio * (sl - dece_dist + int(Para.L/2))),
                         dtype=np.float32)
-                    vs_red_1 = np.linspace(8.33, 0.0, meter_pointnum_ratio * dece_dist, endpoint=True, dtype=np.float32)
+                    vs_red_1 = np.linspace(5.0, 0.0, meter_pointnum_ratio * dece_dist, endpoint=True, dtype=np.float32)
                     vs_red_2 = np.array([0.0] * (meter_pointnum_ratio * int(Para.L/2) + len(trj_data[0]) - 1) + [0.0] * len(end_straight_line_x), dtype=np.float32)
                     vs_red = np.append(np.append(vs_red_0, vs_red_1), vs_red_2)
                     planed_trj_green = xs_1, ys_1, phis_1, vs_green
@@ -853,7 +853,7 @@ class ReferencePath(object):
                     xs_1, ys_1 = planed_trj[0][:-1], planed_trj[1][:-1]
                     xs_2, ys_2 = planed_trj[0][1:], planed_trj[1][1:]
                     phis_1 = np.arctan2(ys_2 - ys_1, xs_2 - xs_1) * 180 / pi
-                    vs_green = np.array([8.33] * len(start_straight_line_x) + [7.0] * (len(trj_data[0]) - 1) + [8.33] *
+                    vs_green = np.array([5.0] * len(start_straight_line_x) + [4.0] * (len(trj_data[0]) - 1) + [5.0] *
                                         len(end_straight_line_x), dtype=np.float32)
                     planed_trj_green = xs_1, ys_1, phis_1, vs_green
                     planed_trj_red = xs_1, ys_1, phis_1, vs_green  # the same velocity design for turning right
