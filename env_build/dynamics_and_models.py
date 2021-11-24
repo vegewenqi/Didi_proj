@@ -230,8 +230,8 @@ class EnvironmentModel(object):  # all tensors
                     tf.sqrt(tf.square(ego_point[0] - Para.CROSSROAD_SIZE_LAT / 2) + tf.square(ego_point[1] - Para.OFFSET_R)), tf.zeros_like(veh_infos[:, 0]))
                 veh2road4training += tf.where(logical_and(ego_point[0] < Para.OFFSET_U_X, ego_point[1] > Para.OFFSET_U_Y),
                     tf.sqrt(tf.square(ego_point[0] - Para.OFFSET_U_X) + tf.square(ego_point[1] - Para.OFFSET_U_Y)), tf.zeros_like(veh_infos[:, 0]))
-                veh2road4training += tf.where(logical_and(ego_point[0] < -Para.CROSSROAD_SIZE_LAT / 2, ego_point[1] < Para.OFFSET_L + Para.GREEN_BELT_LAT),
-                    tf.sqrt(tf.square(ego_point[0] - -Para.CROSSROAD_SIZE_LAT / 2) + tf.square(ego_point[1] - (Para.OFFSET_L + Para.GREEN_BELT_LAT))), tf.zeros_like(veh_infos[:, 0]))
+                veh2road4training += tf.where(logical_and(ego_point[0] < -Para.CROSSROAD_SIZE_LAT / 2, ego_point[1] < Para.OFFSET_L + Para.L_GREEN),
+                    tf.sqrt(tf.square(ego_point[0] - -Para.CROSSROAD_SIZE_LAT / 2) + tf.square(ego_point[1] - (Para.OFFSET_L + Para.L_GREEN))), tf.zeros_like(veh_infos[:, 0]))
 
             rewards = 0.01 * devi_v + 0.8 * devi_longitudinal + 0.8 * devi_lateral + 30 * devi_phi + 0.02 * punish_yaw_rate + \
                       5 * punish_steer0 + 0.4 * punish_steer1 + 0.1 * punish_steer2 + \

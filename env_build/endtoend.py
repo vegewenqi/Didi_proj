@@ -511,38 +511,37 @@ class CrossroadEnd2endMix(gym.Env):
                 elif v['type'] == 'DEFAULT_PEDTYPE':
                     v.update(partici_type=[0., 1., 0.], turn_rad=0.0, exist=True)
                     # c0 walk
-                    x1_0, y1_0 = Para.OFFSET_U_X - (Para.LANE_WIDTH_4 + Para.LANE_WIDTH_3 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * sin(Para.ANGLE_U * pi / 180), \
-                             Para.OFFSET_U_Y + (Para.LANE_WIDTH_4 + Para.LANE_WIDTH_3 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * cos(Para.ANGLE_U * pi / 180),
-                    x2_0, y2_0 = Para.OFFSET_U_X + (Para.LANE_WIDTH_4 + Para.LANE_WIDTH_4 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * sin(Para.ANGLE_U * pi / 180), \
-                             Para.OFFSET_U_Y - (Para.LANE_WIDTH_4 + Para.LANE_WIDTH_4 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * cos(Para.ANGLE_U * pi / 180),
+                    x1_0, y1_0 = Para.OFFSET_U_X - (Para.U_IN_0 + Para.U_IN_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * sin(Para.ANGLE_U * pi / 180), \
+                             Para.OFFSET_U_Y + (Para.U_IN_0 + Para.U_IN_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * cos(Para.ANGLE_U * pi / 180),
+                    x2_0, y2_0 = Para.OFFSET_U_X + (Para.U_OUT_0 + Para.U_OUT_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * sin(Para.ANGLE_U * pi / 180), \
+                             Para.OFFSET_U_Y - (Para.U_OUT_0 + Para.U_OUT_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * cos(Para.ANGLE_U * pi / 180),
                     x3_0, y3_0 = x2_0 - Para.WALK_WIDTH * cos(Para.ANGLE_U * pi / 180), y2_0 - Para.WALK_WIDTH * sin(Para.ANGLE_U * pi / 180)
                     x4_0, y4_0 = x1_0 - Para.WALK_WIDTH * cos(Para.ANGLE_U * pi / 180), y1_0 - Para.WALK_WIDTH * sin(Para.ANGLE_U * pi / 180)
                     # c2 walk
-                    x1_2, y1_2 = Para.OFFSET_D_X - (Para.LANE_WIDTH_2 + Para.LANE_WIDTH_2 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * sin(Para.ANGLE_D * pi / 180), \
-                             Para.OFFSET_D_Y + (Para.LANE_WIDTH_2 + Para.LANE_WIDTH_2 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * cos(Para.ANGLE_D * pi / 180),
-                    x2_2, y2_2 = Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * sin(Para.ANGLE_D * pi / 180), \
-                             Para.OFFSET_D_Y - (Para.LANE_WIDTH_4 + Para.LANE_WIDTH_4 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * cos(Para.ANGLE_D * pi / 180),
+                    x1_2, y1_2 = Para.OFFSET_D_X - (Para.D_OUT_0 + Para.D_OUT_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * sin(Para.ANGLE_D * pi / 180), \
+                             Para.OFFSET_D_Y + (Para.D_OUT_0 + Para.D_OUT_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * cos(Para.ANGLE_D * pi / 180),
+                    x2_2, y2_2 = Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * sin(Para.ANGLE_D * pi / 180), \
+                             Para.OFFSET_D_Y - (Para.D_IN_0 + Para.D_IN_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * cos(Para.ANGLE_D * pi / 180),
                     x3_2, y3_2 = x2_2 + Para.WALK_WIDTH * cos(Para.ANGLE_D * pi / 180), y2_2 + Para.WALK_WIDTH * sin(Para.ANGLE_D * pi / 180)
                     x4_2, y4_2 = x1_2 + Para.WALK_WIDTH * cos(Para.ANGLE_D * pi / 180), y1_2 + Para.WALK_WIDTH * sin(Para.ANGLE_D * pi / 180)
                     # c1 walk
                     x1_1, y1_1 = Para.CROSSROAD_SIZE_LAT / 2, \
-                                 Para.OFFSET_R + Para.GREEN_BELT_LAT + (Para.LANE_WIDTH_1 + Para.LANE_WIDTH_3 * (Para.LANE_NUMBER_LAT_IN - 1)) + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH
+                                 Para.OFFSET_R + Para.R_GREEN + (Para.R_IN_0 + Para.R_IN_1 + Para.R_IN_2 + Para.R_IN_3) + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH
                     x2_1, y2_1 = Para.CROSSROAD_SIZE_LAT / 2 - Para.WALK_WIDTH, \
-                                 Para.OFFSET_R + Para.GREEN_BELT_LAT + (Para.LANE_WIDTH_1 + Para.LANE_WIDTH_3 * (
-                                             Para.LANE_NUMBER_LAT_IN - 1)) + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH
+                                 Para.OFFSET_R + Para.R_GREEN + (Para.R_IN_0 + Para.R_IN_1 + Para.R_IN_2 + Para.R_IN_3) + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH
                     x3_1, y3_1 = Para.CROSSROAD_SIZE_LAT / 2 - Para.WALK_WIDTH, \
-                                 Para.OFFSET_R - (Para.LANE_WIDTH_1 + Para.LANE_WIDTH_3 * (Para.LANE_NUMBER_LAT_OUT - 1)) - Para.BIKE_LANE_WIDTH - Para.PERSON_LANE_WIDTH
+                                 Para.OFFSET_R - (Para.R_OUT_0 + Para.R_OUT_1 + Para.R_OUT_2) - Para.BIKE_LANE_WIDTH - Para.PERSON_LANE_WIDTH
                     x4_1, y4_1 = Para.CROSSROAD_SIZE_LAT / 2, \
-                                 Para.OFFSET_R - (Para.LANE_WIDTH_1 + Para.LANE_WIDTH_3 * (Para.LANE_NUMBER_LAT_OUT - 1)) - Para.BIKE_LANE_WIDTH - Para.PERSON_LANE_WIDTH
+                                 Para.OFFSET_R - (Para.R_OUT_0 + Para.R_OUT_1 + Para.R_OUT_2) - Para.BIKE_LANE_WIDTH - Para.PERSON_LANE_WIDTH
                     # c3 walk
                     x1_3, y1_3 = -Para.CROSSROAD_SIZE_LAT / 2, \
-                                 Para.OFFSET_L + Para.GREEN_BELT_LAT + (Para.LANE_WIDTH_3 * Para.LANE_NUMBER_LAT_OUT) + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH
+                                 Para.OFFSET_L + Para.L_GREEN + (Para.L_OUT_0 + Para.L_OUT_1 + Para.L_OUT_2) + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH
                     x2_3, y2_3 = -Para.CROSSROAD_SIZE_LAT / 2 + Para.WALK_WIDTH, \
-                                 Para.OFFSET_L + Para.GREEN_BELT_LAT + (Para.LANE_WIDTH_3 * Para.LANE_NUMBER_LAT_OUT) + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH
+                                 Para.OFFSET_L + Para.L_GREEN + (Para.L_OUT_0 + Para.L_OUT_1 + Para.L_OUT_2) + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH
                     x3_3, y3_3 = -Para.CROSSROAD_SIZE_LAT / 2 + Para.WALK_WIDTH, \
-                                 Para.OFFSET_L - (Para.LANE_WIDTH_1 + Para.LANE_WIDTH_3 * (Para.LANE_NUMBER_LAT_IN - 1)) - Para.BIKE_LANE_WIDTH - Para.PERSON_LANE_WIDTH
+                                 Para.OFFSET_L - (Para.L_IN_0 + Para.L_IN_1 + Para.L_IN_2 + Para.L_IN_3) - Para.BIKE_LANE_WIDTH - Para.PERSON_LANE_WIDTH
                     x4_3, y4_3 = -Para.CROSSROAD_SIZE_LAT / 2, \
-                                 Para.OFFSET_L - (Para.LANE_WIDTH_1 + Para.LANE_WIDTH_3 * (Para.LANE_NUMBER_LAT_IN - 1)) - Para.BIKE_LANE_WIDTH - Para.PERSON_LANE_WIDTH
+                                 Para.OFFSET_L - (Para.L_IN_0 + Para.L_IN_1 + Para.L_IN_2 + Para.L_IN_3) - Para.BIKE_LANE_WIDTH - Para.PERSON_LANE_WIDTH
                     if if_inPoly([(x1_0, y1_0), (x2_0, y2_0), (x3_0, y3_0), (x4_0, y4_0)], (v['x'], v['y'])):
                         c0.append(v)
                     elif if_inPoly([(x1_1, y1_1), (x2_1, y2_1), (x3_1, y3_1), (x4_1, y4_1)], (v['x'], v['y'])):
@@ -604,17 +603,17 @@ class CrossroadEnd2endMix(gym.Env):
 
             mode2fillvalue_b = dict(
                 du_b=dict(type="bicycle_1",
-                          x=Para.OFFSET_D_X + (Para.GREEN_BELT_LON+ Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 + Para.BIKE_LANE_WIDTH / 2) * sin(Para.ANGLE_D * pi / 180),
+                          x=Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1 + Para.BIKE_LANE_WIDTH / 2) * sin(Para.ANGLE_D * pi / 180),
                           y=Para.OFFSET_D_Y - 25, v=0,
                           phi=Para.ANGLE_D, w=0.48, l=2, route=('1o', '3i'), partici_type=[1., 0., 0.], turn_rad=0., exist=False),
 
-                ud_b=dict(type="bicycle_1", x=Para.OFFSET_U_X - (Para.LANE_WIDTH_3 + Para.LANE_WIDTH_4),
+                ud_b=dict(type="bicycle_1", x=Para.OFFSET_U_X - (Para.U_IN_0 + Para.U_IN_1),
                           y=Para.OFFSET_U_Y + 25, v=0,
                           phi=-(180 - Para.ANGLE_U), w=0.48, l=2, route=('3o', '1i'), partici_type=[1., 0., 0.], turn_rad=0.,
                           exist=False),
 
                 lr_b=dict(type="bicycle_1", x=-(Para.CROSSROAD_SIZE_LAT / 2 + 30),
-                          y=-(-Para.OFFSET_L + Para.LANE_WIDTH_1 +  Para.LANE_WIDTH_3 * (Para.LANE_NUMBER_LAT_IN -1) + Para.BIKE_LANE_WIDTH / 2),
+                          y=-(-Para.OFFSET_L + Para.L_IN_0 + Para.L_IN_1 + Para.L_IN_2 + Para.L_IN_3 + Para.BIKE_LANE_WIDTH / 2),
                           v=0, phi=0, w=0.48, l=2, route=('4o', '2i'), partici_type=[1., 0., 0.], turn_rad=0.,
                           exist=False))
 
@@ -639,7 +638,7 @@ class CrossroadEnd2endMix(gym.Env):
 
             # fetch person in range
             c0 = list(filter(lambda v: Para.OFFSET_U_X - 4 < v['x'] and v['y'] > ego_y - Para.L, c0))  # interest of straight
-            c1 = list(filter(lambda v: v['y'] < Para.OFFSET_R + Para.GREEN_BELT_LAT and v['x'] > ego_x - Para.L, c1))  # interest of right
+            c1 = list(filter(lambda v: v['y'] < Para.OFFSET_R + Para.R_GREEN and v['x'] > ego_x - Para.L, c1))  # interest of right
             c2 = list(filter(lambda v: Para.OFFSET_D_X - 4 < v['x'] and v['y'] > ego_y - Para.L, c2))  # interest of right
             c3 = list(filter(lambda v: Para.OFFSET_L < v['y'] and v['x'] < ego_x + Para.L, c3))  # interest of left
             # sort
@@ -649,13 +648,13 @@ class CrossroadEnd2endMix(gym.Env):
 
             mode2fillvalue_p = dict(
                 c1=dict(type='DEFAULT_PEDTYPE',
-                        x=Para.OFFSET_D_X + (Para.GREEN_BELT_LON+ Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 + Para.BIKE_LANE_WIDTH / 2) * sin(Para.ANGLE_D * pi / 180),
+                        x=Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1 + Para.BIKE_LANE_WIDTH / 2) * sin(Para.ANGLE_D * pi / 180),
                         y=Para.OFFSET_D_Y - 30,
                         v=0, phi=Para.ANGLE_D, w=0.525, l=0.75, road="0_c1", partici_type=[0., 1., 0.], turn_rad=0., exist=False),
                 c2=dict(type='DEFAULT_PEDTYPE', x=-(Para.CROSSROAD_SIZE_LAT / 2 + 30), y=-(
-                            -Para.OFFSET_L + Para.LANE_WIDTH_1 * Para.LANE_NUMBER_LAT_IN + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH / 2),
+                            -Para.OFFSET_L + Para.L_IN_0 + Para.L_IN_1 + Para.L_IN_2 + Para.L_IN_3 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH / 2),
                         v=0, phi=0, w=0.525, l=0.75, road="0_c2", partici_type=[0., 1., 0.], turn_rad=0., exist=False),
-                c3=dict(type='DEFAULT_PEDTYPE', x=Para.OFFSET_U_X - (Para.LANE_WIDTH_3 + Para.LANE_WIDTH_4),
+                c3=dict(type='DEFAULT_PEDTYPE', x=Para.OFFSET_U_X - (Para.U_IN_0 + Para.U_IN_1),
                           y=Para.OFFSET_U_Y + 30, v=0,  phi=-(180 - Para.ANGLE_U),  w=0.525, l=0.75, road="0_c3", partici_type=[0., 1., 0.], turn_rad=0.,
                         exist=False))
 
@@ -720,18 +719,18 @@ class CrossroadEnd2endMix(gym.Env):
             lr = sorted(lr, key=lambda v: -v['x'])
 
             mode2fillvalue = dict(
-                dl=dict(type="car_1", x=Para.OFFSET_D_X + Para.GREEN_BELT_LON * sin(Para.ANGLE_D * pi / 180),
+                dl=dict(type="car_1", x=Para.OFFSET_D_X + Para.D_GREEN * sin(Para.ANGLE_D * pi / 180),
                         y=Para.OFFSET_D_Y - 30, v=0, phi=Para.ANGLE_D, w=2.5, l=5, route=('1o', '4i'), partici_type=[0., 0., 1.],
                         turn_rad=0., exist=False),
-                du=dict(type="car_1", x=Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_2) * sin(Para.ANGLE_D * pi / 180),
+                du=dict(type="car_1", x=Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0) * sin(Para.ANGLE_D * pi / 180),
                         y=Para.OFFSET_D_Y - 30, v=0, phi=Para.ANGLE_D, w=2.5, l=5, route=('1o', '3i'),
                         partici_type=[0., 0., 1.], turn_rad=0., exist=False),
-                dr=dict(type="car_1", x=Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_2) * sin(Para.ANGLE_D * pi / 180),
+                dr=dict(type="car_1", x=Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0) * sin(Para.ANGLE_D * pi / 180),
                         y=Para.OFFSET_D_Y - 30, v=0, phi=Para.ANGLE_D, w=2.5, l=5, route=('1o', '2i'),
                         partici_type=[0., 0., 1.], turn_rad=0., exist=False),
 
                 ru=dict(type="car_1", x=(Para.CROSSROAD_SIZE_LAT / 2 + 30),
-                        y=Para.LANE_WIDTH_1 + Para.LANE_WIDTH_3 * (Para.LANE_NUMBER_LAT_IN - 1.5) + Para.OFFSET_R + Para.GREEN_BELT_LAT,
+                        y=Para.R_IN_0 + Para.R_IN_1 + Para.R_IN_2 + Para.R_IN_3 * 0.5 + Para.OFFSET_R + Para.R_GREEN,
                         v=0, phi=180, w=2.5, l=5, route=('2o', '3i'), partici_type=[0., 0., 1.],
                         turn_rad=0., exist=False),
                 ur=dict(type="car_1", x=Para.OFFSET_U_X, y=Para.OFFSET_U_Y + 30,
@@ -740,11 +739,11 @@ class CrossroadEnd2endMix(gym.Env):
                 ud=dict(type="car_1", x=Para.OFFSET_U_X, y=Para.OFFSET_U_Y + 30,
                         v=0, phi=-(180 - Para.ANGLE_U), w=2.5, l=5, route=('3o', '1i'),
                         partici_type=[0., 0., 1.], turn_rad=0., exist=False),
-                ul=dict(type="car_1", x=Para.OFFSET_U_X - Para.LANE_WIDTH_3,
+                ul=dict(type="car_1", x=Para.OFFSET_U_X - Para.U_IN_0,
                         y=Para.OFFSET_U_Y + 30, v=0, phi=-(180 - Para.ANGLE_U), w=2.5, l=5, route=('3o', '4i'),
                         partici_type=[0., 0., 1.], turn_rad=0., exist=False),
                 lr=dict(type="car_1", x=-(Para.CROSSROAD_SIZE_LAT / 2 + 30),
-                        y=-(-Para.OFFSET_L + Para.LANE_WIDTH_1 * (Para.LANE_NUMBER_LAT_IN - 1.5)), v=0, phi=0, w=2.5,
+                        y=-(-Para.OFFSET_L + Para.L_IN_0 + Para.L_IN_1 * 0.5), v=0, phi=0, w=2.5,
                         l=5, route=('4o', '2i'), partici_type=[0., 0., 1.], turn_rad=0., exist=False))
 
             tmp_v = []
@@ -834,73 +833,31 @@ class CrossroadEnd2endMix(gym.Env):
                         v.update(partici_type=[0., 0., 1.], turn_rad=cal_turn_rad(v), exist=True)
                         veh_all.append(v)
 
-            mode2fillvalue_b = dict(
-                du_b=dict(type="bicycle_1",
-                          x=Para.OFFSET_D_X + (Para.GREEN_BELT_LON+ Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 + Para.BIKE_LANE_WIDTH / 2) * sin(Para.ANGLE_D * pi / 180),
-                          y=Para.OFFSET_D_Y - 25, v=0,
-                          phi=Para.ANGLE_D, w=0.48, l=2, route=('1o', '3i'), partici_type=[1., 0., 0.], turn_rad=0., exist=False),
+            mode2fillvalue_b = dict(type="bicycle_1", x=Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1 + Para.BIKE_LANE_WIDTH / 2) * sin(Para.ANGLE_D * pi / 180),
+                          y=Para.OFFSET_D_Y - 25, v=0, phi=Para.ANGLE_D, w=0.48, l=2, route=('1o', '3i'), partici_type=[1., 0., 0.], turn_rad=0., exist=False)
 
-                ud_b=dict(type="bicycle_1", x=Para.OFFSET_U_X - (Para.LANE_WIDTH_3 + Para.LANE_WIDTH_4),
-                          y=Para.OFFSET_U_Y + 25, v=0,
-                          phi=-(180 - Para.ANGLE_U), w=0.48, l=2, route=('3o', '1i'), partici_type=[1., 0., 0.], turn_rad=0.,
-                          exist=False),
+            mode2fillvalue_p = dict(type='DEFAULT_PEDTYPE',
+                        x=Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1 + Para.BIKE_LANE_WIDTH / 2) * sin(Para.ANGLE_D * pi / 180),
+                        y=Para.OFFSET_D_Y - 30, v=0, phi=Para.ANGLE_D, w=0.525, l=0.75, road="0_c1", partici_type=[0., 1., 0.], turn_rad=0., exist=False)
 
-                lr_b=dict(type="bicycle_1", x=-(Para.CROSSROAD_SIZE_LAT / 2 + 30),
-                          y=-(-Para.OFFSET_L + Para.LANE_WIDTH_1 +  Para.LANE_WIDTH_3 * (Para.LANE_NUMBER_LAT_IN -1) + Para.BIKE_LANE_WIDTH / 2),
-                          v=0, phi=0, w=0.48, l=2, route=('4o', '2i'), partici_type=[1., 0., 0.], turn_rad=0.,
-                          exist=False))
-
-            mode2fillvalue_p = dict(
-                c1=dict(type='DEFAULT_PEDTYPE',
-                        x=Para.OFFSET_D_X + (Para.GREEN_BELT_LON+ Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 + Para.BIKE_LANE_WIDTH / 2) * sin(Para.ANGLE_D * pi / 180),
-                        y=Para.OFFSET_D_Y - 30,
-                        v=0, phi=Para.ANGLE_D, w=0.525, l=0.75, road="0_c1", partici_type=[0., 1., 0.], turn_rad=0., exist=False),
-                c2=dict(type='DEFAULT_PEDTYPE', x=-(Para.CROSSROAD_SIZE_LAT / 2 + 30), y=-(
-                            -Para.OFFSET_L + Para.LANE_WIDTH_1 * Para.LANE_NUMBER_LAT_IN + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH / 2),
-                        v=0, phi=0, w=0.525, l=0.75, road="0_c2", partici_type=[0., 1., 0.], turn_rad=0., exist=False),
-                c3=dict(type='DEFAULT_PEDTYPE', x=Para.OFFSET_U_X - (Para.LANE_WIDTH_3 + Para.LANE_WIDTH_4),
-                          y=Para.OFFSET_U_Y + 30, v=0,  phi=-(180 - Para.ANGLE_U),  w=0.525, l=0.75, road="0_c3", partici_type=[0., 1., 0.], turn_rad=0.,
-                        exist=False))
-            mode2fillvalue = dict(
-                dl=dict(type="car_1", x=Para.OFFSET_D_X + Para.GREEN_BELT_LON * sin(Para.ANGLE_D * pi / 180),
+            mode2fillvalue_v = dict(type="car_1", x=Para.OFFSET_D_X + Para.D_GREEN * sin(Para.ANGLE_D * pi / 180),
                         y=Para.OFFSET_D_Y - 30, v=0, phi=Para.ANGLE_D, w=2.5, l=5, route=('1o', '4i'), partici_type=[0., 0., 1.],
-                        turn_rad=0., exist=False),
-                du=dict(type="car_1", x=Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_2) * sin(Para.ANGLE_D * pi / 180),
-                        y=Para.OFFSET_D_Y - 30, v=0, phi=Para.ANGLE_D, w=2.5, l=5, route=('1o', '3i'),
-                        partici_type=[0., 0., 1.], turn_rad=0., exist=False),
-                dr=dict(type="car_1", x=Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_2) * sin(Para.ANGLE_D * pi / 180),
-                        y=Para.OFFSET_D_Y - 30, v=0, phi=Para.ANGLE_D, w=2.5, l=5, route=('1o', '2i'),
-                        partici_type=[0., 0., 1.], turn_rad=0., exist=False))
+                        turn_rad=0., exist=False)
 
             while len(bike_all) < self.bike_num:
-                if self.training_task == 'left':
-                    bike_all.append(mode2fillvalue_b['ud_b'])
-                elif self.training_task == 'straight':
-                    bike_all.append(mode2fillvalue_b['du_b'])
-                else:
-                    bike_all.append(mode2fillvalue_b['du_b'])
+                bike_all.append(mode2fillvalue_b)
             if len(bike_all) > self.bike_num:
                 bike_all_sorted = sorted(bike_all, key=lambda v: (sqrt((v['y'] - ego_y) ** 2 + (v['x'] - ego_x) ** 2)))
                 bike_all = bike_all_sorted[:self.bike_num]
 
             while len(ped_all) < self.person_num:
-                if self.training_task == 'left':
-                    ped_all.append(mode2fillvalue_p['c3'])
-                elif self.training_task == 'straight':
-                    ped_all.append(mode2fillvalue_p['c2'])
-                else:
-                    ped_all.append(mode2fillvalue_p['c1'])
+                ped_all.append(mode2fillvalue_p)
             if len(ped_all) > self.person_num:
                 ped_all_sorted = sorted(ped_all, key=lambda v: (sqrt((v['y'] - ego_y) ** 2 + (v['x'] - ego_x) ** 2)))
                 ped_all = ped_all_sorted[:self.person_num]
 
             while len(veh_all) < self.veh_num:
-                if self.training_task == 'left':
-                    veh_all.append(mode2fillvalue['dl'])
-                elif self.training_task == 'straight':
-                    veh_all.append(mode2fillvalue['du'])
-                else:
-                    veh_all.append(mode2fillvalue['dr'])
+                veh_all.append(mode2fillvalue_v)
             if len(veh_all) > self.veh_num:
                 veh_all_sorted = sorted(veh_all, key=lambda v: (sqrt((v['y'] - ego_y) ** 2 + (v['x'] - ego_x) ** 2), -v['x']))
                 veh_all = veh_all_sorted[:self.veh_num]
