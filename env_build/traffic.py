@@ -250,12 +250,11 @@ class Traffic(object):
     def generate_random_traffic(self):
         random_traffic = traci.junction.getContextSubscriptionResults('0')
         random_traffic = copy.deepcopy(random_traffic)
-
+        if 'vir_car' in random_traffic:
+            del random_traffic['vir_car']
         for ego_id in self.n_ego_dict.keys():
             if ego_id in random_traffic:
                 del random_traffic[ego_id]
-            elif 'vir_car' in random_traffic:
-                del random_traffic['vir_car']
         return random_traffic
 
     def init_light(self, traffic_case):
