@@ -140,13 +140,13 @@ class Para:
     # MAP
     # todo
 
-    LANE_WIDTH_1 = 3.50
-    LANE_WIDTH_2 = 3.70
-    LANE_WIDTH_3 = 3.75
-    LANE_WIDTH_4 = 3.80
-
-    GREEN_BELT_LAT = 9.5
-    GREEN_BELT_LON = 1.0
+    # LANE_WIDTH_1 = 3.50
+    # LANE_WIDTH_2 = 3.70
+    # LANE_WIDTH_3 = 3.75
+    # LANE_WIDTH_4 = 3.80
+    #
+    # GREEN_BELT_LAT = 9.5
+    # GREEN_BELT_LON = 1.0
 
 
     # DIM
