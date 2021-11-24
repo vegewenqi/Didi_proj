@@ -81,7 +81,7 @@ class Para:
     BIKE_LANE_WIDTH = 1.0
     PERSON_LANE_WIDTH = 2.0
 
-    OFFSET_L = -2
+    OFFSET_L = -1.7
     OFFSET_R = -5.2
     OFFSET_U_X = 1.65
     OFFSET_U_Y = 33.2
@@ -123,6 +123,7 @@ class Para:
     L_IN_1, _ = calculate_distance_angle(E_I[2], E_I[3])
     L_IN_2, _ = calculate_distance_angle(E_I[1], E_I[2])
     L_IN_3, _ = calculate_distance_angle(E_I[0], E_I[1])
+    L_IN_3 -= 0.1
     L_GREEN, _ = calculate_distance_angle(E_I[4], E_I[5])
     L_GREEN -= 0.2
     L_OUT_0, _ = calculate_distance_angle(E_I[5], E_I[6])
