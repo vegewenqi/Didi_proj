@@ -147,9 +147,9 @@ class Para:
     PER_OTHER_INFO_DIM = 10
 
     # MAX NUM
-    MAX_VEH_NUM = 8  # to be align with VEHICLE_MODE_DICT
-    MAX_BIKE_NUM = 4  # to be align with BIKE_MODE_DICT
-    MAX_PERSON_NUM = 4  # to be align with PERSON_MODE_DICT
+    MAX_VEH_NUM = 6  # to be align with VEHICLE_MODE_DICT
+    MAX_BIKE_NUM = 6  # to be align with BIKE_MODE_DICT
+    MAX_PERSON_NUM = 6  # to be align with PERSON_MODE_DICT
 
     # NOISE
     # (v_x, v_y, r, x, y, phi) for ego
