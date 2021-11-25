@@ -406,18 +406,24 @@ class EnvironmentModel(object):  # all tensors
             ax.spines['right'].set_visible(False)
             ax.axis("equal")
 
-            ax.add_patch(plt.Rectangle((Para.CROSSROAD_SIZE_LAT / 2, Para.OFFSET_R), extension, Para.GREEN_BELT_LAT, edgecolor='black', facecolor='green',
-                          linewidth=1))
-            ax.add_patch(plt.Rectangle((-Para.CROSSROAD_SIZE_LAT / 2 - extension, Para.OFFSET_L), extension, Para.GREEN_BELT_LAT, edgecolor='black', facecolor='green',
-                          linewidth=1))
-            ax.add_patch(plt.Rectangle((-Para.CROSSROAD_SIZE_LAT / 2 - extension, Para.OFFSET_L), extension, Para.GREEN_BELT_LAT, edgecolor='black', facecolor='green',
-                          linewidth=1))
+            ax.add_patch(
+                plt.Rectangle((Para.CROSSROAD_SIZE_LAT / 2, Para.OFFSET_R), extension, Para.R_GREEN, edgecolor='white',
+                              facecolor='green',
+                              linewidth=1, alpha=0.7))
+            ax.add_patch(
+                plt.Rectangle((-Para.CROSSROAD_SIZE_LAT / 2 - extension, Para.OFFSET_L), extension, Para.L_GREEN,
+                              edgecolor='white', facecolor='green',
+                              linewidth=1, alpha=0.7))
+            ax.add_patch(plt.Rectangle((Para.OFFSET_D_X - extension * math.cos(Para.ANGLE_D / 180 * pi),
+                                        Para.OFFSET_D_Y - extension * math.sin(Para.ANGLE_D / 180 * pi)),
+                                       Para.D_GREEN, extension, edgecolor='white', facecolor='green',
+                                       angle=-(90 - Para.ANGLE_D), linewidth=1, alpha=0.7))
 
             # Left out lane
             for i in range(1, Para.LANE_NUMBER_LAT_OUT + 2):
-                lane_width_flag = [Para.LANE_WIDTH_3, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
+                lane_width_flag = [Para.L_OUT_0, Para.L_OUT_1, Para.L_OUT_2,
                                    Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
-                base = Para.OFFSET_L + Para.GREEN_BELT_LAT
+                base = Para.OFFSET_L + Para.L_GREEN
                 linestyle = dotted_line_style if i < Para.LANE_NUMBER_LAT_OUT else solid_line_style
                 linewidth = 1 if i < Para.LANE_NUMBER_LAT_OUT else 1
                 plt.plot([-Para.CROSSROAD_SIZE_LAT / 2 - extension, -Para.CROSSROAD_SIZE_LAT / 2],
@@ -425,7 +431,7 @@ class EnvironmentModel(object):  # all tensors
                          linestyle=linestyle, color='black', linewidth=linewidth)
             # Left in lane
             for i in range(1, Para.LANE_NUMBER_LAT_IN + 2):
-                lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
+                lane_width_flag = [Para.L_IN_0, Para.L_IN_1, Para.L_IN_2, Para.L_IN_3,
                                    Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
                 base = Para.OFFSET_L
                 linestyle = dotted_line_style if i < Para.LANE_NUMBER_LAT_IN else solid_line_style
@@ -436,7 +442,7 @@ class EnvironmentModel(object):  # all tensors
 
             # Right out lane
             for i in range(1, Para.LANE_NUMBER_LAT_OUT + 2):
-                lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
+                lane_width_flag = [Para.R_OUT_0, Para.R_OUT_1, Para.R_OUT_2,
                                    Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
                 base = Para.OFFSET_R
                 linestyle = dotted_line_style if i < Para.LANE_NUMBER_LAT_OUT else solid_line_style
@@ -447,9 +453,9 @@ class EnvironmentModel(object):  # all tensors
 
             # Right in lane
             for i in range(1, Para.LANE_NUMBER_LAT_IN + 2):
-                lane_width_flag = [Para.LANE_WIDTH_1, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3, Para.LANE_WIDTH_3,
+                lane_width_flag = [Para.R_IN_0, Para.R_IN_1, Para.R_IN_2, Para.R_IN_3,
                                    Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
-                base = Para.OFFSET_R + Para.GREEN_BELT_LAT
+                base = Para.OFFSET_R + Para.R_GREEN
                 linestyle = dotted_line_style if i < Para.LANE_NUMBER_LAT_IN else solid_line_style
                 linewidth = 1 if i < Para.LANE_NUMBER_LAT_IN else 1
                 plt.plot([Para.CROSSROAD_SIZE_LAT / 2, Para.CROSSROAD_SIZE_LAT / 2 + extension],
@@ -458,76 +464,171 @@ class EnvironmentModel(object):  # all tensors
 
             # Up in lane
             for i in range(1, Para.LANE_NUMBER_LON_IN + 2):
-                lane_width_flag = [Para.LANE_WIDTH_4, Para.LANE_WIDTH_3, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+                lane_width_flag = [Para.U_IN_0, Para.U_IN_1, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
                 base_x, base_y = Para.OFFSET_U_X, Para.OFFSET_U_Y
                 linestyle = dotted_line_style if i < Para.LANE_NUMBER_LON_IN else solid_line_style
                 linewidth = 1 if i < Para.LANE_NUMBER_LON_IN else 1
-                plt.plot([base_x - sum(lane_width_flag[:i]) * math.cos((90 - Para.ANGLE_U)/180 * pi) + extension * math.cos(Para.ANGLE_U/180 * pi),
-                          base_x - sum(lane_width_flag[:i]) * math.cos((90 - Para.ANGLE_U)/180 * pi)],
-                         [base_y + sum(lane_width_flag[:i]) * math.sin((90 - Para.ANGLE_U)/180 * pi) + extension * math.sin(Para.ANGLE_U/180 * pi),
-                          base_y + sum(lane_width_flag[:i]) * math.sin((90 - Para.ANGLE_U)/180 * pi)],
+                plt.plot([base_x - sum(lane_width_flag[:i]) * math.cos(
+                    (90 - Para.ANGLE_U) / 180 * pi) + extension * math.cos(
+                    Para.ANGLE_U / 180 * pi),
+                          base_x - sum(lane_width_flag[:i]) * math.cos((90 - Para.ANGLE_U) / 180 * pi)],
+                         [base_y + sum(lane_width_flag[:i]) * math.sin(
+                             (90 - Para.ANGLE_U) / 180 * pi) + extension * math.sin(
+                             Para.ANGLE_U / 180 * pi),
+                          base_y + sum(lane_width_flag[:i]) * math.sin((90 - Para.ANGLE_U) / 180 * pi)],
                          linestyle=linestyle, color='black', linewidth=linewidth)
 
             # Up out lane
             for i in range(0, Para.LANE_NUMBER_LON_OUT + 2):
-                lane_width_flag = [Para.LANE_WIDTH_4, Para.LANE_WIDTH_4, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+                lane_width_flag = [Para.U_OUT_0, Para.U_OUT_1, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
                 base_x, base_y = Para.OFFSET_U_X, Para.OFFSET_U_Y
                 linestyle = dotted_line_style if i < Para.LANE_NUMBER_LON_OUT else solid_line_style
                 linewidth = 1 if i < Para.LANE_NUMBER_LON_OUT else 1
                 if i == 0:
                     linestyle = solid_line_style
-                plt.plot([base_x + sum(lane_width_flag[:i]) * math.cos((90 - Para.ANGLE_U)/180 * pi) + extension * math.cos(Para.ANGLE_U/180 * pi),
-                          base_x + sum(lane_width_flag[:i]) * math.cos((90 - Para.ANGLE_U)/180 * pi)],
-                         [base_y - sum(lane_width_flag[:i]) * math.sin((90 - Para.ANGLE_U)/180 * pi) + extension * math.sin(Para.ANGLE_U/180 * pi),
-                          base_y - sum(lane_width_flag[:i]) * math.sin((90 - Para.ANGLE_U)/180 * pi)],
+                plt.plot([base_x + sum(lane_width_flag[:i]) * math.cos(
+                    (90 - Para.ANGLE_U) / 180 * pi) + extension * math.cos(
+                    Para.ANGLE_U / 180 * pi),
+                          base_x + sum(lane_width_flag[:i]) * math.cos((90 - Para.ANGLE_U) / 180 * pi)],
+                         [base_y - sum(lane_width_flag[:i]) * math.sin(
+                             (90 - Para.ANGLE_U) / 180 * pi) + extension * math.sin(
+                             Para.ANGLE_U / 180 * pi),
+                          base_y - sum(lane_width_flag[:i]) * math.sin((90 - Para.ANGLE_U) / 180 * pi)],
                          linestyle=linestyle, color='black', linewidth=linewidth)
 
             # Down in lane
             for i in range(0, Para.LANE_NUMBER_LON_IN + 2):
-                lane_width_flag = [Para.LANE_WIDTH_3, Para.LANE_WIDTH_2, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
-                base_x, base_y = Para.OFFSET_D_X + Para.GREEN_BELT_LON * math.cos((90 - Para.ANGLE_D)/180 * pi), Para.OFFSET_D_Y - Para.GREEN_BELT_LON * math.sin((90 - Para.ANGLE_D)/180 * pi)
+                lane_width_flag = [Para.D_IN_0, Para.D_IN_1, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+                base_x, base_y = Para.OFFSET_D_X + Para.D_GREEN * math.cos(
+                    (90 - Para.ANGLE_D) / 180 * pi), Para.OFFSET_D_Y - Para.D_GREEN * math.sin(
+                    (90 - Para.ANGLE_D) / 180 * pi)
                 linestyle = dotted_line_style if i < Para.LANE_NUMBER_LON_IN else solid_line_style
                 linewidth = 1 if i < Para.LANE_NUMBER_LON_IN else 1
-                plt.plot([base_x + sum(lane_width_flag[:i]) * math.cos((90 - Para.ANGLE_D)/180 * pi) - extension * math.cos(Para.ANGLE_D/180 * pi),
-                          base_x + sum(lane_width_flag[:i]) * math.cos((90 - Para.ANGLE_D)/180 * pi)],
-                         [base_y - sum(lane_width_flag[:i]) * math.sin((90 - Para.ANGLE_D)/180 * pi) - extension * math.sin(Para.ANGLE_D/180 * pi),
-                          base_y - sum(lane_width_flag[:i]) * math.sin((90 - Para.ANGLE_D)/180 * pi)],
+                plt.plot([base_x + sum(lane_width_flag[:i]) * math.cos(
+                    (90 - Para.ANGLE_D) / 180 * pi) - extension * math.cos(
+                    Para.ANGLE_D / 180 * pi),
+                          base_x + sum(lane_width_flag[:i]) * math.cos((90 - Para.ANGLE_D) / 180 * pi)],
+                         [base_y - sum(lane_width_flag[:i]) * math.sin(
+                             (90 - Para.ANGLE_D) / 180 * pi) - extension * math.sin(
+                             Para.ANGLE_D / 180 * pi),
+                          base_y - sum(lane_width_flag[:i]) * math.sin((90 - Para.ANGLE_D) / 180 * pi)],
                          linestyle=linestyle, color='black', linewidth=linewidth)
 
             # Down out lane
             for i in range(1, Para.LANE_NUMBER_LON_OUT + 2):
-                lane_width_flag = [Para.LANE_WIDTH_2, Para.LANE_WIDTH_2, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
+                lane_width_flag = [Para.D_OUT_0, Para.D_OUT_1, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]
                 base_x, base_y = Para.OFFSET_D_X, Para.OFFSET_D_Y
                 linestyle = dotted_line_style if i < Para.LANE_NUMBER_LON_OUT else solid_line_style
                 linewidth = 1 if i < Para.LANE_NUMBER_LON_OUT else 1
-                plt.plot([base_x - sum(lane_width_flag[:i]) * math.cos((90 - Para.ANGLE_D)/180 * pi) - extension * math.cos(Para.ANGLE_D/180 * pi),
-                          base_x - sum(lane_width_flag[:i]) * math.cos((90 - Para.ANGLE_D)/180 * pi)],
-                         [base_y + sum(lane_width_flag[:i]) * math.sin((90 - Para.ANGLE_D)/180 * pi) - extension * math.sin(Para.ANGLE_D/180 * pi),
-                          base_y + sum(lane_width_flag[:i]) * math.sin((90 - Para.ANGLE_D)/180 * pi)],
+                plt.plot([base_x - sum(lane_width_flag[:i]) * math.cos(
+                    (90 - Para.ANGLE_D) / 180 * pi) - extension * math.cos(
+                    Para.ANGLE_D / 180 * pi),
+                          base_x - sum(lane_width_flag[:i]) * math.cos((90 - Para.ANGLE_D) / 180 * pi)],
+                         [base_y + sum(lane_width_flag[:i]) * math.sin(
+                             (90 - Para.ANGLE_D) / 180 * pi) - extension * math.sin(
+                             Para.ANGLE_D / 180 * pi),
+                          base_y + sum(lane_width_flag[:i]) * math.sin((90 - Para.ANGLE_D) / 180 * pi)],
                          linestyle=linestyle, color='black', linewidth=linewidth)
 
-            ax.add_patch(plt.Rectangle((Para.OFFSET_D_X - extension * math.cos(Para.ANGLE_D/180 * pi), Para.OFFSET_D_Y -extension * math.sin(Para.ANGLE_D/180 * pi)),
-                                       Para.GREEN_BELT_LON, extension,  edgecolor='black', facecolor='green', angle=-(90 - Para.ANGLE_D), linewidth=1))
-
             # Oblique
-            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, Para.OFFSET_U_X - (Para.LANE_WIDTH_3 + Para.LANE_WIDTH_4 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.cos((90 - Para.ANGLE_U)/180 * pi)],
-                     [Para.OFFSET_L + Para.GREEN_BELT_LAT + Para.LANE_NUMBER_LAT_OUT * Para.LANE_WIDTH_3 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH,
-                      Para.OFFSET_U_Y + (Para.LANE_WIDTH_3 + Para.LANE_WIDTH_4 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.sin((90 - Para.ANGLE_U)/180 * pi)],
+            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, Para.OFFSET_U_X - (
+                    Para.U_IN_0 + Para.U_IN_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.cos(
+                (90 - Para.ANGLE_U) / 180 * pi)],
+                     [
+                         Para.OFFSET_L + Para.L_GREEN + Para.L_OUT_0 + Para.L_OUT_1 + Para.L_OUT_2 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH,
+                         Para.OFFSET_U_Y + (
+                                 Para.U_IN_0 + Para.U_IN_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.sin(
+                             (90 - Para.ANGLE_U) / 180 * pi)],
                      color='black', linewidth=1)
-            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, Para.OFFSET_D_X - (Para.LANE_WIDTH_2 + Para.LANE_WIDTH_2 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.cos((90 - Para.ANGLE_D)/180 * pi)],
-                     [Para.OFFSET_L - Para.LANE_WIDTH_1 - (Para.LANE_NUMBER_LAT_IN-1) * Para.LANE_WIDTH_3 - Para.BIKE_LANE_WIDTH - Para.PERSON_LANE_WIDTH,
-                      Para.OFFSET_D_Y + (Para.LANE_WIDTH_2 + Para.LANE_WIDTH_2 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.sin((90 - Para.ANGLE_D)/180 * pi)],
+            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, Para.OFFSET_D_X - (
+                    Para.D_OUT_0 + Para.D_OUT_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.cos(
+                (90 - Para.ANGLE_D) / 180 * pi)],
+                     [
+                         Para.OFFSET_L - Para.L_IN_0 - Para.L_IN_1 - Para.L_IN_2 - Para.L_IN_3 - Para.BIKE_LANE_WIDTH - Para.PERSON_LANE_WIDTH,
+                         Para.OFFSET_D_Y + (
+                                 Para.D_OUT_0 + Para.D_OUT_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.sin(
+                             (90 - Para.ANGLE_D) / 180 * pi)],
                      color='black', linewidth=1)
             plt.plot([Para.CROSSROAD_SIZE_LAT / 2,
-                      Para.OFFSET_D_X + (Para.GREEN_BELT_LON + Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.cos((90 - Para.ANGLE_D)/180 * pi)],
-                     [Para.OFFSET_R - (Para.LANE_WIDTH_1 + Para.LANE_WIDTH_3 + Para.LANE_WIDTH_3) - Para.BIKE_LANE_WIDTH - Para.PERSON_LANE_WIDTH,
-                      Para.OFFSET_D_Y - (Para.GREEN_BELT_LON + Para.LANE_WIDTH_2 + Para.LANE_WIDTH_3 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.sin((90 - Para.ANGLE_D) / 180 * pi)],
+                      Para.OFFSET_D_X + (
+                              Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.cos(
+                          (90 - Para.ANGLE_D) / 180 * pi)],
+                     [Para.OFFSET_R - (
+                             Para.R_OUT_0 + Para.R_OUT_1 + Para.R_OUT_2) - Para.BIKE_LANE_WIDTH - Para.PERSON_LANE_WIDTH,
+                      Para.OFFSET_D_Y - (
+                              Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.sin(
+                          (90 - Para.ANGLE_D) / 180 * pi)],
                      color='black', linewidth=1)
             plt.plot([Para.CROSSROAD_SIZE_LAT / 2,
-                      Para.OFFSET_U_X + (Para.LANE_WIDTH_4 + Para.LANE_WIDTH_4 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.cos((90 - Para.ANGLE_U)/180 * pi)],
-                     [Para.OFFSET_R + (Para.GREEN_BELT_LAT + Para.LANE_WIDTH_1 + Para.LANE_WIDTH_3 * (Para.LANE_NUMBER_LAT_IN - 1)) + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH,
-                      Para.OFFSET_U_Y - (Para.LANE_WIDTH_4 + Para.LANE_WIDTH_4 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.sin((90 - Para.ANGLE_U) / 180 * pi)],
+                      Para.OFFSET_U_X + (
+                              Para.U_OUT_0 + Para.U_OUT_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.cos(
+                          (90 - Para.ANGLE_U) / 180 * pi)],
+                     [Para.OFFSET_R + (
+                                 Para.R_GREEN + Para.R_IN_0 + Para.R_IN_1 + Para.R_IN_2 + Para.R_IN_3) + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH,
+                      Para.OFFSET_U_Y - (
+                              Para.U_OUT_0 + Para.U_OUT_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) * math.sin(
+                          (90 - Para.ANGLE_U) / 180 * pi)],
                      color='black', linewidth=1)
+
+            # stop line
+            light_line_width = 2
+            v_color_1, v_color_2, h_color_1, h_color_2 = 'gray', 'gray', 'gray', 'gray'
+            lane_width_flag = [Para.D_IN_0, Para.D_IN_1, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # Down
+            plt.plot([Para.OFFSET_D_X + Para.D_GREEN * math.cos((Para.ANGLE_D - 90) * math.pi / 180),
+                      Para.OFFSET_D_X + (Para.D_GREEN + sum(lane_width_flag[:1])) * math.cos(
+                          (Para.ANGLE_D - 90) * math.pi / 180)],
+                     [Para.OFFSET_D_Y + Para.D_GREEN * math.sin((Para.ANGLE_D - 90) * math.pi / 180),
+                      Para.OFFSET_D_Y + (Para.D_GREEN + sum(lane_width_flag[:1])) * math.sin(
+                          (Para.ANGLE_D - 90) * math.pi / 180)],
+                     color=v_color_1, linewidth=light_line_width)
+            plt.plot([Para.OFFSET_D_X + (Para.D_GREEN + sum(lane_width_flag[:1])) * math.cos(
+                (Para.ANGLE_D - 90) * math.pi / 180),
+                      Para.OFFSET_D_X + (Para.D_GREEN + sum(lane_width_flag[:2])) * math.cos(
+                          (Para.ANGLE_D - 90) * math.pi / 180)],
+                     [Para.OFFSET_D_Y + (Para.D_GREEN + sum(lane_width_flag[:1])) * math.sin(
+                         (Para.ANGLE_D - 90) * math.pi / 180),
+                      Para.OFFSET_D_Y + (Para.D_GREEN + sum(lane_width_flag[:2])) * math.sin(
+                          (Para.ANGLE_D - 90) * math.pi / 180)],
+                     color='gray', linewidth=light_line_width)
+
+            lane_width_flag = [Para.U_IN_0, Para.U_IN_1, Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # Up
+            plt.plot([Para.OFFSET_U_X,
+                      Para.OFFSET_U_X + sum(lane_width_flag[:1]) * math.cos((Para.ANGLE_U + 90) * math.pi / 180)],
+                     [Para.OFFSET_U_Y,
+                      Para.OFFSET_U_Y + sum(lane_width_flag[:1]) * math.sin((Para.ANGLE_U + 90) * math.pi / 180)],
+                     color=v_color_1, linewidth=light_line_width)
+            plt.plot([Para.OFFSET_U_X + sum(lane_width_flag[:1]) * math.cos((Para.ANGLE_U + 90) * math.pi / 180),
+                      Para.OFFSET_U_X + sum(lane_width_flag[:2]) * math.cos((Para.ANGLE_U + 90) * math.pi / 180)],
+                     [Para.OFFSET_U_Y + sum(lane_width_flag[:1]) * math.sin((Para.ANGLE_U + 90) * math.pi / 180),
+                      Para.OFFSET_U_Y + sum(lane_width_flag[:2]) * math.sin((Para.ANGLE_U + 90) * math.pi / 180)],
+                     color='gray', linewidth=light_line_width)
+
+            lane_width_flag = [Para.L_IN_0, Para.L_IN_1, Para.L_IN_2, Para.L_IN_3,
+                               Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # left
+            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, -Para.CROSSROAD_SIZE_LAT / 2],
+                     [Para.OFFSET_L, Para.OFFSET_L - sum(lane_width_flag[:1])],
+                     color=h_color_1, linewidth=light_line_width)
+            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, -Para.CROSSROAD_SIZE_LAT / 2],
+                     [Para.OFFSET_L - sum(lane_width_flag[:1]), Para.OFFSET_L - sum(lane_width_flag[:3])],
+                     color=h_color_2, linewidth=light_line_width)
+            plt.plot([-Para.CROSSROAD_SIZE_LAT / 2, -Para.CROSSROAD_SIZE_LAT / 2],
+                     [Para.OFFSET_L - sum(lane_width_flag[:3]), Para.OFFSET_L - sum(lane_width_flag[:4])],
+                     color='gray', linewidth=light_line_width)
+
+            lane_width_flag = [Para.R_IN_0, Para.R_IN_1, Para.R_IN_2, Para.R_IN_3,
+                               Para.PERSON_LANE_WIDTH + Para.BIKE_LANE_WIDTH]  # right
+            plt.plot([Para.CROSSROAD_SIZE_LAT / 2, Para.CROSSROAD_SIZE_LAT / 2],
+                     [Para.OFFSET_R + Para.R_GREEN,
+                      Para.OFFSET_R + Para.R_GREEN + sum(lane_width_flag[:1])],
+                     color=h_color_1, linewidth=light_line_width)
+            plt.plot([Para.CROSSROAD_SIZE_LAT / 2, Para.CROSSROAD_SIZE_LAT / 2],
+                     [Para.OFFSET_R + Para.R_GREEN + sum(lane_width_flag[:1]),
+                      Para.OFFSET_R + Para.R_GREEN + sum(lane_width_flag[:3])],
+                     color=h_color_2, linewidth=light_line_width)
+            plt.plot([Para.CROSSROAD_SIZE_LAT / 2, Para.CROSSROAD_SIZE_LAT / 2],
+                     [Para.OFFSET_R + Para.R_GREEN + sum(lane_width_flag[:3]),
+                      Para.OFFSET_R + Para.R_GREEN + sum(lane_width_flag[:4])],
+                     color='gray', linewidth=light_line_width)
 
             def draw_rotate_rec(type, x, y, a, l, w, color, linestyle='-', patch=False):
                 RU_x, RU_y, _ = rotate_coordination(l / 2, w / 2, 0, -a)
