@@ -1500,12 +1500,13 @@ def test_end2end():
             actions = tf.convert_to_tensor(np.tile(actions, (1, 1)), dtype=tf.float32)
             env_model.reset(obses)
             env.render(weights=np.zeros(env.other_number,))
-            for i in range(25):
-                obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
-                    veh2bike4real, veh2person4real = env_model.rollout_out(actions + tf.experimental.numpy.random.rand(2)*0.05, ref_points[:, :, i])
-                env_model.render()
-            # if done:
-            #     break
+            # for i in range(25):
+            #     obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
+            #         veh2bike4real, veh2person4real = env_model.rollout_out(actions + tf.experimental.numpy.random.rand(2)*0.05, ref_points[:, :, i])
+            #     env_model.render()
+            if done:
+                print(env.done_type)
+                break
         obs, _ = env.reset()
         # env.render(weights=np.zeros(env.other_number,))
 

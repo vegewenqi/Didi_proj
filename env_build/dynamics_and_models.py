@@ -226,12 +226,31 @@ class EnvironmentModel(object):  # all tensors
             veh2road4real = tf.zeros_like(veh_infos[:, 0])
             veh2road4training = tf.zeros_like(veh_infos[:, 0])
             for ego_point in [ego_front_points, ego_rear_points]:
-                veh2road4training += tf.where(logical_and(ego_point[0] > Para.CROSSROAD_SIZE_LAT / 2, ego_point[1] > Para.OFFSET_R - 1.),
-                    tf.sqrt(tf.square(ego_point[0] - Para.CROSSROAD_SIZE_LAT / 2) + tf.square(ego_point[1] - Para.OFFSET_R)), tf.zeros_like(veh_infos[:, 0]))
-                veh2road4training += tf.where(logical_and(ego_point[0] < Para.OFFSET_U_X, ego_point[1] > Para.OFFSET_U_Y),
-                    tf.sqrt(tf.square(ego_point[0] - Para.OFFSET_U_X) + tf.square(ego_point[1] - Para.OFFSET_U_Y)), tf.zeros_like(veh_infos[:, 0]))
-                veh2road4training += tf.where(logical_and(ego_point[0] < -Para.CROSSROAD_SIZE_LAT / 2, ego_point[1] < Para.OFFSET_L + Para.L_GREEN),
-                    tf.sqrt(tf.square(ego_point[0] - -Para.CROSSROAD_SIZE_LAT / 2) + tf.square(ego_point[1] - (Para.OFFSET_L + Para.L_GREEN))), tf.zeros_like(veh_infos[:, 0]))
+                # start line for all tasks
+                edge_ID, dist_left, dist_right = road_cons(ego_point[0], ego_point[1])
+
+                veh2road4training += tf.where(logical_and(edge_ID == '1o', dist_left < 1.0),
+                                              tf.square(dist_left - 1.0), tf.zeros_like(veh_infos[:, 0]))
+                veh2road4training += tf.where(logical_and(edge_ID == '1o', dist_right < 1.0),
+                                              tf.square(dist_right - 1.0), tf.zeros_like(veh_infos[:, 0]))
+
+                # end line for left
+                veh2road4training += tf.where(logical_and(ego_point[0] < -Para.CROSSROAD_SIZE_LAT / 2 + Para.CROSSROAD_SIZE_LAT / 3, ego_point[1] > Para.OFFSET_L + Para.L_GREEN + Para.L_OUT_0 + Para.L_OUT_1 + Para.L_OUT_2 - 1.0),
+                    tf.sqrt(tf.square(ego_point[1] - (Para.OFFSET_L + Para.L_GREEN + Para.L_OUT_0 + Para.L_OUT_1 + Para.L_OUT_2 - 1.0))), tf.zeros_like(veh_infos[:, 0]))
+                veh2road4training += tf.where(logical_and(ego_point[0] < -Para.CROSSROAD_SIZE_LAT / 2, ego_point[1] < Para.OFFSET_L + Para.L_GREEN + 1.0),
+                    tf.sqrt(tf.square(ego_point[1] - (Para.OFFSET_L + Para.L_GREEN + 1.0))), tf.zeros_like(veh_infos[:, 0]))
+
+                # end line for straight
+                veh2road4training += tf.where(logical_and(edge_ID == '3i', dist_left < 1.0),
+                                              tf.square(dist_left - 1.0), tf.zeros_like(veh_infos[:, 0]))
+                veh2road4training += tf.where(logical_and(edge_ID == '3i', dist_right < 1.0),
+                                              tf.square(dist_right - 1.0), tf.zeros_like(veh_infos[:, 0]))
+
+                # end line for right
+                veh2road4training += tf.where(logical_and(ego_point[0] > Para.CROSSROAD_SIZE_LAT / 2 - Para.CROSSROAD_SIZE_LAT / 3, ego_point[1] > Para.OFFSET_R - 1.0),
+                    tf.sqrt(tf.square(ego_point[1] - (Para.OFFSET_R - 1.0))), tf.zeros_like(veh_infos[:, 0]))
+                veh2road4training += tf.where(logical_and(ego_point[0] > Para.CROSSROAD_SIZE_LAT / 2, ego_point[1] < Para.OFFSET_R - Para.L_OUT_0 - Para.L_OUT_1 - Para.L_OUT_2 + 1.0),
+                    tf.sqrt(tf.square(ego_point[1] - (Para.OFFSET_R - Para.L_OUT_0 - Para.L_OUT_1 - Para.L_OUT_2 + 1.0))), tf.zeros_like(veh_infos[:, 0]))
 
             rewards = 0.01 * devi_v + 0.8 * devi_longitudinal + 0.8 * devi_lateral + 30 * devi_phi + 0.02 * punish_yaw_rate + \
                       5 * punish_steer0 + 0.4 * punish_steer1 + 0.1 * punish_steer2 + \

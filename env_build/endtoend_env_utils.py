@@ -504,6 +504,57 @@ def xy2_edgeID_lane(x, y):
     return edgeID, lane
 
 
+def road_cons(x, y):
+    edgeID, lane = xy2_edgeID_lane(x, y)
+    if edgeID == '1o':
+        x1_u = Para.OFFSET_D_X + Para.D_GREEN * math.sin(Para.ANGLE_D * math.pi / 180)
+        y1_u = Para.OFFSET_D_Y - Para.D_GREEN * math.cos(Para.ANGLE_D * math.pi / 180)
+        x1_d = Para.OFFSET_D_X + Para.D_GREEN * math.sin(Para.ANGLE_D * math.pi / 180) - 60 * math.cos(
+            Para.ANGLE_D * math.pi / 180)
+        y1_d = Para.OFFSET_D_Y - Para.D_GREEN * math.cos(Para.ANGLE_D * math.pi / 180) - 60 * math.sin(
+            Para.ANGLE_D * math.pi / 180)
+        x2_u = Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0) * math.sin(Para.ANGLE_D * math.pi / 180)
+        y2_u = Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0) * math.cos(Para.ANGLE_D * math.pi / 180)
+        x2_d = Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0) * math.sin(Para.ANGLE_D * math.pi / 180) - 60 * math.cos(
+            Para.ANGLE_D * math.pi / 180)
+        y2_d = Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0) * math.cos(Para.ANGLE_D * math.pi / 180) - 60 * math.sin(
+            Para.ANGLE_D * math.pi / 180)
+        x3_u = Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1) * math.sin(Para.ANGLE_D * math.pi / 180)
+        y3_u = Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1) * math.cos(Para.ANGLE_D * math.pi / 180)
+        x3_d = Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1) * math.sin(
+            Para.ANGLE_D * math.pi / 180) - 60 * math.cos(Para.ANGLE_D * math.pi / 180)
+        y3_d = Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1) * math.cos(
+            Para.ANGLE_D * math.pi / 180) - 60 * math.sin(Para.ANGLE_D * math.pi / 180)
+        if lane == 3:
+            dis_left = Para.get_point_line_distance([x, y], [[x1_u, y1_u], [x1_d, y1_d]])
+            dis_right = Para.get_point_line_distance([x, y], [[x2_u, y2_u], [x2_d, y2_d]])
+        elif lane == 2:
+            dis_left = Para.get_point_line_distance([x, y], [[x2_u, y2_u], [x2_d, y2_d]])
+            dis_right = Para.get_point_line_distance([x, y], [[x3_u, y3_u], [x3_d, y3_d]])
+    elif edgeID == '3i':
+        x1_d = Para.OFFSET_U_X
+        y1_d = Para.OFFSET_U_Y
+        x1_u = Para.OFFSET_U_X + 60 * math.cos(Para.ANGLE_U*math.pi/180)
+        y1_u = Para.OFFSET_U_Y + 60 * math.sin(Para.ANGLE_U*math.pi/180)
+        x2_d = Para.OFFSET_U_X + Para.U_OUT_0 * math.sin(Para.ANGLE_U*math.pi/180)
+        y2_d = Para.OFFSET_U_Y - Para.U_OUT_0 * math.cos(Para.ANGLE_U*math.pi/180)
+        x2_u = Para.OFFSET_U_X + Para.U_OUT_0 * math.sin(Para.ANGLE_U*math.pi/180) + 60 * math.cos(Para.ANGLE_U*math.pi/180)
+        y2_u = Para.OFFSET_U_Y - Para.U_OUT_0 * math.cos(Para.ANGLE_U*math.pi/180) + 60 * math.sin(Para.ANGLE_U*math.pi/180)
+        x3_d = Para.OFFSET_U_X + (Para.U_OUT_0 + Para.U_OUT_1) * math.sin(Para.ANGLE_U*math.pi/180)
+        y3_d = Para.OFFSET_U_Y - (Para.U_OUT_0 + Para.U_OUT_1) * math.cos(Para.ANGLE_U*math.pi/180)
+        x3_u = Para.OFFSET_U_X + (Para.U_OUT_0 + Para.U_OUT_1) * math.sin(Para.ANGLE_U*math.pi/180) + 60 * math.cos(Para.ANGLE_U*math.pi/180)
+        y3_u = Para.OFFSET_U_Y - (Para.U_OUT_0 + Para.U_OUT_1) * math.cos(Para.ANGLE_U*math.pi/180) + 60 * math.sin(Para.ANGLE_U*math.pi/180)
+        if lane == 3:
+            dis_left = Para.get_point_line_distance([x, y], [[x1_u, y1_u], [x1_d, y1_d]])
+            dis_right = Para.get_point_line_distance([x, y], [[x2_u, y2_u], [x2_d, y2_d]])
+        elif lane == 2:
+            dis_left = Para.get_point_line_distance([x, y], [[x2_u, y2_u], [x2_d, y2_d]])
+            dis_right = Para.get_point_line_distance([x, y], [[x3_u, y3_u], [x3_d, y3_d]])
+    else:
+        return 'others', 0, 0
+    return edgeID, dis_left, dis_right
+
+
 def _convert_car_coord_to_sumo_coord(x_in_car_coord, y_in_car_coord, a_in_car_coord, car_length):  # a in deg
     x_in_sumo_coord = x_in_car_coord + car_length / 2 * math.cos(math.radians(a_in_car_coord))
     y_in_sumo_coord = y_in_car_coord + car_length / 2 * math.sin(math.radians(a_in_car_coord))
