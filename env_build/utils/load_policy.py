@@ -35,7 +35,7 @@ class LoadPolicy(object):
         self.run_batch(init_obs[np.newaxis, :], mask[np.newaxis, :])
         self.obj_value_batch(init_obs[np.newaxis, :], mask[np.newaxis, :])
 
-    # @tf.function
+    @tf.function
     def run_batch(self, obses, masks):
         processed_obses = self.preprocessor.process_obs(obses)
         states = self._get_states(processed_obses, masks)
