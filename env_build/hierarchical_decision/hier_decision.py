@@ -102,6 +102,19 @@ class HierarchicalDecision(object):
         else:
             return self.policy.run_batch(real_obs, real_mask).numpy()[0], False
 
+    @tf.function
+    def cal_prediction_obs(self, real_obs, real_mask, real_future_n_point):
+        obses, masks = real_obs[np.newaxis, :], real_mask[np.newaxis, :]
+        ref_points = tf.expand_dims(real_future_n_point, axis=0)
+        self.model.reset(obses)
+        obses_list = []
+        for i in range(25):
+            action = self.policy.run_batch(obses, masks)
+            obses, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, \
+                veh2person4real, reward_dict = self.model.rollout_out_online(action, ref_points[:, :, i])
+            obses_list.append(obses[0])
+        return tf.convert_to_tensor(obses_list)
+
     def step(self):
         self.step_counter += 1
         self.path_list = self.stg.generate_path(self.env.training_task, LIGHT_PHASE_TO_GREEN_OR_RED[self.env.light_phase])
@@ -145,12 +158,26 @@ class HierarchicalDecision(object):
             with self.ss_timer:
                 safe_action, is_ss = self.safe_shield(obs_real, mask_real, future_n_point_real)
             # print('ALL TIME:', self.step_timer.mean, 'ss', self.ss_timer.mean)
-        self.render(path_values, path_index)
+
+        # obses, masks = obs_real[np.newaxis, :], mask_real[np.newaxis, :]
+        # ref_points = tf.expand_dims(future_n_point_real, axis=0)
+        # self.model.reset(obses)
+        # obses_list = []
+        # for i in range(25):
+        #     action = self.policy.run_batch(obses, masks)
+        #     obses, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, \
+        #         veh2person4real, reward_dict = self.model.rollout_out_online(action, ref_points[:, :, i])
+        #     obses_list.append(obses[0])
+        # obses_list = tf.convert_to_tensor(obses_list)
+        obses_list = self.cal_prediction_obs(obs_real, mask_real, future_n_point_real)
+        pred_xs, pred_ys = obses_list[:, 3], obses_list[:, 4]
+
+        self.render(path_values, path_index, pred_xs, pred_ys)
         self.recorder.record(obs_real, safe_action, self.step_timer.mean, path_index, path_values, self.ss_timer.mean, is_ss)
         self.obs, r, done, info = self.env.step(safe_action)
         return done
 
-    def render(self, path_values, path_index):
+    def render(self, path_values, path_index, pred_xs=None, pred_ys=None):
         extension = 40
         dotted_line_style = '--'
         solid_line_style = '-'
@@ -565,6 +592,8 @@ class HierarchicalDecision(object):
 
         plot_phi_line('self_car', ego_x, ego_y, ego_phi, 'red')
         draw_rotate_rec('self_car', ego_x, ego_y, ego_phi, self.env.ego_l, self.env.ego_w, 'red')
+        if (pred_xs is not None) and (pred_ys is not None):
+            plt.plot(pred_xs, pred_ys, 'ro')
 
         # plot real time traj
         color = ['blue', 'coral', 'darkcyan', 'pink']
@@ -644,7 +673,10 @@ def main():
     time_now = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     logdir = './results/{time}'.format(time=time_now)
     os.makedirs(logdir)
-    hier_decision = HierarchicalDecision('experiment-2021-11-23-20-09-04', 280000, logdir)
+    # hier_decision = HierarchicalDecision('experiment-2021-11-24-23-32-42', 145000, logdir)
+    # hier_decision = HierarchicalDecision('experiment-2021-11-25-00-24-55', 145000, logdir)
+    hier_decision = HierarchicalDecision('experiment-2021-11-25-19-33-31', 145000, logdir)
+    # hier_decision = HierarchicalDecision('experiment-2021-11-25-19-44-54', 130000, logdir)
 
     for i in range(300):
         for _ in range(200):

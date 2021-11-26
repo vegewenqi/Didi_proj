@@ -123,6 +123,17 @@ class EnvironmentModel(object):  # all tensors
         return self.obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
                veh2bike4real, veh2person4real
 
+    def rollout_out_online(self, actions, ref_points):  # ref_points [#batch, 4]
+        with tf.name_scope('model_step') as scope:
+            self.actions = self._action_transformation_for_end2end(actions)
+            rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, \
+                veh2person4real, reward_dict = self.compute_rewards(self.obses, self.actions, actions)
+
+            self.obses = self.compute_next_obses(self.obses, self.actions, actions, ref_points)
+
+        return self.obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
+               veh2bike4real, veh2person4real
+
     def compute_rewards(self, obses, actions, untransformed_action):
         obses = self._convert_to_abso(obses)
         obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_his_ac, obses_other = self._split_all(obses)
