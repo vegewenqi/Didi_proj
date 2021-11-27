@@ -504,6 +504,30 @@ def xy2_edgeID_lane(x, y):
     return edgeID, lane
 
 
+class Road:
+    D_X1_U = Para.OFFSET_D_X + Para.D_GREEN * math.sin(Para.ANGLE_D * math.pi / 180)
+    D_Y1_U = Para.OFFSET_D_Y - Para.D_GREEN * math.cos(Para.ANGLE_D * math.pi / 180)
+    D_X1_D = Para.OFFSET_D_X + Para.D_GREEN * math.sin(Para.ANGLE_D * math.pi / 180) - 60 * math.cos(Para.ANGLE_D * math.pi / 180)
+    D_Y1_D = Para.OFFSET_D_Y - Para.D_GREEN * math.cos(Para.ANGLE_D * math.pi / 180) - 60 * math.sin(Para.ANGLE_D * math.pi / 180)
+    D_X2_U = Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0) * math.sin(Para.ANGLE_D * math.pi / 180)
+    D_Y2_U = Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0) * math.cos(Para.ANGLE_D * math.pi / 180)
+    D_X2_D = Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0) * math.sin(Para.ANGLE_D * math.pi / 180) - 60 * math.cos(Para.ANGLE_D * math.pi / 180)
+    D_Y2_D = Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0) * math.cos(Para.ANGLE_D * math.pi / 180) - 60 * math.sin(Para.ANGLE_D * math.pi / 180)
+    D_X3_U = Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1) * math.sin(Para.ANGLE_D * math.pi / 180)
+    D_Y3_U = Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1) * math.cos(Para.ANGLE_D * math.pi / 180)
+    D_X3_D = Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1) * math.sin(Para.ANGLE_D * math.pi / 180) - 60 * math.cos(Para.ANGLE_D * math.pi / 180)
+    D_Y3_D = Para.OFFSET_D_Y - (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1) * math.cos(Para.ANGLE_D * math.pi / 180) - 60 * math.sin(Para.ANGLE_D * math.pi / 180)
+
+    U_X1_D = Para.OFFSET_U_X
+    U_Y1_D = Para.OFFSET_U_Y
+    U_X1_U = Para.OFFSET_U_X + 60 * math.cos(Para.ANGLE_U*math.pi/180)
+    U_Y1_U = Para.OFFSET_U_Y + 60 * math.sin(Para.ANGLE_U*math.pi/180)
+    U_X2_D = Para.OFFSET_U_X + (Para.U_OUT_0 + Para.U_OUT_1) * math.sin(Para.ANGLE_U*math.pi/180)
+    U_Y2_D = Para.OFFSET_U_Y - (Para.U_OUT_0 + Para.U_OUT_1) * math.cos(Para.ANGLE_U*math.pi/180)
+    U_X2_U = Para.OFFSET_U_X + (Para.U_OUT_0 + Para.U_OUT_1) * math.sin(Para.ANGLE_U*math.pi/180) + 60 * math.cos(Para.ANGLE_U*math.pi/180)
+    U_Y2_U = Para.OFFSET_U_Y - (Para.U_OUT_0 + Para.U_OUT_1) * math.cos(Para.ANGLE_U*math.pi/180) + 60 * math.sin(Para.ANGLE_U*math.pi/180)
+
+
 def _convert_car_coord_to_sumo_coord(x_in_car_coord, y_in_car_coord, a_in_car_coord, car_length):  # a in deg
     x_in_sumo_coord = x_in_car_coord + car_length / 2 * math.cos(math.radians(a_in_car_coord))
     y_in_sumo_coord = y_in_car_coord + car_length / 2 * math.sin(math.radians(a_in_car_coord))

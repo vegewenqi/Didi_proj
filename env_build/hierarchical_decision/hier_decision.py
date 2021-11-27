@@ -675,8 +675,10 @@ def main():
     os.makedirs(logdir)
     # hier_decision = HierarchicalDecision('experiment-2021-11-24-23-32-42', 145000, logdir)
     # hier_decision = HierarchicalDecision('experiment-2021-11-25-00-24-55', 145000, logdir)
-    hier_decision = HierarchicalDecision('experiment-2021-11-25-19-33-31', 145000, logdir)
-    # hier_decision = HierarchicalDecision('experiment-2021-11-25-19-44-54', 130000, logdir)
+    # hier_decision = HierarchicalDecision('experiment-2021-11-25-19-33-31', 145000, logdir)    #pf=20 d_x=1 d_y=1
+    # hier_decision = HierarchicalDecision('experiment-2021-11-25-19-44-54', 130000, logdir)    #pf=20 d_v=0.001
+    hier_decision = HierarchicalDecision('experiment-2021-11-26-22-27-14', 150000, logdir)      #pf=20 d_v=0.005 d_x=1 d_y=1
+    # hier_decision = HierarchicalDecision('experiment-2021-11-26-23-39-14', 150000, logdir)      #pf=30 d_v=0.001
 
     for i in range(300):
         for _ in range(200):
