@@ -72,7 +72,7 @@ def built_AMPC_parser():
 
     # env
     parser.add_argument('--env_id', default='CrossroadEnd2endMix-v0')
-    parser.add_argument('--max_step', type=int, default=200)
+    parser.add_argument('--max_step', type=int, default=400)
     parser.add_argument('--obs_dim', default=None)
     parser.add_argument('--act_dim', default=None)
     parser.add_argument('--state_dim', default=None)
