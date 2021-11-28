@@ -150,7 +150,7 @@ class Traffic(object):
                 traci.simulationStep()
 
     def _reset(self):
-        self.__del__()
+        traci.close()
         try:
             traci.start(
                 [SUMO_BINARY, "-c",
@@ -167,6 +167,7 @@ class Traffic(object):
         except FatalTraCIError:
             print('Retry by other port')
             port = sumolib.miscutils.getFreeSocketPort()
+            traci.close()
             traci.start(
                 [SUMO_BINARY, "-c",
                  os.path.dirname(__file__) + "/sumo_files/" + str(self.file_path) + "/cross.sumocfg",
@@ -220,6 +221,9 @@ class Traffic(object):
         self.init_step()
 
     def __del__(self):
+        traci.close()
+
+    def close(self):
         traci.close()
 
     def add_self_car(self, n_ego_dict, with_delete=True):
