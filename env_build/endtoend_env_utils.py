@@ -288,8 +288,8 @@ def judge_feasible(orig_x, orig_y, task):  # map dependant
         return True if is_in_straight_before1(orig_x, orig_y) or is_in_left(orig_x, orig_y) \
                        or is_in_middle(orig_x, orig_y) else False
     elif task == 'straight':
-        return True if is_in_straight_before2(orig_x, orig_y) or is_in_straight_after(
-            orig_x, orig_y) or is_in_middle(orig_x, orig_y) or is_in_straight_before2(orig_x, orig_y) else False
+        return True if is_in_straight_before1(orig_x, orig_y) or is_in_straight_after(
+            orig_x, orig_y) or is_in_middle(orig_x, orig_y) else False
     else:
         assert task == 'right'
         return True if is_in_straight_before2(orig_x, orig_y) or is_in_right(orig_x, orig_y) \
@@ -589,6 +589,10 @@ if __name__ == '__main__':
     # print(Para.L_GREEN, Para.R_GREEN, Para.D_GREEN)
     # print(Para.CROSSROAD_SIZE_LAT)
     # print(Para.ANGLE_U, Para.ANGLE_D)
-    print('didi2sumo', coordination_didi2sumo(Para.E_I[4][0], Para.E_I[4][1]))
-    print('sumo2didi', coordination_sumo2didi(-24.005982240251946, -2.090883080432098))
-    print(Para.E_I[4][0], Para.E_I[4][1])
+    # print('didi2sumo', coordination_didi2sumo(Para.E_I[4][0], Para.E_I[4][1]))
+    # print('sumo2didi', coordination_sumo2didi(-24.005982240251946, -2.090883080432098))
+    # print(Para.E_I[4][0], Para.E_I[4][1])
+    corner = ((0.11815315750125033, -48.83591669365837), (2.115684642944006, -48.93525432331027),
+     (-0.12025715366330525, -53.62999225872098), (1.8772743317794505, -53.72932988837288))
+    for i in corner:
+        print(judge_feasible(i[0], i[1], 'straight'))

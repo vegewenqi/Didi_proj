@@ -1489,7 +1489,8 @@ def test_end2end():
     env_model = EnvironmentModel()
     obs, all_info = env.reset()
     i = 0
-    while i < 100000:
+    # done_test = []
+    while i < 1000:
         for j in range(60):
             i += 1
             action = np.array([0.05, 0.6 + np.random.rand(1)*0.8], dtype=np.float32) # np.random.rand(1)*0.1 - 0.05
@@ -1504,11 +1505,15 @@ def test_end2end():
             #     obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
             #         veh2bike4real, veh2person4real = env_model.rollout_out(actions + tf.experimental.numpy.random.rand(2)*0.05, ref_points[:, :, i])
             #     env_model.render()
-            if done:
-                print(env.done_type)
-                break
+            # if done:
+            #     if j < 3:
+            #         print(env.ego_dynamics['corner_point'], env.done_type)
+            #     # print(j, env.done_type)
+            #     done_test.append((j, env.done_type))
+            #     break
         obs, _ = env.reset()
         # env.render(weights=np.zeros(env.other_number,))
+    # print(done_test)
 
 
 if __name__ == '__main__':
