@@ -304,7 +304,7 @@ class EnvironmentModel(object):  # all tensors
                                veh2bike4training=veh2bike4training,
                                veh2person4training=veh2person4training,
                                veh2veh4real=veh2veh4real,
-                               veh2road4real=veh2road4real,
+                               veh2road4real=veh2road4training,
                                veh2bike2real=veh2bike4real,
                                veh2person2real=veh2person4real
                                )
