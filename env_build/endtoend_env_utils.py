@@ -288,8 +288,8 @@ def judge_feasible(orig_x, orig_y, task):  # map dependant
         return True if is_in_straight_before1(orig_x, orig_y) or is_in_left(orig_x, orig_y) \
                        or is_in_middle(orig_x, orig_y) else False
     elif task == 'straight':
-        return True if is_in_straight_before2(orig_x, orig_y) or is_in_straight_after(
-            orig_x, orig_y) or is_in_middle(orig_x, orig_y) or is_in_straight_before2(orig_x, orig_y) else False
+        return True if is_in_straight_before1(orig_x, orig_y) or is_in_straight_after(
+            orig_x, orig_y) or is_in_middle(orig_x, orig_y) else False
     else:
         assert task == 'right'
         return True if is_in_straight_before2(orig_x, orig_y) or is_in_right(orig_x, orig_y) \
