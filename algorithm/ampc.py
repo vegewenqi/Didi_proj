@@ -94,7 +94,7 @@ class AMPCLearnerWithAttention(object):
 
             mb_obs, rewards, punish_terms_for_training, real_punish_term, \
                 veh2veh4real, veh2road4real, veh2bike4real, veh2person4real = \
-                self.model.rollout_out(actions, mb_future_n_point[:, :, i])  # mb_future_n_point [#batch, 4, T]
+                self.model.rollout_out(actions, mb_future_n_point[:, :, i], i)  # mb_future_n_point [#batch, 4, T]
             
             rewards_sum += self.preprocessor.tf_process_rewards(rewards)
             punish_terms_for_training_sum += self.args.reward_scale * punish_terms_for_training

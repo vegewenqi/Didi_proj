@@ -112,11 +112,11 @@ class EnvironmentModel(object):  # all tensors
         self.actions = None
         self.reward_info = None
 
-    def rollout_out(self, actions, ref_points):  # ref_points [#batch, 4]
+    def rollout_out(self, actions, ref_points, step=0):  # ref_points [#batch, 4]
         with tf.name_scope('model_step') as scope:
             self.actions = self._action_transformation_for_end2end(actions)
             rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, \
-                veh2person4real, reward_dict = self.compute_rewards(self.obses, self.actions, actions)
+                veh2person4real, reward_dict = self.compute_rewards(self.obses, self.actions, actions, step)
 
             self.obses = self.compute_next_obses(self.obses, self.actions, actions, ref_points)
 
@@ -134,7 +134,7 @@ class EnvironmentModel(object):  # all tensors
         return self.obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
                veh2bike4real, veh2person4real
 
-    def compute_rewards(self, obses, actions, untransformed_action):
+    def compute_rewards(self, obses, actions, untransformed_action, i=0.):
         obses = self._convert_to_abso(obses)
         obses_ego, obses_track, obses_light, obses_task, obses_ref, obses_his_ac, obses_other = self._split_all(obses)
         obses_bike, obses_person, obses_veh = self._split_other(obses_other)
@@ -271,7 +271,7 @@ class EnvironmentModel(object):  # all tensors
                     tf.square(ego_point[1] - (Para.OFFSET_R - Para.L_OUT_0 - Para.L_OUT_1 - Para.L_OUT_2 + 1.0)), tf.zeros_like(veh_infos[:, 0]))
             veh2road4real = veh2road4training
 
-            rewards = 0.01 * devi_v + 0.8 * devi_longitudinal + 0.8 * devi_lateral + 30 * devi_phi + 0.02 * punish_yaw_rate + \
+            rewards = (0.01 * devi_v + 0.8 * devi_longitudinal + 0.8 * devi_lateral + 30 * devi_phi) * tf.pow(Para.gamma, i) + 0.02 * punish_yaw_rate + \
                       5 * punish_steer0 + 0.4 * punish_steer1 + 0.1 * punish_steer2 + \
                       punish_a_x0 + punish_a_x1 + 0.05 * punish_a_x2
 
