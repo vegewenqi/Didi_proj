@@ -88,7 +88,7 @@ class HierarchicalDecision(object):
             action = self.policy.run_batch(obses, masks)
             obses, _, _, _, veh2veh4real, veh2road4real, veh2bike4real, veh2person4real \
                 = self.model.rollout_out(action, future_n_point[:, :, step])
-            punish += veh2veh4real[0] + veh2road4real[0] + veh2bike4real[0] + veh2person4real[0]
+            punish += veh2veh4real[0] + veh2bike4real[0] + veh2person4real[0]
         return False if punish > 0 else True
 
     def safe_shield(self, real_obs, real_mask, real_future_n_point):
