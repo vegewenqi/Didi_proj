@@ -271,9 +271,9 @@ class EnvironmentModel(object):  # all tensors
                     tf.square(ego_point[1] - (Para.OFFSET_R - Para.L_OUT_0 - Para.L_OUT_1 - Para.L_OUT_2 + 1.0)), tf.zeros_like(veh_infos[:, 0]))
             veh2road4real = veh2road4training
 
-            rewards = (0.01 * devi_v + 0.8 * devi_longitudinal + 0.8 * devi_lateral + 30 * devi_phi) * tf.pow(Para.gamma, i) + 0.02 * punish_yaw_rate + \
-                      5 * punish_steer0 + 0.4 * punish_steer1 + 0.1 * punish_steer2 + \
-                      punish_a_x0 + punish_a_x1 + 0.05 * punish_a_x2
+            rewards = (0.01 * devi_v + 1.0 * devi_longitudinal + 1.0 * devi_lateral + 30 * devi_phi + 0.02 * punish_yaw_rate +
+                      5 * punish_steer0 + 0.4 * punish_steer1 + 0.1 * punish_steer2 +
+                      punish_a_x0 + punish_a_x1 + 0.05 * punish_a_x2) * tf.pow(Para.gamma, i)
 
             punish_term_for_training = veh2veh4training + veh2road4training + veh2bike4training + veh2person4training
             real_punish_term = veh2veh4real + veh2road4real + veh2bike4real + veh2person4real
@@ -297,8 +297,8 @@ class EnvironmentModel(object):  # all tensors
                                scaled_punish_a_x2=0.05 * punish_a_x2,
                                scaled_punish_yaw_rate=0.02 * punish_yaw_rate,
                                scaled_devi_v=0.01 * devi_v,
-                               scaled_devi_longitudinal=0.8 * devi_longitudinal,
-                               scaled_devi_lateral=0.8 * devi_lateral,
+                               scaled_devi_longitudinal=1.0 * devi_longitudinal,
+                               scaled_devi_lateral=1.0 * devi_lateral,
                                scaled_devi_phi=30 * devi_phi,
                                veh2veh4training=veh2veh4training,
                                veh2road4training=veh2road4training,
