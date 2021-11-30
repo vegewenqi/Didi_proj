@@ -50,7 +50,7 @@ class CrossroadEnd2endMix(gym.Env):
                  multi_display=False,
                  state_mode='dyna',  # 'dyna'
                  future_point_num=25,
-                 traffic_mode='user',  # 'auto' or 'user'
+                 traffic_mode='auto',  # 'auto'
                  **kwargs):
         self.mode = mode
         self.traffic_mode = traffic_mode
