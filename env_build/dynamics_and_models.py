@@ -277,7 +277,7 @@ class EnvironmentModel(object):  # all tensors
                     tf.square(ego_point[1] - (Para.OFFSET_R - 1.0)), tf.zeros_like(veh_infos[:, 0]))
                 veh2road4training += tf.where(logical_and(right_flag, logical_and(ego_point[0] > Para.CROSSROAD_SIZE_LAT / 2, ego_point[1] < Para.OFFSET_R - Para.L_OUT_0 - Para.L_OUT_1 - Para.L_OUT_2 + 1.0)),
                     tf.square(ego_point[1] - (Para.OFFSET_R - Para.L_OUT_0 - Para.L_OUT_1 - Para.L_OUT_2 + 1.0)), tf.zeros_like(veh_infos[:, 0]))
-            # veh2road4real = veh2road4training
+            veh2road4real = veh2road4training
 
             rewards = 0.01 * devi_v + 0.8 * devi_longitudinal + 0.8 * devi_lateral + 30 * devi_phi + 0.02 * punish_yaw_rate + \
                       5 * punish_steer0 + 0.4 * punish_steer1 + 0.1 * punish_steer2 + \

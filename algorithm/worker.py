@@ -119,32 +119,32 @@ class OffPolicyWorkerWithAttention(object):
         self.sample_times += 1
         return batch_data
 
-    # def sample_with_count(self):
-    #     batch_data = self.sample()
-    #     return batch_data, len(batch_data)
-
     def sample_with_count(self):
-        try:
-            batch_data = self.sample()
-        except traci.exceptions.FatalTraCIError as e:
-            self.restart_env()
-            try:
-                batch_data = self.sample()
-            except Exception as ee:
-                raise ValueError("The first sample after restart error")
-        except AttributeError as e:
-            batch_data = []
-        except Exception as e:
-            raise ValueError("Unknown Error")
+        batch_data = self.sample()
         return batch_data, len(batch_data)
 
-    def restart_env(self):
-        try:
-            self.env.traffic.close()
-        except Exception as e:
-            print(e)
-            logger.info("Try to close env")
-        logger.warning(f"worker: {self.worker_id} restart environment")
-        self.env = CrossroadEnd2endMix(**args2envkwargs(self.args))
-        self.obs, self.info = self.env.reset()
-        self.done = False
+    # def sample_with_count(self):
+    #     try:
+    #         batch_data = self.sample()
+    #     except traci.exceptions.FatalTraCIError as e:
+    #         self.restart_env()
+    #         try:
+    #             batch_data = self.sample()
+    #         except Exception as ee:
+    #             raise ValueError("The first sample after restart error")
+    #     except AttributeError as e:
+    #         batch_data = []
+    #     except Exception as e:
+    #         raise ValueError("Unknown Error")
+    #     return batch_data, len(batch_data)
+    #
+    # def restart_env(self):
+    #     try:
+    #         self.env.traffic.close()
+    #     except Exception as e:
+    #         print(e)
+    #         logger.info("Try to close env")
+    #     logger.warning(f"worker: {self.worker_id} restart environment")
+    #     self.env = CrossroadEnd2endMix(**args2envkwargs(self.args))
+    #     self.obs, self.info = self.env.reset()
+    #     self.done = False

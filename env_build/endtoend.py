@@ -834,14 +834,14 @@ class CrossroadEnd2endMix(gym.Env):
                         veh_all.append(v)
 
             mode2fillvalue_b = dict(type="bicycle_1", x=Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1 + Para.BIKE_LANE_WIDTH / 2) * sin(Para.ANGLE_D * pi / 180),
-                          y=Para.OFFSET_D_Y - 25, v=0, phi=Para.ANGLE_D, w=0.48, l=2, route=('1o', '3i'), partici_type=[1., 0., 0.], turn_rad=0., exist=False)
+                          y=Para.OFFSET_D_Y - 35, v=0., phi=0., w=0., l=0., route=('1o', '3i'), partici_type=[0., 0., 0.], turn_rad=0., exist=False)
 
             mode2fillvalue_p = dict(type='DEFAULT_PEDTYPE',
                         x=Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1 + Para.BIKE_LANE_WIDTH / 2) * sin(Para.ANGLE_D * pi / 180),
-                        y=Para.OFFSET_D_Y - 30, v=0, phi=Para.ANGLE_D, w=0.525, l=0.75, road="0_c1", partici_type=[0., 1., 0.], turn_rad=0., exist=False)
+                        y=Para.OFFSET_D_Y - 35, v=0, phi=0., w=0., l=0., road="0_c1", partici_type=[0., 0., 0.], turn_rad=0., exist=False)
 
-            mode2fillvalue_v = dict(type="car_1", x=Para.OFFSET_D_X + Para.D_GREEN * sin(Para.ANGLE_D * pi / 180),
-                        y=Para.OFFSET_D_Y - 30, v=0, phi=Para.ANGLE_D, w=2.5, l=5, route=('1o', '4i'), partici_type=[0., 0., 1.],
+            mode2fillvalue_v = dict(type="car_1", x=Para.OFFSET_D_X + (Para.D_GREEN + Para.D_IN_0 + Para.D_IN_1 + Para.BIKE_LANE_WIDTH / 2) * sin(Para.ANGLE_D * pi / 180),
+                        y=Para.OFFSET_D_Y - 35, v=0, phi=0., w=0., l=0., route=('1o', '4i'), partici_type=[0., 0., 0.],
                         turn_rad=0., exist=False)
 
             while len(bike_all) < self.bike_num:
@@ -1528,7 +1528,7 @@ def test_end2end():
     while i < 1000:
         for j in range(60):
             i += 1
-            action = np.array([0.0, 0.6 + np.random.rand(1)*0.8], dtype=np.float32) # np.random.rand(1)*0.1 - 0.05
+            action = np.array([0.8, 0.6 + np.random.rand(1)*0.8], dtype=np.float32) # np.random.rand(1)*0.1 - 0.05
             obs, reward, done, info = env.step(action)
             obses, actions = obs[np.newaxis, :], action[np.newaxis, :]
             obses = tf.convert_to_tensor(np.tile(obs, (3, 1)), dtype=tf.float32)
@@ -1536,17 +1536,16 @@ def test_end2end():
             actions = tf.convert_to_tensor(np.tile(actions, (3, 1)), dtype=tf.float32)
             env_model.reset(obses)
             env.render(weights=np.zeros(env.other_number,))
-            # if j > 25:
-            #     for i in range(25):
-            #         obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
-            #             veh2bike4real, veh2person4real = env_model.rollout_out(actions + tf.experimental.numpy.random.rand(2)*0.05, ref_points[:, :, i])
+            if j > 25:
+                veh2road4real_total = 0.
+                for i in range(25):
+                    obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
+                        veh2bike4real, veh2person4real = env_model.rollout_out(actions + tf.experimental.numpy.random.rand(2)*0.05, ref_points[:, :, i])
+                    veh2road4real_total += veh2road4real
             #     env_model.render()
-            # if done:
-            #     if j < 3:
-            #         print(env.ego_dynamics['corner_point'], env.done_type)
-            #     # print(j, env.done_type)
-            #     done_test.append((j, env.done_type))
-            #     break
+            if done:
+                print(env.done_type)
+                # break
         obs, _ = env.reset()
         # env.render(weights=np.zeros(env.other_number,))
     # print(done_test)
