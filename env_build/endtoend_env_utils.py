@@ -259,7 +259,7 @@ def judge_feasible(orig_x, orig_y, task):  # map dependant
     def is_in_straight_after(orig_x, orig_y):
         orig_x_trans, orig_y_trans, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_U-90)
         OFFSET_U_X_trans, OFFSET_U_Y_trans, _ = rotate_coordination(Para.OFFSET_U_X, Para.OFFSET_U_Y, 0, Para.ANGLE_U - 90)
-        return OFFSET_U_X_trans + Para.D_GREEN < orig_x_trans < OFFSET_U_X_trans + Para.U_OUT_0 + Para.U_OUT_1 and orig_y >= OFFSET_U_Y_trans
+        return OFFSET_U_X_trans < orig_x_trans < OFFSET_U_X_trans + Para.U_OUT_0 + Para.U_OUT_1 and orig_y_trans >= OFFSET_U_Y_trans
 
     def is_in_left(orig_x, orig_y):
         return Para.OFFSET_L + Para.L_GREEN < orig_y < Para.OFFSET_L + Para.L_GREEN + Para.L_OUT_0 + Para.L_OUT_1 + Para.L_OUT_2 and orig_x < -Para.CROSSROAD_SIZE_LAT / 2
@@ -591,6 +591,10 @@ if __name__ == '__main__':
     # print(Para.L_GREEN, Para.R_GREEN, Para.D_GREEN)
     # print(Para.CROSSROAD_SIZE_LAT)
     # print(Para.ANGLE_U, Para.ANGLE_D)
-    print('didi2sumo', coordination_didi2sumo(Para.E_I[4][0], Para.E_I[4][1]))
-    print('sumo2didi', coordination_sumo2didi(-24.005982240251946, -2.090883080432098))
-    print(Para.E_I[4][0], Para.E_I[4][1])
+    # print('didi2sumo', coordination_didi2sumo(Para.E_I[4][0], Para.E_I[4][1]))
+    # print('sumo2didi', coordination_sumo2didi(-24.005982240251946, -2.090883080432098))
+    # print(Para.E_I[4][0], Para.E_I[4][1])
+    corner = ((0.11815315750125033, -48.83591669365837), (2.115684642944006, -48.93525432331027),
+     (-0.12025715366330525, -53.62999225872098), (1.8772743317794505, -53.72932988837288))
+    for i in corner:
+        print(judge_feasible(i[0], i[1], 'straight'))
