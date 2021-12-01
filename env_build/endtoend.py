@@ -285,8 +285,7 @@ class CrossroadEnd2endMix(gym.Env):
     def _break_red_light(self):
         x_trans, y_trans, _ = rotate_coordination(self.ego_dynamics['x'], self.ego_dynamics['y'], 0, Para.ANGLE_D-90)
         OFFSET_D_X_trans, OFFSET_D_Y_trans, _ = rotate_coordination(Para.OFFSET_D_X, Para.OFFSET_D_Y, 0, Para.ANGLE_D - 90)
-        return True if self.light_phase > 2 and self.ego_dynamics[
-            'y'] > OFFSET_D_Y_trans and self.training_task != 'right' else False
+        return True if self.light_phase > 2 and y_trans > OFFSET_D_Y_trans and self.training_task != 'right' else False
 
     def _is_achieve_goal(self):
         x = self.ego_dynamics['x']
@@ -300,7 +299,7 @@ class CrossroadEnd2endMix(gym.Env):
             x_trans, y_trans, _ = rotate_coordination(x, y, 0, Para.ANGLE_U - 90)
             OFFSET_U_X_trans, OFFSET_U_Y_trans, _ = rotate_coordination(Para.OFFSET_U_X, Para.OFFSET_U_Y, 0,
                                                                         Para.ANGLE_U - 90)
-            return True if y_trans > OFFSET_U_Y_trans + 10 and OFFSET_U_X_trans < x < OFFSET_U_X_trans + Para.U_OUT_0 + Para.U_OUT_1 else False
+            return True if y_trans > OFFSET_U_Y_trans + 10 and OFFSET_U_X_trans < x_trans < OFFSET_U_X_trans + Para.U_OUT_0 + Para.U_OUT_1 else False
 
     def _action_transformation_for_end2end(self, action):  # [-1, 1]
         action = np.clip(action, -1.05, 1.05)
