@@ -878,22 +878,34 @@ class CrossroadEnd2endMix(gym.Env):
         return np.array(other_vector, dtype=np.float32), np.array(other_mask_vector, dtype=np.float32)
 
     def _reset_init_state(self, light_phase):
-        if self.traffic_mode == 'auto':
-            if self.training_task == 'left':
-                if light_phase == 'green':
-                    random_index = int(np.random.random() * (900 + 500)) + 700
-                else:
-                    random_index = int(np.random.random() * 200) + 700
-            elif self.training_task == 'straight':
-                if light_phase == 'green':
-                    random_index = int(np.random.random() * (1200 + 500)) + 700
-                else:
-                    random_index = int(np.random.random() * 200) + 700
+        # if self.traffic_mode == 'auto':
+        #     if self.training_task == 'left':
+        #         if light_phase == 'green':
+        #             random_index = int(np.random.random() * (900 + 500)) + 700
+        #         else:
+        #             random_index = int(np.random.random() * 200) + 700
+        #     elif self.training_task == 'straight':
+        #         if light_phase == 'green':
+        #             random_index = int(np.random.random() * (1200 + 500)) + 700
+        #         else:
+        #             random_index = int(np.random.random() * 200) + 700
+        #     else:
+        #         random_index = int(np.random.random() * (420 + 500)) + 700
+        # else:
+        #     random_index = MODE2INDEX[self.traffic_case] + int(np.random.random() * 100)
+
+        if self.training_task == 'left':
+            if light_phase == 'green':
+                random_index = int(np.random.random() * (900 + 500)) + 700
             else:
-                random_index = int(np.random.random() * (420 + 500)) + 700
+                random_index = int(np.random.random() * 200) + 700
+        elif self.training_task == 'straight':
+            if light_phase == 'green':
+                random_index = int(np.random.random() * (1200 + 500)) + 700
+            else:
+                random_index = int(np.random.random() * 200) + 700
         else:
-            random_index = MODE2INDEX[self.traffic_case] + int(np.random.random() * 100)
-            # random_index = MODE2INDEX[self.traffic_mode]
+            random_index = int(np.random.random() * (420 + 500)) + 700
 
         x, y, phi, exp_v = self.ref_path.idx2point(random_index)
         v = exp_v * np.random.random()

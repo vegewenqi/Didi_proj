@@ -319,11 +319,10 @@ class Traffic(object):
                                                                                                            a_in_ego_coord)
                 if (-5 < x_in_ego_coord < 1 * (ego_v_x) + ego_l/2. + veh_l/2. + 2 and abs(y_in_ego_coord) < 3) or \
                         (-5 < ego_x_in_veh_coord < 1 * (veh_v) + ego_l/2. + veh_l/2. + 2 and abs(ego_y_in_veh_coord) <3):
-                    if self.traffic_mode == 'auto':
-                        if veh_type == 'DEFAULT_PEDTYPE':
-                            traci.person.removeStages(veh)
-                        else:
-                            traci.vehicle.remove(veh)
+                    if veh_type == 'DEFAULT_PEDTYPE':
+                        traci.person.removeStages(veh)
+                    else:
+                        traci.vehicle.remove(veh)
 
                     # traci.vehicle.remove(vehID=veh)
                 # if 0<x_in_sumo<3.5 and -22<y_in_sumo<-15:# and veh_sig!=1 and veh_sig!=9:
