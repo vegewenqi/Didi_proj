@@ -820,8 +820,8 @@ class CrossroadEnd2endMix(gym.Env):
                 return turn_rad
 
             for v in vs:
-                if (-Para.CROSSROAD_SIZE_LAT / 2 - 10 < v['x'] < Para.CROSSROAD_SIZE_LAT / 2 + 10 and
-                        Para.OFFSET_D_Y - 20 < v['y'] < Para.OFFSET_U_Y + 10):
+                if (-Para.CROSSROAD_SIZE_LAT / 2 - 30 < v['x'] < Para.CROSSROAD_SIZE_LAT / 2 + 30 and
+                        Para.OFFSET_D_Y - 30 < v['y'] < Para.OFFSET_U_Y + 30):
                     if v['type'] in ['bicycle_1', 'bicycle_2', 'bicycle_3']:
                         v.update(partici_type=[1., 0., 0.], turn_rad=0.0, exist=True)
                         bike_all.append(v)
