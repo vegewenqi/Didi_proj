@@ -1585,4 +1585,4 @@ def test_judge_done(x=-24.14, y=8.16, training_task='right'):
     test_break_red_light(x, y, training_task)
 
 if __name__ == '__main__':
-    test_judge_done()
+    test_end2end()
