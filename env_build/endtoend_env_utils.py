@@ -269,7 +269,7 @@ def judge_feasible(orig_x, orig_y, task):  # map dependant
     def is_in_straight_after(orig_x, orig_y):
         orig_x_trans, orig_y_trans, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_U-90)
         OFFSET_U_X_trans, OFFSET_U_Y_trans, _ = rotate_coordination(Para.OFFSET_U_X, Para.OFFSET_U_Y, 0, Para.ANGLE_U - 90)
-        return OFFSET_U_X_trans + Para.D_GREEN < orig_x_trans < OFFSET_U_X_trans + Para.U_OUT_0 + Para.U_OUT_1 and orig_y >= OFFSET_U_Y_trans
+        return OFFSET_U_X_trans < orig_x_trans < OFFSET_U_X_trans + Para.U_OUT_0 + Para.U_OUT_1 and orig_y_trans >= OFFSET_U_Y_trans
 
     def is_in_left(orig_x, orig_y):
         return Para.OFFSET_L + Para.L_GREEN < orig_y < Para.OFFSET_L + Para.L_GREEN + Para.L_OUT_0 + Para.L_OUT_1 + Para.L_OUT_2 and orig_x < -Para.CROSSROAD_SIZE_LAT / 2

@@ -291,15 +291,15 @@ class CrossroadEnd2endMix(gym.Env):
         x = self.ego_dynamics['x']
         y = self.ego_dynamics['y']
         if self.training_task == 'left':
-            return True if x < -Para.CROSSROAD_SIZE_LAT / 2 - 10 and Para.OFFSET_L + Para.L_GREEN < y < Para.OFFSET_L + Para.L_GREEN +  Para.L_OUT_0 + Para.L_OUT_1+ Para.L_OUT_2 else False
+            return True if x < -Para.CROSSROAD_SIZE_LAT / 2 - 30 and Para.OFFSET_L + Para.L_GREEN < y < Para.OFFSET_L + Para.L_GREEN +  Para.L_OUT_0 + Para.L_OUT_1+ Para.L_OUT_2 else False
         elif self.training_task == 'right':
-            return True if x > Para.CROSSROAD_SIZE_LAT / 2 + 10 and Para.OFFSET_R - Para.R_OUT_0 - Para.R_OUT_1 - Para.R_OUT_2 < y < Para.OFFSET_R else False
+            return True if x > Para.CROSSROAD_SIZE_LAT / 2 + 30 and Para.OFFSET_R - Para.R_OUT_0 - Para.R_OUT_1 - Para.R_OUT_2 < y < Para.OFFSET_R else False
         else:
             assert self.training_task == 'straight'
             x_trans, y_trans, _ = rotate_coordination(x, y, 0, Para.ANGLE_U - 90)
             OFFSET_U_X_trans, OFFSET_U_Y_trans, _ = rotate_coordination(Para.OFFSET_U_X, Para.OFFSET_U_Y, 0,
                                                                         Para.ANGLE_U - 90)
-            return True if y_trans > OFFSET_U_Y_trans + 10 and OFFSET_U_X_trans < x_trans < OFFSET_U_X_trans + Para.U_OUT_0 + Para.U_OUT_1 else False
+            return True if y_trans > OFFSET_U_Y_trans + 30 and OFFSET_U_X_trans < x_trans < OFFSET_U_X_trans + Para.U_OUT_0 + Para.U_OUT_1 else False
 
     def _action_transformation_for_end2end(self, action):  # [-1, 1]
         action = np.clip(action, -1.05, 1.05)
@@ -1515,5 +1515,37 @@ def test_end2end():
     # print(done_test)
 
 
+def test_is_achieve_goal(x, y, training_task):
+    if training_task == 'left':
+        return True if x < -Para.CROSSROAD_SIZE_LAT / 2 - 30 and Para.OFFSET_L + Para.L_GREEN < y < Para.OFFSET_L + Para.L_GREEN + Para.L_OUT_0 + Para.L_OUT_1 + Para.L_OUT_2 else False
+    elif training_task == 'right':
+        return True if x > Para.CROSSROAD_SIZE_LAT / 2 + 30 and Para.OFFSET_R - Para.R_OUT_0 - Para.R_OUT_1 - Para.R_OUT_2 < y < Para.OFFSET_R else False
+    else:
+        assert training_task == 'straight'
+        x_trans, y_trans, _ = rotate_coordination(x, y, 0, Para.ANGLE_U - 90)
+        OFFSET_U_X_trans, OFFSET_U_Y_trans, _ = rotate_coordination(Para.OFFSET_U_X, Para.OFFSET_U_Y, 0,
+                                                                    Para.ANGLE_U - 90)
+        return True if y_trans > OFFSET_U_Y_trans + 30 and OFFSET_U_X_trans < x_trans < OFFSET_U_X_trans + Para.U_OUT_0 + Para.U_OUT_1 else False
+
+
+def test_break_red_light(x, y, training_task):
+    x_trans, y_trans, _ = rotate_coordination(x, y, 0, Para.ANGLE_D - 90)
+    OFFSET_D_X_trans, OFFSET_D_Y_trans, _ = rotate_coordination(Para.OFFSET_D_X, Para.OFFSET_D_Y, 0, Para.ANGLE_D - 90)
+    print(True if y_trans > OFFSET_D_Y_trans and training_task != 'right' else False)
+
+
+def test_judge_feasible(x, y, training_task):
+    print(judge_feasible(x, y, training_task))
+
+
+def test_judge_done(x=-24.14, y=8.16, training_task='right'):
+    print(Para.OFFSET_U_X, Para.OFFSET_U_Y)
+    print('test_is_achieve_goal')
+    print(test_is_achieve_goal(x, y, training_task))
+    print('test_judge_feasible')
+    test_judge_feasible(x, y, training_task)
+    print('test_break_red_light')
+    test_break_red_light(x, y, training_task)
+
 if __name__ == '__main__':
-    test_end2end()
+    test_judge_done()
