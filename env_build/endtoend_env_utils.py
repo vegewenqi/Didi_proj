@@ -517,6 +517,18 @@ class Road:
     U_X2_U = Para.OFFSET_U_X + (Para.U_OUT_0 + Para.U_OUT_1) * math.sin(Para.ANGLE_U*math.pi/180) + 60 * math.cos(Para.ANGLE_U*math.pi/180)
     U_Y2_U = Para.OFFSET_U_Y - (Para.U_OUT_0 + Para.U_OUT_1) * math.cos(Para.ANGLE_U*math.pi/180) + 60 * math.sin(Para.ANGLE_U*math.pi/180)
 
+    # line equation
+    D_K1 = (D_Y1_D - D_Y1_U) / (D_X1_D - D_X1_U)
+    D_B1 = (D_Y1_U - D_X1_U * (D_Y1_D - D_Y1_U) / (D_X1_D - D_X1_U))
+    D_K2 = (D_Y2_D - D_Y2_U) / (D_X2_D - D_X2_U)
+    D_B2 = (D_Y2_U - D_X2_U * (D_Y2_D - D_Y2_U) / (D_X2_D - D_X2_U))
+    D_K3 = (D_Y3_D - D_Y3_U) / (D_X3_D - D_X3_U)
+    D_B3 = (D_Y3_U - D_X3_U * (D_Y3_D - D_Y3_U) / (D_X3_D - D_X3_U))
+
+    U_K1 = (U_Y1_D - U_Y1_U) / (U_X1_D - U_X1_U)
+    U_B1 = (U_Y1_U - U_X1_U * (U_Y1_D - U_Y1_U) / (U_X1_D - U_X1_U))
+    U_K2 = (U_Y2_D - U_Y2_U) / (U_X2_D - U_X2_U)
+    U_B2 = (U_Y2_U - U_X2_U * (U_Y2_D - U_Y2_U) / (U_X2_D - U_X2_U))
 
 def _convert_car_coord_to_sumo_coord(x_in_car_coord, y_in_car_coord, a_in_car_coord, car_length):  # a in deg
     x_in_sumo_coord = x_in_car_coord + car_length / 2 * math.cos(math.radians(a_in_car_coord))

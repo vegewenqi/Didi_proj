@@ -960,6 +960,29 @@ class CrossroadEnd2endMix(gym.Env):
                                        Para.D_GREEN, extension, edgecolor='white', facecolor='green',
                                        angle=-(90 - Para.ANGLE_D), linewidth=1, alpha=0.7))
 
+            #
+            # plt.scatter(-Para.CROSSROAD_SIZE_LAT / 2 + Para.CROSSROAD_SIZE_LAT / 3, Para.OFFSET_L + Para.L_GREEN + Para.L_OUT_0 + Para.L_OUT_1 + Para.L_OUT_2 - 1.0)
+            # plt.scatter(Para.CROSSROAD_SIZE_LAT / 2 - Para.CROSSROAD_SIZE_LAT / 3, Para.OFFSET_R - 1.0)
+            # plt.scatter(Road.U_X1_D, Road.U_Y1_D)
+            # plt.scatter(Road.U_X2_D, Road.U_Y2_D)
+            # x1 = np.array([-3., Road.D_X1_U, Road.D_X1_D, 0., 3.0])
+            #             # y1 = Road.D_K1 * x1 + Road.D_B1
+            #             # plt.plot(x1, y1)
+            #             # x2 = np.array([-0., Road.D_X2_U, Road.D_X2_D, 0., 3.0])
+            #             # y2 = Road.D_K2 * x2 + Road.D_B2
+            #             # plt.plot(x2, y2)
+            #             # x3 = np.array([3., Road.D_X3_U, Road.D_X3_D, 0., 6.])
+            #             # y3 = Road.D_K3 * x3 + Road.D_B3
+            #             # plt.plot(x3, y3)
+            #             # x4 = np.array([-3., Road.U_X1_U, Road.U_X1_D, 0., 3.0])
+            #             # y4 = Road.U_K1 * x4 + Road.U_B1
+            #             # plt.plot(x4, y4)
+            #             # x5 = np.array([-2., Road.U_X2_U, Road.U_X2_D, 0., 4.0])
+            #             # y5 = Road.U_K2 * x5 + Road.U_B2
+            #             # plt.plot(x5, y5)
+            # plt.scatter(Road.D_X1_U, Road.D_Y1_U)
+            # plt.scatter(Road.D_X1_D, Road.D_Y1_D)
+
             # Left out lane
             for i in range(1, Para.LANE_NUMBER_LAT_OUT + 2):
                 lane_width_flag = [Para.L_OUT_0, Para.L_OUT_1, Para.L_OUT_2,
@@ -1505,17 +1528,18 @@ def test_end2end():
     while i < 100000:
         for j in range(60):
             i += 1
-            action = np.array([0.05, 0.6 + np.random.rand(1)*0.8], dtype=np.float32) # np.random.rand(1)*0.1 - 0.05
+            action = np.array([0.0, 0.6 + np.random.rand(1)*0.8], dtype=np.float32) # np.random.rand(1)*0.1 - 0.05
             obs, reward, done, info = env.step(action)
             obses, actions = obs[np.newaxis, :], action[np.newaxis, :]
-            obses = tf.convert_to_tensor(np.tile(obs, (1, 1)), dtype=tf.float32)
-            ref_points = tf.convert_to_tensor(np.tile(info['future_n_point'], (1, 1, 1)), dtype=tf.float32)
-            actions = tf.convert_to_tensor(np.tile(actions, (1, 1)), dtype=tf.float32)
+            obses = tf.convert_to_tensor(np.tile(obs, (3, 1)), dtype=tf.float32)
+            ref_points = tf.convert_to_tensor(np.tile(info['future_n_point'], (3, 1, 1)), dtype=tf.float32)
+            actions = tf.convert_to_tensor(np.tile(actions, (3, 1)), dtype=tf.float32)
             env_model.reset(obses)
             env.render(weights=np.zeros(env.other_number,))
-            # for i in range(25):
-            #     obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
-            #         veh2bike4real, veh2person4real = env_model.rollout_out(actions + tf.experimental.numpy.random.rand(2)*0.05, ref_points[:, :, i])
+            # if j > 25:
+            #     for i in range(25):
+            #         obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
+            #             veh2bike4real, veh2person4real = env_model.rollout_out(actions + tf.experimental.numpy.random.rand(2)*0.05, ref_points[:, :, i])
             #     env_model.render()
             if done:
                 print(env.done_type)
