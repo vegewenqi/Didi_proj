@@ -132,6 +132,7 @@ class CrossroadEnd2endMix(gym.Env):
             self.traffic_case = None
         elif self.traffic_mode == 'user':
             self.traffic_case = choice(list(MODE2STEP.keys()))
+            # self.traffic_case = 'green_mix_left_1'
         else:
             assert 1, 'setting wrong traffic mode'
         self.light_phase = self.traffic.init_light(self.traffic_case)
