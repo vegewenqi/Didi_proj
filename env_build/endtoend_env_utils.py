@@ -291,7 +291,7 @@ def judge_feasible(orig_x, orig_y, task):  # map dependant
                        and orig_y_trans_U < OFFSET_U_Y_trans \
                        and -Para.CROSSROAD_SIZE_LAT / 2 < orig_x < Para.CROSSROAD_SIZE_LAT / 2 \
                        and orig_x_trans_D > OFFSET_D_X_trans - Para.D_OUT_0 - Para.D_OUT_1 \
-                       and (orig_y < Para.OFFSET_R + Para.R_IN_0 + Para.R_IN_1 + Para.R_IN_2 + Para.R_IN_3 + + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH
+                       and (orig_y < Para.OFFSET_R + Para.R_GREEN + Para.R_IN_0 + Para.R_IN_1 + Para.R_IN_2 + Para.R_IN_3 + + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH
                             or orig_x_trans_U < OFFSET_U_X_trans + Para.U_OUT_0 + Para.U_OUT_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) else False
 
     def is_in_middle_right(orig_x, orig_y):
