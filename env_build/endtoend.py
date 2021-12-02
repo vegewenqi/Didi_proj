@@ -1528,7 +1528,7 @@ def test_end2end():
     while i < 1000:
         for j in range(60):
             i += 1
-            action = np.array([0.8, 0.6 + np.random.rand(1)*0.8], dtype=np.float32) # np.random.rand(1)*0.1 - 0.05
+            action = np.array([-0.5, 0.6 + np.random.rand(1)*0.8], dtype=np.float32) # np.random.rand(1)*0.1 - 0.05
             obs, reward, done, info = env.step(action)
             obses, actions = obs[np.newaxis, :], action[np.newaxis, :]
             obses = tf.convert_to_tensor(np.tile(obs, (3, 1)), dtype=tf.float32)
@@ -1536,20 +1536,16 @@ def test_end2end():
             actions = tf.convert_to_tensor(np.tile(actions, (3, 1)), dtype=tf.float32)
             env_model.reset(obses)
             env.render(weights=np.zeros(env.other_number,))
-            if j > 25:
-                veh2road4real_total = 0.
-                for i in range(25):
-                    obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
-                        veh2bike4real, veh2person4real = env_model.rollout_out(actions + tf.experimental.numpy.random.rand(2)*0.05, ref_points[:, :, i])
-                    veh2road4real_total += veh2road4real
+            # if j > 25:
+            #     for i in range(25):
+            #         obses, rewards, punish_term_for_training, real_punish_term, veh2veh4real, veh2road4real, \
+            #             veh2bike4real, veh2person4real = env_model.rollout_out(actions + tf.experimental.numpy.random.rand(2)*0.05, ref_points[:, :, i])
             #     env_model.render()
             if done:
                 print(env.done_type)
-                # break
+                break
         obs, _ = env.reset()
         # env.render(weights=np.zeros(env.other_number,))
-    # print(done_test)
-
 
 def test_is_achieve_goal(x, y, training_task):
     if training_task == 'left':

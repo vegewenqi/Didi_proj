@@ -277,8 +277,6 @@ def judge_feasible(orig_x, orig_y, task):  # map dependant
     def is_in_middle_left(orig_x, orig_y):
         _, orig_y_trans_D, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_D-90)
         _, OFFSET_D_Y_trans, _ = rotate_coordination(Para.OFFSET_D_X, Para.OFFSET_D_Y, 0, Para.ANGLE_D - 90)
-        # _, orig_y_trans_U, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_U-90)
-        # _, OFFSET_U_Y_trans, _ = rotate_coordination(Para.OFFSET_U_X, Para.OFFSET_U_Y, 0, Para.ANGLE_U - 90)
         return True if orig_y_trans_D > OFFSET_D_Y_trans \
                        and orig_y < Para.OFFSET_L + Para.L_GREEN + Para.L_OUT_0 + Para.L_OUT_1 + Para.L_OUT_2 \
                        + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH \

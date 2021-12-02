@@ -116,7 +116,7 @@ class AMPCLearnerWithAttention(object):
 
         if self.tf.reduce_max(veh2road4real_sum) > 40:
             index = self.tf.math.argmax(veh2road4real_sum)
-            self.tf.print('unusual obs:', mb_obs[index, 3:6])
+            self.tf.print('unusual obs:', mb_obs[index, 3:6], mb_obs[12:15])
 
         real_punish_term = self.tf.reduce_mean(real_punish_terms_sum)
         veh2veh4real = self.tf.reduce_mean(veh2veh4real_sum)
