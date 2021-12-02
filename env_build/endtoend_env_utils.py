@@ -267,23 +267,52 @@ def judge_feasible(orig_x, orig_y, task):  # map dependant
     def is_in_right(orig_x, orig_y):
         return Para.OFFSET_R - Para.R_OUT_0 - Para.R_OUT_1 - Para.R_OUT_2 < orig_y < Para.OFFSET_R and orig_x > Para.CROSSROAD_SIZE_LAT / 2
 
-    def is_in_middle(orig_x, orig_y):
+    # def is_in_middle(orig_x, orig_y):
+    #     _, orig_y_trans_D, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_D-90)
+    #     _, OFFSET_D_Y_trans, _ = rotate_coordination(Para.OFFSET_D_X, Para.OFFSET_D_Y, 0, Para.ANGLE_D - 90)
+    #     _, orig_y_trans_U, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_U-90)
+    #     _, OFFSET_U_Y_trans, _ = rotate_coordination(Para.OFFSET_U_X, Para.OFFSET_U_Y, 0, Para.ANGLE_U - 90)
+    #     return True if OFFSET_D_Y_trans < orig_y_trans_D  and orig_y_trans_U < OFFSET_U_Y_trans and -Para.CROSSROAD_SIZE_LAT / 2 < orig_x < Para.CROSSROAD_SIZE_LAT / 2 else False
+
+    def is_in_middle_left(orig_x, orig_y):
         _, orig_y_trans_D, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_D-90)
         _, OFFSET_D_Y_trans, _ = rotate_coordination(Para.OFFSET_D_X, Para.OFFSET_D_Y, 0, Para.ANGLE_D - 90)
-        _, orig_y_trans_U, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_U-90)
-        _, OFFSET_U_Y_trans, _ = rotate_coordination(Para.OFFSET_U_X, Para.OFFSET_U_Y, 0, Para.ANGLE_U - 90)
-        return True if OFFSET_D_Y_trans < orig_y_trans_D  and orig_y_trans_U < OFFSET_U_Y_trans and -Para.CROSSROAD_SIZE_LAT / 2 < orig_x < Para.CROSSROAD_SIZE_LAT / 2 else False
+        # _, orig_y_trans_U, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_U-90)
+        # _, OFFSET_U_Y_trans, _ = rotate_coordination(Para.OFFSET_U_X, Para.OFFSET_U_Y, 0, Para.ANGLE_U - 90)
+        return True if orig_y_trans_D > OFFSET_D_Y_trans \
+                       and orig_y < Para.OFFSET_L + Para.L_GREEN + Para.L_OUT_0 + Para.L_OUT_1 + Para.L_OUT_2 \
+                       + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH \
+                       and -Para.CROSSROAD_SIZE_LAT / 2 < orig_x < Para.CROSSROAD_SIZE_LAT / 2 else False
+
+    def is_in_middle_straight(orig_x, orig_y):
+        orig_x_trans_D, orig_y_trans_D, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_D-90)
+        OFFSET_D_X_trans, OFFSET_D_Y_trans, _ = rotate_coordination(Para.OFFSET_D_X, Para.OFFSET_D_Y, 0, Para.ANGLE_D - 90)
+        orig_x_trans_U, orig_y_trans_U, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_U-90)
+        OFFSET_U_X_trans, OFFSET_U_Y_trans, _ = rotate_coordination(Para.OFFSET_U_X, Para.OFFSET_U_Y, 0, Para.ANGLE_U - 90)
+        return True if orig_y_trans_D > OFFSET_D_Y_trans \
+                       and orig_y_trans_U < OFFSET_U_Y_trans \
+                       and -Para.CROSSROAD_SIZE_LAT / 2 < orig_x < Para.CROSSROAD_SIZE_LAT / 2 \
+                       and orig_x_trans_D > OFFSET_D_X_trans - Para.D_OUT_0 - Para.D_OUT_1 \
+                       and (orig_y < Para.OFFSET_R + Para.R_IN_0 + Para.R_IN_1 + Para.R_IN_2 + Para.R_IN_3 + + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH
+                            or orig_x_trans_U < OFFSET_U_X_trans + Para.U_OUT_0 + Para.U_OUT_1 + Para.BIKE_LANE_WIDTH + Para.PERSON_LANE_WIDTH) else False
+
+    def is_in_middle_right(orig_x, orig_y):
+        orig_x_trans_D, orig_y_trans_D, _ = rotate_coordination(orig_x, orig_y, 0, Para.ANGLE_D-90)
+        OFFSET_D_X_trans, OFFSET_D_Y_trans, _ = rotate_coordination(Para.OFFSET_D_X, Para.OFFSET_D_Y, 0, Para.ANGLE_D - 90)
+        return True if orig_y_trans_D > OFFSET_D_Y_trans \
+                       and orig_y < Para.OFFSET_R + Para.R_GREEN / 2 \
+                       and orig_x < Para.CROSSROAD_SIZE_LAT / 2 and orig_x_trans_D > OFFSET_D_X_trans else False
 
     if task == 'left':
         return True if is_in_straight_before1(orig_x, orig_y) or is_in_left(orig_x, orig_y) \
-                       or is_in_middle(orig_x, orig_y) else False
+                       or is_in_middle_left(orig_x, orig_y) else False
     elif task == 'straight':
         return True if is_in_straight_before1(orig_x, orig_y) or is_in_straight_after(
-            orig_x, orig_y) or is_in_middle(orig_x, orig_y) else False
+            orig_x, orig_y) or is_in_middle_straight(orig_x, orig_y) else False
     else:
         assert task == 'right'
         return True if is_in_straight_before2(orig_x, orig_y) or is_in_right(orig_x, orig_y) \
-                       or is_in_middle(orig_x, orig_y) else False
+                       or is_in_middle_right(orig_x, orig_y) else False
 
 
 def shift_coordination(orig_x, orig_y, coordi_shift_x, coordi_shift_y):

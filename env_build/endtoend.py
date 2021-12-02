@@ -1574,14 +1574,14 @@ def test_judge_feasible(x, y, training_task):
     print(judge_feasible(x, y, training_task))
 
 
-def test_judge_done(x=-24.14, y=8.16, training_task='right'):
-    print(Para.OFFSET_U_X, Para.OFFSET_U_Y)
-    print('test_is_achieve_goal')
-    print(test_is_achieve_goal(x, y, training_task))
+def test_judge_done(x=-13.53, y=4.7, training_task='left'):
+    # print(Para.OFFSET_U_X, Para.OFFSET_U_Y)
+    # print('test_is_achieve_goal')
+    # print(test_is_achieve_goal(x, y, training_task))
     print('test_judge_feasible')
     test_judge_feasible(x, y, training_task)
-    print('test_break_red_light')
-    test_break_red_light(x, y, training_task)
+    # print('test_break_red_light')
+    # test_break_red_light(x, y, training_task)
 
 if __name__ == '__main__':
-    test_end2end()
+    test_judge_done()
