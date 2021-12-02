@@ -72,7 +72,7 @@ def built_AMPC_parser():
 
     # env
     parser.add_argument('--env_id', default='CrossroadEnd2endMix-v0')
-    parser.add_argument('--max_step', type=int, default=200)
+    parser.add_argument('--max_step', type=int, default=100)
     parser.add_argument('--obs_dim', default=None)
     parser.add_argument('--act_dim', default=None)
     parser.add_argument('--state_dim', default=None)
@@ -98,7 +98,7 @@ def built_AMPC_parser():
     # buffer
     parser.add_argument('--max_buffer_size', type=int, default=50000)
     parser.add_argument('--replay_starts', type=int, default=1500)  # use a small value for debug
-    parser.add_argument('--replay_batch_size', type=int, default=512)
+    parser.add_argument('--replay_batch_size', type=int, default=256)
     parser.add_argument('--replay_alpha', type=float, default=0.6)
     parser.add_argument('--replay_beta', type=float, default=0.4)
     parser.add_argument('--buffer_log_interval', type=int, default=40000)
