@@ -189,16 +189,11 @@ PERSON_MODE_DICT = dict(left=OrderedDict(c3=4),
                         straight=OrderedDict(c2=4),  # 0
                         right=OrderedDict(c1=4, c2=0))
 
-MODE2STEP = {'green_mix_left_1': 7+5+np.random.random() * 20, 'green_mix_left_2': 7+5+np.random.random() * 20, 'green_mix_left_3': 7+6+np.random.random() * 20,
-             'green_mix_straight_1': 2+11+np.random.random() * 20, 'green_mix_straight_2': 2+11+np.random.random() * 20, 'green_mix_straight_3': 2+8+np.random.random() * 20, 'green_mix_straight_4': 2+3+np.random.random() * 20,
-             'green_mix_right_1': 3+6+np.random.random() * 20, 'green_mix_right_2': 9+np.random.random() * 20, 'green_mix_right_3': 8+np.random.random() * 20,
-             'green_mix_right_4': 9+9+np.random.random() * 20, 'green_mix_right_5': 8+14+np.random.random() * 20, 'green_veh_left_2': 0+8+np.random.random() *20,
-             }
-MODE2INDEX = {'green_mix_left_1': 500, 'green_mix_left_2': 500, 'green_mix_left_3': 450,
-              'green_mix_straight_1': 480, 'green_mix_straight_2': 500, 'green_mix_straight_3': 550, 'green_mix_straight_4': 500,
-              'green_mix_right_1': 500, 'green_mix_right_2': 500, 'green_mix_right_3': 500,
-              'green_mix_right_4': 500, 'green_mix_right_5': 500, 'green_veh_left_2': 450,
-              }
+MODE2STEP = {'green_ego_left_1': 0+5+np.random.random() * 20, 'green_veh_left_1': 2+8+np.random.random() * 20, 'green_veh_left_2': 0+8+np.random.random() * 20,
+             'green_veh_left_3': 7+8+np.random.random() * 20, 'green_veh_left_4': 7+6+np.random.random() * 20, 'green_ego_right_1': 5+np.random.random() * 20,
+             'green_ego_straight_1': 5+np.random.random() * 20, 'green_veh_right_1': 3+9+np.random.random() * 20, 'green_veh_right_2': 12+5+np.random.random() * 20,
+             'green_veh_straight_1': 5+9+np.random.random() * 20, 'green_veh_straight_2': 9+np.random.random() * 20, 'green_veh_straight_3': 4+6+np.random.random() * 20,
+             'green_veh_straight_4': 3+6+np.random.random() * 20}
 
 def dict2flat(inp):
     out = []
