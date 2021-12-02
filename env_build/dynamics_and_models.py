@@ -246,10 +246,10 @@ class EnvironmentModel(object):  # all tensors
                 dis_d1_left = (ego_point[0] * Road.D_K1 - ego_point[1] + Road.D_B1) / (tf.pow((tf.square(Road.D_K1)+1), 0.5))
                 dis_d1_right = (ego_point[0] * Road.D_K2 - ego_point[1] + Road.D_B2) / (tf.pow((tf.square(Road.D_K2)+1), 0.5))
 
-                veh2road4training += tf.where(logical_and(left_flag, logical_and(ego_point[1] < Road.D_Y1_U, dis_d1_left < 1.0)), tf.square(dis_d1_left - 1.0), tf.zeros_like(veh_infos[:, 0]))
+                veh2road4training += tf.where(logical_and(left_flag, logical_and(ego_point[1] < Road.D_Y1_U + 1.5 * Para.L, dis_d1_left < 1.0)), tf.square(dis_d1_left - 1.0), tf.zeros_like(veh_infos[:, 0]))
                 veh2road4training += tf.where(logical_and(left_flag, logical_and(ego_point[1] < Road.D_Y2_U, dis_d1_right > 0.0)), tf.square(dis_d1_right - (0.0)), tf.zeros_like(veh_infos[:, 0]))
 
-                veh2road4training += tf.where(logical_and(straight_flag, logical_and(ego_point[1] < Road.D_Y1_U, dis_d1_left < 1.0)), tf.square(dis_d1_left - 1.0), tf.zeros_like(veh_infos[:, 0]))
+                veh2road4training += tf.where(logical_and(straight_flag, logical_and(ego_point[1] < Road.D_Y1_U + 1.5 * Para.L, dis_d1_left < 1.0)), tf.square(dis_d1_left - 1.0), tf.zeros_like(veh_infos[:, 0]))
                 veh2road4training += tf.where(logical_and(straight_flag, logical_and(ego_point[1] < Road.D_Y2_U, dis_d1_right > 0.0)), tf.square(dis_d1_right - (0.0)), tf.zeros_like(veh_infos[:, 0]))
 
                 # start lane for right
@@ -279,9 +279,9 @@ class EnvironmentModel(object):  # all tensors
                     tf.square(ego_point[1] - (Para.OFFSET_R - Para.L_OUT_0 - Para.L_OUT_1 - Para.L_OUT_2 + 1.0)), tf.zeros_like(veh_infos[:, 0]))
             veh2road4real = veh2road4training
 
-            rewards = 0.01 * devi_v + 0.8 * devi_longitudinal + 0.8 * devi_lateral + 30 * devi_phi + 0.02 * punish_yaw_rate + \
+            rewards = 0.005 * devi_v + 0.4 * devi_longitudinal + 0.4 * devi_lateral + 20 * devi_phi + 0.01 * punish_yaw_rate + \
                       5 * punish_steer0 + 0.4 * punish_steer1 + 0.1 * punish_steer2 + \
-                      punish_a_x0 + punish_a_x1 + 0.05 * punish_a_x2
+                      punish_a_x0 + 0.0 * punish_a_x1 + 0.0 * punish_a_x2
 
             punish_term_for_training = veh2veh4training + veh2road4training + veh2bike4training + veh2person4training
             real_punish_term = veh2veh4real + veh2road4real + veh2bike4real + veh2person4real
@@ -301,13 +301,13 @@ class EnvironmentModel(object):  # all tensors
                                scaled_punish_steer1=0.4 * punish_steer1,
                                scaled_punish_steer2=0.1 * punish_steer2,
                                scaled_punish_a_x0=punish_a_x0,
-                               scaled_punish_a_x1=punish_a_x1,
-                               scaled_punish_a_x2=0.05 * punish_a_x2,
-                               scaled_punish_yaw_rate=0.02 * punish_yaw_rate,
-                               scaled_devi_v=0.01 * devi_v,
-                               scaled_devi_longitudinal=0.8 * devi_longitudinal,
-                               scaled_devi_lateral=0.8 * devi_lateral,
-                               scaled_devi_phi=30 * devi_phi,
+                               scaled_punish_a_x1=0.0 * punish_a_x1,
+                               scaled_punish_a_x2=0.0 * punish_a_x2,
+                               scaled_punish_yaw_rate=0.01 * punish_yaw_rate,
+                               scaled_devi_v=0.005 * devi_v,
+                               scaled_devi_longitudinal=0.4 * devi_longitudinal,
+                               scaled_devi_lateral=0.4 * devi_lateral,
+                               scaled_devi_phi=20 * devi_phi,
                                veh2veh4training=veh2veh4training,
                                veh2road4training=veh2road4training,
                                veh2bike4training=veh2bike4training,
