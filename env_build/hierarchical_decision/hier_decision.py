@@ -15,7 +15,10 @@ import os
 import heapq
 from math import cos, sin, pi
 
+import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.transforms import Affine2D
+from matplotlib.collections import PatchCollection
 import numpy as np
 import tensorflow as tf
 
@@ -169,10 +172,10 @@ class HierarchicalDecision(object):
         #         veh2person4real, reward_dict = self.model.rollout_out_online(action, ref_points[:, :, i])
         #     obses_list.append(obses[0])
         # obses_list = tf.convert_to_tensor(obses_list)
-        obses_list = self.cal_prediction_obs(obs_real, mask_real, future_n_point_real)
-        pred_xs, pred_ys = obses_list[:, 3], obses_list[:, 4]
+        # obses_list = self.cal_prediction_obs(obs_real, mask_real, future_n_point_real)
+        # pred_xs, pred_ys = obses_list[:, 3], obses_list[:, 4]
 
-        self.render(path_values, path_index, pred_xs, pred_ys)
+        self.render(path_values, path_index)
         self.recorder.record(obs_real, safe_action, self.step_timer.mean, path_index, path_values, self.ss_timer.mean, is_ss)
         self.obs, r, done, info = self.env.step(safe_action)
         return done
@@ -191,6 +194,7 @@ class HierarchicalDecision(object):
         ax = plt.axes([-0.05, -0.05, 1.1, 1.1])
         for ax in self.fig.get_axes():
             ax.axis('off')
+        patches = []
         ax.axis("equal")
 
         # ----------arrow--------------
@@ -526,22 +530,29 @@ class HierarchicalDecision(object):
                     item_color = 'lime'
                 else:
                     item_color = 'lightgray'
-                ax.add_patch(plt.Rectangle((x + LU_x, y + LU_y), w, l, edgecolor=item_color,facecolor=item_color, angle=-(90 - a), zorder=30))
+                patches.append(plt.Rectangle((x + LU_x, y + LU_y), w, l, edgecolor=item_color, facecolor=item_color,
+                                             angle=-(90 - a), zorder=30))
             else:
-                ax.plot([RU_x + x, RD_x + x], [RU_y + y, RD_y + y], color=color, linestyle=linestyle)
-                ax.plot([RU_x + x, LU_x + x], [RU_y + y, LU_y + y], color=color, linestyle=linestyle)
-                ax.plot([LD_x + x, RD_x + x], [LD_y + y, RD_y + y], color=color, linestyle=linestyle)
-                ax.plot([LD_x + x, LU_x + x], [LD_y + y, LU_y + y], color=color, linestyle=linestyle)
+                patches.append(matplotlib.patches.Rectangle(np.array([-l / 2 + x, -w / 2 + y]),
+                                                            width=l, height=w,
+                                                            fill=False,
+                                                            facecolor=None,
+                                                            edgecolor=color,
+                                                            linestyle=linestyle,
+                                                            linewidth=1.0,
+                                                            transform=Affine2D().rotate_deg_around(*(x, y),
+                                                                                                   a)))
 
         def draw_rotate_batch_rec(x, y, a, l, w):
-            RU_x, RU_y, _ = rotate_coordination_vec(l / 2, w / 2, np.zeros_like(l), -a)
-            RD_x, RD_y, _ = rotate_coordination_vec(l / 2, -w / 2, np.zeros_like(l), -a)
-            LU_x, LU_y, _ = rotate_coordination_vec(-l / 2, w / 2, np.zeros_like(l), -a)
-            LD_x, LD_y, _ = rotate_coordination_vec(-l / 2, -w / 2, np.zeros_like(l), -a)
-            ax.plot([RU_x + x, RD_x + x], [RU_y + y, RD_y + y], color='k')
-            ax.plot([RU_x + x, LU_x + x], [RU_y + y, LU_y + y], color='k')
-            ax.plot([LD_x + x, RD_x + x], [LD_y + y, RD_y + y], color='k')
-            ax.plot([LD_x + x, LU_x + x], [LD_y + y, LU_y + y], color='k')
+            for i in range(len(x)):
+                patches.append(matplotlib.patches.Rectangle(np.array([-l[i] / 2 + x[i], -w[i] / 2 + y[i]]),
+                                                            width=l[i], height=w[i],
+                                                            fill=False,
+                                                            facecolor=None,
+                                                            edgecolor='k',
+                                                            linewidth=1.0,
+                                                            transform=Affine2D().rotate_deg_around(*(x[i], y[i]),
+                                                                                                   a[i])))
 
 
         def plot_phi_line(type, x, y, phi, color):
@@ -655,6 +666,8 @@ class HierarchicalDecision(object):
                 else:
                     plt.text(text_x, text_y_start - next(ge), 'Path cost={:.4f}'.format(value), fontsize=12,
                              color=color[i], fontstyle='italic')
+
+        ax.add_collection(PatchCollection(patches, match_original=True))
         plt.show()
         plt.pause(0.001)
         if self.logdir is not None:
@@ -677,7 +690,7 @@ def main():
     # hier_decision = HierarchicalDecision('experiment-2021-11-25-00-24-55', 145000, logdir)
     # hier_decision = HierarchicalDecision('experiment-2021-11-25-19-33-31', 145000, logdir)    #pf=20 d_x=1 d_y=1
     # hier_decision = HierarchicalDecision('experiment-2021-11-25-19-44-54', 130000, logdir)    #pf=20 d_v=0.001
-    hier_decision = HierarchicalDecision('experiment-2021-12-01-19-46-05', 30000, logdir)      #pf=20 d_v=0.005 d_x=1 d_y=1
+    hier_decision = HierarchicalDecision('experiment-2021-12-03-00-49-50', 200000, logdir)      #pf=20 d_v=0.005 d_x=1 d_y=1
     # hier_decision = HierarchicalDecision('experiment-2021-11-26-23-39-14', 150000, logdir)      #pf=30 d_v=0.001
 
     for i in range(300):
