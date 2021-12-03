@@ -907,6 +907,9 @@ class CrossroadEnd2endMix(gym.Env):
         else:
             random_index = int(np.random.random() * (420 + 500)) + 700
 
+        if self.mode == 'testing' and self.traffic_mode == 'user':
+            random_index = random_index = MODE2INDEX_TEST[self.traffic_case] + int(np.random.random() * 100)
+
         x, y, phi, exp_v = self.ref_path.idx2point(random_index)
         v = exp_v * np.random.random()
         routeID = TASK2ROUTEID[self.training_task]

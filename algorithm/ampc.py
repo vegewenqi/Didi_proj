@@ -72,6 +72,7 @@ class AMPCLearnerWithAttention(object):
         return pf
     
     def model_rollout_for_update(self, mb_obs, ite, mb_future_n_point, mb_mask):
+        start_obses = mb_obs
         self.model.reset(mb_obs)
         rewards_sum = self.tf.zeros((self.batch_size,))
         punish_terms_for_training_sum = self.tf.zeros((self.batch_size,))
@@ -116,7 +117,7 @@ class AMPCLearnerWithAttention(object):
 
         if self.tf.reduce_max(veh2road4real_sum) > 40:
             index = self.tf.math.argmax(veh2road4real_sum)
-            self.tf.print('unusual obs:', mb_obs[index, 3:6], mb_obs[index, 12:15])
+            self.tf.print('unusual obs:', start_obses[index, 3:6], start_obses[index, 12:15])
 
         real_punish_term = self.tf.reduce_mean(real_punish_terms_sum)
         veh2veh4real = self.tf.reduce_mean(veh2veh4real_sum)
@@ -125,9 +126,6 @@ class AMPCLearnerWithAttention(object):
         veh2person4real = self.tf.reduce_mean(veh2person4real_sum)
 
         policy_entropy = self.tf.reduce_mean(entropy_sum)
-
-        # self.tf.print([obj_v_loss, obj_loss, punish_term_for_training, punish_loss, pg_loss,\
-        #        real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, veh2person4real, pf, policy_entropy])
 
         return obj_v_loss, obj_loss, punish_term_for_training, punish_loss, pg_loss,\
                real_punish_term, veh2veh4real, veh2road4real, veh2bike4real, veh2person4real, pf, policy_entropy
@@ -143,8 +141,6 @@ class AMPCLearnerWithAttention(object):
             attn_net_grad = tape.gradient(pg_loss, self.policy_with_value.attn_net.trainable_weights)
         with self.tf.name_scope('obj_v_gradient') as scope:
             obj_v_grad = tape.gradient(obj_v_loss, self.policy_with_value.obj_v.trainable_weights)
-        # with self.tf.name_scope('con_v_gradient') as scope:
-        #     con_v_grad = tape.gradient(con_v_loss, self.policy_with_value.con_v.trainable_weights)
 
         return pg_grad, obj_v_grad, attn_net_grad, obj_v_loss, obj_loss, \
                punish_term_for_training, punish_loss, pg_loss,\

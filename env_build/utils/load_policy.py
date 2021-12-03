@@ -25,15 +25,15 @@ class LoadPolicy(object):
         for key, val in params.items():
             parser.add_argument("-" + key, default=val)
         self.args = parser.parse_args()
-        env = CrossroadEnd2endMix(future_point_num=self.args.num_rollout_list_for_policy_update[0])
+        # env = CrossroadEnd2endMix(future_point_num=self.args.num_rollout_list_for_policy_update[0])
         self.policy = AttentionPolicy4Toyota(self.args)
         self.policy.load_weights(model_dir, iter)
         self.preprocessor = Preprocessor(self.args.obs_scale, self.args.reward_scale, self.args.reward_shift,
                                          args=self.args, gamma=self.args.gamma)
-        init_obs, all_info = env.reset()
-        mask = all_info['mask']
-        self.run_batch(init_obs[np.newaxis, :], mask[np.newaxis, :])
-        self.obj_value_batch(init_obs[np.newaxis, :], mask[np.newaxis, :])
+        # init_obs, all_info = env.reset()
+        # mask = all_info['mask']
+        # self.run_batch(init_obs[np.newaxis, :], mask[np.newaxis, :])
+        # self.obj_value_batch(init_obs[np.newaxis, :], mask[np.newaxis, :])
 
     @tf.function
     def run_batch(self, obses, masks):

@@ -195,6 +195,18 @@ MODE2STEP = {'green_ego_left_1': 0+5+np.random.random() * 20, 'green_veh_left_1'
              'green_veh_straight_1': 5+9+np.random.random() * 20, 'green_veh_straight_2': 9+np.random.random() * 20, 'green_veh_straight_3': 4+6+np.random.random() * 20,
              'green_veh_straight_4': 3+6+np.random.random() * 20}
 
+MODE2STEP_TEST = {'green_ego_left_1': 0+5, 'green_veh_left_1': 2+8, 'green_veh_left_2': 0+8,
+                  'green_veh_left_3': 7+8, 'green_veh_left_4': 7+6, 'green_ego_right_1': 5,
+                  'green_ego_straight_1': 5, 'green_veh_right_1': 3+9, 'green_veh_right_2': 12+5,
+                  'green_veh_straight_1': 5+9, 'green_veh_straight_2': 9, 'green_veh_straight_3': 4+6,
+                  'green_veh_straight_4': 3+6}
+
+MODE2INDEX_TEST = {'green_ego_left_1': 500, 'green_veh_left_1': 500, 'green_veh_left_2': 450,
+                   'green_veh_left_3': 600, 'green_veh_left_4': 550, 'green_ego_right_1': 500,
+                   'green_ego_straight_1': 450, 'green_veh_right_1': 500, 'green_veh_right_2': 500,
+                   'green_veh_straight_1': 550, 'green_veh_straight_2': 500, 'green_veh_straight_3': 500,
+                   'green_veh_straight_4': 500}
+
 def dict2flat(inp):
     out = []
     for key, val in inp.items():

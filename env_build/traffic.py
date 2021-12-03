@@ -15,7 +15,7 @@ import sys
 import numpy as np
 from collections import defaultdict
 from math import fabs, cos, sin, pi
-from env_build.endtoend_env_utils import MODE2STEP
+from env_build.endtoend_env_utils import MODE2STEP, MODE2STEP_TEST
 
 if 'SUMO_HOME' in os.environ:
     tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
@@ -146,8 +146,12 @@ class Traffic(object):
                 traci.trafficlight.setPhase('0', self.training_light_phase)
                 traci.simulationStep()
 
-            while traci.simulation.getTime() < MODE2STEP[self.traffic_case]:
-                traci.simulationStep()
+            if self.mode == 'testing':
+                while traci.simulation.getTime() < MODE2STEP_TEST[self.traffic_case]:
+                    traci.simulationStep()
+            else:
+                while traci.simulation.getTime() < MODE2STEP[self.traffic_case]:
+                    traci.simulationStep()
 
     def _reset(self):
         traci.close()
