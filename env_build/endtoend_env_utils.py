@@ -170,6 +170,8 @@ class Para:
     OTHERS_MEAN = np.concatenate([BIKE_MEAN, PERSON_MEAN, VEH_MEAN], axis=-1) # order determined in line 735 in e2e.py
     OTHERS_VAR = np.diag(np.concatenate([BIKE_VAR, PERSON_VAR, VEH_VAR], axis=-1)).astype(np.float32)
 
+    gamma = 0.95
+
 
 LIGHT_PHASE_TO_GREEN_OR_RED = {0: 'green', 1: 'green', 2: 'red', 3: 'red',
                                  4: 'red', 5: 'red', 6: 'red', 7: 'red', 8: 'red', 9: 'red'}  # 0: green, 1: red
